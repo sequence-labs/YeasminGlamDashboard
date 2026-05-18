@@ -3,13 +3,22 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Glam CRM API for makeup artist business management
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: clients
+    description: Client management
+  - name: bookings
+    description: Booking and job management
+  - name: payments
+    description: Payment tracking
+  - name: dashboard
+    description: Dashboard summary data
+
 paths:
   /healthz:
     get:
@@ -24,6 +33,366 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Clients ───────────────────────────────────────────────────────────────
+
+  /clients:
+    get:
+      operationId: listClients
+      tags: [clients]
+      summary: List all clients
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Client"
+    post:
+      operationId: createClient
+      tags: [clients]
+      summary: Create a new client
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientInput"
+      responses:
+        "201":
+          description: Created client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+
+  /clients/{id}:
+    get:
+      operationId: getClient
+      tags: [clients]
+      summary: Get a client by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateClient
+      tags: [clients]
+      summary: Update a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientUpdate"
+      responses:
+        "200":
+          description: Updated client
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+    delete:
+      operationId: deleteClient
+      tags: [clients]
+      summary: Delete a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Bookings ──────────────────────────────────────────────────────────────
+
+  /bookings:
+    get:
+      operationId: listBookings
+      tags: [bookings]
+      summary: List all bookings
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+    post:
+      operationId: createBooking
+      tags: [bookings]
+      summary: Create a new booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        "201":
+          description: Created booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}:
+    get:
+      operationId: getBooking
+      tags: [bookings]
+      summary: Get a booking by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Booking with events and payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateBooking
+      tags: [bookings]
+      summary: Update a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingUpdate"
+      responses:
+        "200":
+          description: Updated booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+    delete:
+      operationId: deleteBooking
+      tags: [bookings]
+      summary: Delete a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /bookings/{id}/events:
+    post:
+      operationId: createEvent
+      tags: [bookings]
+      summary: Add an event to a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventInput"
+      responses:
+        "201":
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingEvent"
+
+  /bookings/{id}/events/{eventId}:
+    patch:
+      operationId: updateEvent
+      tags: [bookings]
+      summary: Update an event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventUpdate"
+      responses:
+        "200":
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingEvent"
+    delete:
+      operationId: deleteEvent
+      tags: [bookings]
+      summary: Delete an event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /bookings/{id}/contract:
+    get:
+      operationId: getContract
+      tags: [bookings]
+      summary: Get contract data for a booking (used to render/download PDF)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contract data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractData"
+
+  /bookings/{id}/payments:
+    post:
+      operationId: recordPayment
+      tags: [payments]
+      summary: Record a payment against a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Created payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{paymentId}:
+    delete:
+      operationId: deletePayment
+      tags: [payments]
+      summary: Delete a payment record
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Dashboard ─────────────────────────────────────────────────────────────
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Dashboard summary statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/upcoming:
+    get:
+      operationId: getUpcomingEvents
+      tags: [dashboard]
+      summary: Upcoming events in the next 90 days
+      responses:
+        "200":
+          description: Upcoming events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UpcomingEvent"
+
+  /dashboard/recent-bookings:
+    get:
+      operationId: getRecentBookings
+      tags: [dashboard]
+      summary: Most recently created bookings
+      responses:
+        "200":
+          description: Recent bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +403,398 @@ components:
       required:
         - status
 
+    # ── Client ──────────────────────────────────────────────────────────────
+
+    Client:
+      type: object
+      required: [id, name, email, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ClientInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+        notes:
+          type: string
+
+    ClientUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ── Booking ─────────────────────────────────────────────────────────────
+
+    Booking:
+      type: object
+      required: [id, clientId, clientName, eventType, location, status, grandTotal, retainerAmount, retainerPaid, balancePaid, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        eventType:
+          type: string
+          description: "e.g. Wedding, Birthday, Prom"
+        location:
+          type: string
+        locationDetail:
+          type: ["string", "null"]
+        firstServiceDate:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+        grandTotal:
+          type: number
+        retainerAmount:
+          type: number
+        retainerPaid:
+          type: boolean
+        balancePaid:
+          type: boolean
+        balanceDueDate:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        earlyMorningFee:
+          type: number
+        travelFee:
+          type: number
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    BookingInput:
+      type: object
+      required: [clientId, eventType, location]
+      properties:
+        clientId:
+          type: integer
+        eventType:
+          type: string
+          minLength: 1
+        location:
+          type: string
+          minLength: 1
+        locationDetail:
+          type: string
+        firstServiceDate:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+        retainerAmount:
+          type: number
+        balanceDueDate:
+          type: string
+        paymentMethod:
+          type: string
+        earlyMorningFee:
+          type: number
+        travelFee:
+          type: number
+        notes:
+          type: string
+
+    BookingUpdate:
+      type: object
+      properties:
+        eventType:
+          type: string
+        location:
+          type: string
+        locationDetail:
+          type: ["string", "null"]
+        firstServiceDate:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+        retainerAmount:
+          type: number
+        retainerPaid:
+          type: boolean
+        balancePaid:
+          type: boolean
+        balanceDueDate:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        earlyMorningFee:
+          type: number
+        travelFee:
+          type: number
+        notes:
+          type: ["string", "null"]
+
+    BookingDetail:
+      type: object
+      required: [id, clientId, clientName, eventType, location, status, grandTotal, retainerAmount, retainerPaid, balancePaid, createdAt, events, payments]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        clientName:
+          type: string
+        clientEmail:
+          type: ["string", "null"]
+        clientPhone:
+          type: ["string", "null"]
+        eventType:
+          type: string
+        location:
+          type: string
+        locationDetail:
+          type: ["string", "null"]
+        firstServiceDate:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, active, completed, cancelled]
+        grandTotal:
+          type: number
+        retainerAmount:
+          type: number
+        retainerPaid:
+          type: boolean
+        balancePaid:
+          type: boolean
+        balanceDueDate:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        earlyMorningFee:
+          type: number
+        travelFee:
+          type: number
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingEvent"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+
+    # ── Event ───────────────────────────────────────────────────────────────
+
+    BookingEvent:
+      type: object
+      required: [id, bookingId, eventName, eventDate, servicesBegin, completionTarget, subtotal]
+      properties:
+        id:
+          type: integer
+        bookingId:
+          type: integer
+        eventName:
+          type: string
+          description: "e.g. Sangeet, Wedding Ceremony, Reception"
+        eventDate:
+          type: string
+        servicesBegin:
+          type: ["string", "null"]
+        completionTarget:
+          type: ["string", "null"]
+        hairAndMakeupCount:
+          type: integer
+        hairOnlyCount:
+          type: integer
+        makeupOnlyCount:
+          type: integer
+        makeupRate:
+          type: number
+        hairRate:
+          type: number
+        hairAndMakeupRate:
+          type: number
+        subtotal:
+          type: number
+
+    EventInput:
+      type: object
+      required: [eventName, eventDate]
+      properties:
+        eventName:
+          type: string
+          minLength: 1
+        eventDate:
+          type: string
+        servicesBegin:
+          type: string
+        completionTarget:
+          type: string
+        hairAndMakeupCount:
+          type: integer
+        hairOnlyCount:
+          type: integer
+        makeupOnlyCount:
+          type: integer
+        makeupRate:
+          type: number
+        hairRate:
+          type: number
+        hairAndMakeupRate:
+          type: number
+
+    EventUpdate:
+      type: object
+      properties:
+        eventName:
+          type: string
+        eventDate:
+          type: string
+        servicesBegin:
+          type: ["string", "null"]
+        completionTarget:
+          type: ["string", "null"]
+        hairAndMakeupCount:
+          type: integer
+        hairOnlyCount:
+          type: integer
+        makeupOnlyCount:
+          type: integer
+        makeupRate:
+          type: number
+        hairRate:
+          type: number
+        hairAndMakeupRate:
+          type: number
+
+    # ── Payment ─────────────────────────────────────────────────────────────
+
+    Payment:
+      type: object
+      required: [id, bookingId, amount, type, paidAt]
+      properties:
+        id:
+          type: integer
+        bookingId:
+          type: integer
+        amount:
+          type: number
+        type:
+          type: string
+          enum: [retainer, balance, partial, other]
+        note:
+          type: ["string", "null"]
+        paidAt:
+          type: string
+
+    PaymentInput:
+      type: object
+      required: [amount, type]
+      properties:
+        amount:
+          type: number
+        type:
+          type: string
+          enum: [retainer, balance, partial, other]
+        note:
+          type: string
+        paidAt:
+          type: string
+
+    # ── Contract ────────────────────────────────────────────────────────────
+
+    ContractData:
+      type: object
+      required: [booking, client, events]
+      properties:
+        booking:
+          $ref: "#/components/schemas/BookingDetail"
+        client:
+          $ref: "#/components/schemas/Client"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingEvent"
+        artistName:
+          type: string
+        artistEmail:
+          type: ["string", "null"]
+        artistPhone:
+          type: ["string", "null"]
+
+    # ── Dashboard ───────────────────────────────────────────────────────────
+
+    DashboardStats:
+      type: object
+      required: [totalClients, activeBookings, completedBookings, totalRevenue, pendingRevenue, retainersPending, balancesPending]
+      properties:
+        totalClients:
+          type: integer
+        activeBookings:
+          type: integer
+        completedBookings:
+          type: integer
+        totalRevenue:
+          type: number
+          description: Sum of grandTotal for completed bookings
+        pendingRevenue:
+          type: number
+          description: Sum of grandTotal for active bookings
+        retainersPending:
+          type: integer
+          description: Active bookings with retainer not yet paid
+        balancesPending:
+          type: integer
+          description: Active bookings with balance not yet paid
+
+    UpcomingEvent:
+      type: object
+      required: [eventId, bookingId, clientName, eventName, eventDate, location]
+      properties:
+        eventId:
+          type: integer
+        bookingId:
+          type: integer
+        clientName:
+          type: string
+        eventType:
+          type: string
+        eventName:
+          type: string
+        eventDate:
+          type: string
+        location:
+          type: string
+        servicesBegin:
+          type: ["string", "null"]
+        bookingStatus:
+          type: string
