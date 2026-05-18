@@ -170,3 +170,47 @@
     @apply font-sans font-semibold;
   }
 }
+
+.contract-print-page {
+  color: #111827;
+  font-weight: 400;
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: optimizeLegibility;
+}
+
+.contract-print-page .text-gray-700 {
+  color: #374151;
+}
+
+.contract-print-page .text-gray-600 {
+  color: #4b5563;
+}
+
+.contract-print-page .text-gray-500 {
+  color: #6b7280;
+}
+
+@media print {
+  @page {
+    size: 11in 17in;
+    margin: 0.5in;
+  }
+
+  html,
+  body,
+  #root {
+    background: white !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .contract-print-page {
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+}

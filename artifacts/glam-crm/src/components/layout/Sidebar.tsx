@@ -1,20 +1,25 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Users, CalendarDays } from "lucide-react";
+import { FileText, LayoutDashboard, Users, CalendarDays, Sparkles, UserRound } from "lucide-react";
+import { useGetArtistProfile } from "@workspace/api-client-react";
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { data: artistProfile } = useGetArtistProfile();
 
   const links = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/bookings", label: "Bookings", icon: CalendarDays },
+    { href: "/services", label: "Services", icon: Sparkles },
     { href: "/clients", label: "Clients", icon: Users },
+    { href: "/artist", label: "Artist", icon: UserRound },
+    { href: "/contract-templates", label: "Templates", icon: FileText },
   ];
 
   return (
     <div className="w-60 border-r bg-sidebar flex flex-col h-full shrink-0">
       <div className="px-5 py-5 border-b border-border">
-        <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">Glam CRM</div>
-        <div className="text-base font-semibold text-foreground">Yeasmin Bhuiyan</div>
+        <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{artistProfile?.businessName ?? "Glam CRM"}</div>
+        <div className="text-base font-semibold text-foreground">{artistProfile?.displayName ?? "Yeasmin Bhuiyan"}</div>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
         {links.map((link) => (

@@ -5,13 +5,17 @@
  * Glam CRM API for makeup artist business management
  * OpenAPI spec version: 0.1.0
  */
+import type { BookingActivity } from './bookingActivity';
 import type { BookingDetailStatus } from './bookingDetailStatus';
 import type { BookingEvent } from './bookingEvent';
+import type { BookingLineItem } from './bookingLineItem';
 import type { Payment } from './payment';
 
 export interface BookingDetail {
   id: number;
   clientId: number;
+  /** @nullable */
+  contractTemplateId?: number | null;
   clientName: string;
   /** @nullable */
   clientEmail?: string | null;
@@ -36,7 +40,11 @@ export interface BookingDetail {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  deletedAt?: string | null;
   createdAt: string;
   events: BookingEvent[];
   payments: Payment[];
+  lineItems: BookingLineItem[];
+  activity: BookingActivity[];
 }

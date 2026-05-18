@@ -16,6 +16,12 @@ tags:
     description: Booking and job management
   - name: payments
     description: Payment tracking
+  - name: services
+    description: Reusable services and fees
+  - name: artist
+    description: Artist business profile
+  - name: contractTemplates
+    description: Reusable contract template management
   - name: dashboard
     description: Dashboard summary data
 
@@ -125,6 +131,182 @@ paths:
         "204":
           description: Deleted
 
+  # ─── Services ─────────────────────────────────────────────────────────────
+
+  /services:
+    get:
+      operationId: listServiceItems
+      tags: [services]
+      summary: List reusable services and fees
+      responses:
+        "200":
+          description: List of reusable services and fees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceItem"
+    post:
+      operationId: createServiceItem
+      tags: [services]
+      summary: Create a reusable service or fee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceItemInput"
+      responses:
+        "201":
+          description: Created service or fee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceItem"
+
+  /services/{id}:
+    patch:
+      operationId: updateServiceItem
+      tags: [services]
+      summary: Update a reusable service or fee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceItemUpdate"
+      responses:
+        "200":
+          description: Updated service or fee
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceItem"
+    delete:
+      operationId: deleteServiceItem
+      tags: [services]
+      summary: Archive a reusable service or fee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Archived
+
+  # ─── Artist Profile ──────────────────────────────────────────────────────
+
+  /artist-profile:
+    get:
+      operationId: getArtistProfile
+      tags: [artist]
+      summary: Get the artist business profile
+      responses:
+        "200":
+          description: Artist profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtistProfile"
+    patch:
+      operationId: updateArtistProfile
+      tags: [artist]
+      summary: Update the artist business profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtistProfileUpdate"
+      responses:
+        "200":
+          description: Updated artist profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtistProfile"
+
+  # ─── Contract Templates ──────────────────────────────────────────────────
+
+  /contract-templates:
+    get:
+      operationId: listContractTemplates
+      tags: [contractTemplates]
+      summary: List contract templates
+      responses:
+        "200":
+          description: List of contract templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContractTemplate"
+    post:
+      operationId: createContractTemplate
+      tags: [contractTemplates]
+      summary: Create a contract template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractTemplateInput"
+      responses:
+        "201":
+          description: Created contract template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractTemplate"
+
+  /contract-templates/{id}:
+    patch:
+      operationId: updateContractTemplate
+      tags: [contractTemplates]
+      summary: Update a contract template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContractTemplateUpdate"
+      responses:
+        "200":
+          description: Updated contract template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractTemplate"
+    delete:
+      operationId: deleteContractTemplate
+      tags: [contractTemplates]
+      summary: Archive a contract template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Archived contract template
+
   # ─── Bookings ──────────────────────────────────────────────────────────────
 
   /bookings:
@@ -132,6 +314,12 @@ paths:
       operationId: listBookings
       tags: [bookings]
       summary: List all bookings
+      parameters:
+        - name: includeDeleted
+          in: query
+          required: false
+          schema:
+            type: boolean
       responses:
         "200":
           description: List of bookings
@@ -205,7 +393,7 @@ paths:
     delete:
       operationId: deleteBooking
       tags: [bookings]
-      summary: Delete a booking
+      summary: Move a booking to deleted bookings
       parameters:
         - name: id
           in: path
@@ -215,6 +403,40 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  /bookings/{id}/restore:
+    post:
+      operationId: restoreBooking
+      tags: [bookings]
+      summary: Restore a deleted booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Restored booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/permanent:
+    delete:
+      operationId: permanentlyDeleteBooking
+      tags: [bookings]
+      summary: Permanently delete a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Permanently deleted
 
   /bookings/{id}/events:
     post:
@@ -240,6 +462,79 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BookingEvent"
+
+  /bookings/{id}/line-items:
+    post:
+      operationId: createBookingLineItem
+      tags: [bookings]
+      summary: Add a selected service or fee to a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingLineItemInput"
+      responses:
+        "201":
+          description: Created booking line item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingLineItem"
+
+  /bookings/{id}/line-items/{lineItemId}:
+    patch:
+      operationId: updateBookingLineItem
+      tags: [bookings]
+      summary: Update a selected service or fee on a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: lineItemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingLineItemUpdate"
+      responses:
+        "200":
+          description: Updated booking line item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingLineItem"
+    delete:
+      operationId: deleteBookingLineItem
+      tags: [bookings]
+      summary: Remove a selected service or fee from a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: lineItemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed booking line item
 
   /bookings/{id}/events/{eventId}:
     patch:
@@ -450,6 +745,182 @@ components:
         notes:
           type: ["string", "null"]
 
+    # ── Services ────────────────────────────────────────────────────────────
+
+    ServiceItem:
+      type: object
+      required: [id, name, kind, defaultUnitPrice, unitLabel, active, sortOrder, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [service, fee]
+        defaultUnitPrice:
+          type: number
+        unitLabel:
+          type: string
+          description: "e.g. person, event, booking, hour"
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+
+    ServiceItemInput:
+      type: object
+      required: [name, kind, defaultUnitPrice, unitLabel]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        kind:
+          type: string
+          enum: [service, fee]
+        defaultUnitPrice:
+          type: number
+        unitLabel:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    ServiceItemUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [service, fee]
+        defaultUnitPrice:
+          type: number
+        unitLabel:
+          type: string
+        active:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    # ── Artist Profile ─────────────────────────────────────────────────────
+
+    ArtistProfile:
+      type: object
+      required: [id, businessName, displayName, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        businessName:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        instagram:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ArtistProfileUpdate:
+      type: object
+      properties:
+        businessName:
+          type: string
+          minLength: 1
+        displayName:
+          type: string
+          minLength: 1
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        instagram:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    # ── Contract Templates ─────────────────────────────────────────────────
+
+    ContractTemplate:
+      type: object
+      required: [id, name, body, active, isDefault, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        body:
+          type: string
+        active:
+          type: boolean
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ContractTemplateInput:
+      type: object
+      required: [name, body]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        body:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+        isDefault:
+          type: boolean
+
+    ContractTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        body:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+        isDefault:
+          type: boolean
+
     # ── Booking ─────────────────────────────────────────────────────────────
 
     Booking:
@@ -492,6 +963,8 @@ components:
           type: number
         notes:
           type: ["string", "null"]
+        deletedAt:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -526,6 +999,10 @@ components:
           type: number
         notes:
           type: string
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingLineItemInput"
 
     BookingUpdate:
       type: object
@@ -560,7 +1037,7 @@ components:
 
     BookingDetail:
       type: object
-      required: [id, clientId, clientName, eventType, location, status, grandTotal, retainerAmount, retainerPaid, balancePaid, createdAt, events, payments]
+      required: [id, clientId, clientName, eventType, location, status, grandTotal, retainerAmount, retainerPaid, balancePaid, createdAt, events, payments, lineItems, activity]
       properties:
         id:
           type: integer
@@ -601,6 +1078,8 @@ components:
           type: number
         notes:
           type: ["string", "null"]
+        deletedAt:
+          type: ["string", "null"]
         createdAt:
           type: string
         events:
@@ -611,8 +1090,122 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Payment"
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingLineItem"
+        activity:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingActivity"
+
+    BookingActivity:
+      type: object
+      required: [id, bookingId, action, title, description, createdAt]
+      properties:
+        id:
+          type: integer
+        bookingId:
+          type: integer
+        action:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        metadata:
+          type: ["string", "null"]
+        createdAt:
+          type: string
 
     # ── Event ───────────────────────────────────────────────────────────────
+
+    BookingLineItem:
+      type: object
+      required: [id, bookingId, name, kind, quantity, unitPrice, unitLabel, sortOrder, total]
+      properties:
+        id:
+          type: integer
+        bookingId:
+          type: integer
+        eventId:
+          type: ["integer", "null"]
+        serviceItemId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [service, fee]
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        unitLabel:
+          type: string
+        calculationNote:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
+        total:
+          type: number
+
+    BookingLineItemInput:
+      type: object
+      required: [name, kind, quantity, unitPrice, unitLabel]
+      properties:
+        serviceItemId:
+          type: integer
+        eventId:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        kind:
+          type: string
+          enum: [service, fee]
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        unitLabel:
+          type: string
+          minLength: 1
+        calculationNote:
+          type: string
+        sortOrder:
+          type: integer
+
+    BookingLineItemUpdate:
+      type: object
+      properties:
+        serviceItemId:
+          type: ["integer", "null"]
+        eventId:
+          type: ["integer", "null"]
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [service, fee]
+        quantity:
+          type: number
+        unitPrice:
+          type: number
+        unitLabel:
+          type: string
+          minLength: 1
+        calculationNote:
+          type: ["string", "null"]
+        sortOrder:
+          type: integer
 
     BookingEvent:
       type: object
@@ -749,6 +1342,8 @@ components:
         artistEmail:
           type: ["string", "null"]
         artistPhone:
+          type: ["string", "null"]
+        artistPaymentMethod:
           type: ["string", "null"]
 
     # ── Dashboard ───────────────────────────────────────────────────────────

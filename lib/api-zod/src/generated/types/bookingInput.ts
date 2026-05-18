@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BookingInputStatus } from './bookingInputStatus';
+import type { BookingLineItemInput } from './bookingLineItemInput';
 
 export interface BookingInput {
   clientId: number;
+  contractTemplateId?: number;
   /** @minLength 1 */
   eventType: string;
   /** @minLength 1 */
@@ -22,4 +24,5 @@ export interface BookingInput {
   earlyMorningFee?: number;
   travelFee?: number;
   notes?: string;
+  lineItems?: BookingLineItemInput[];
 }

@@ -8,6 +8,8 @@
 import type { BookingUpdateStatus } from './bookingUpdateStatus';
 
 export interface BookingUpdate {
+  /** @nullable */
+  contractTemplateId?: number | null;
   eventType?: string;
   location?: string;
   /** @nullable */

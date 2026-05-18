@@ -6,12 +6,21 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './artistProfile';
+export * from './artistProfileUpdate';
 export * from './booking';
+export * from './bookingActivity';
 export * from './bookingDetail';
 export * from './bookingDetailStatus';
 export * from './bookingEvent';
 export * from './bookingInput';
 export * from './bookingInputStatus';
+export * from './bookingLineItem';
+export * from './bookingLineItemInput';
+export * from './bookingLineItemInputKind';
+export * from './bookingLineItemKind';
+export * from './bookingLineItemUpdate';
+export * from './bookingLineItemUpdateKind';
 export * from './bookingStatus';
 export * from './bookingUpdate';
 export * from './bookingUpdateStatus';
@@ -19,12 +28,22 @@ export * from './client';
 export * from './clientInput';
 export * from './clientUpdate';
 export * from './contractData';
+export * from './contractTemplate';
+export * from './contractTemplateInput';
+export * from './contractTemplateUpdate';
 export * from './dashboardStats';
 export * from './eventInput';
 export * from './eventUpdate';
 export * from './healthStatus';
+export * from './listBookingsParams';
 export * from './payment';
 export * from './paymentInput';
 export * from './paymentInputType';
 export * from './paymentType';
+export * from './serviceItem';
+export * from './serviceItemInput';
+export * from './serviceItemInputKind';
+export * from './serviceItemKind';
+export * from './serviceItemUpdate';
+export * from './serviceItemUpdateKind';
 export * from './upcomingEvent';

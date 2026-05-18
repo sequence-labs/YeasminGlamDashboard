@@ -39,6 +39,141 @@ export interface ClientUpdate {
   notes?: string | null;
 }
 
+export type ServiceItemKind = typeof ServiceItemKind[keyof typeof ServiceItemKind];
+
+
+export const ServiceItemKind = {
+  service: 'service',
+  fee: 'fee',
+} as const;
+
+export interface ServiceItem {
+  id: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  kind: ServiceItemKind;
+  defaultUnitPrice: number;
+  /** e.g. person, event, booking, hour */
+  unitLabel: string;
+  active: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export type ServiceItemInputKind = typeof ServiceItemInputKind[keyof typeof ServiceItemInputKind];
+
+
+export const ServiceItemInputKind = {
+  service: 'service',
+  fee: 'fee',
+} as const;
+
+export interface ServiceItemInput {
+  /** @minLength 1 */
+  name: string;
+  description?: string;
+  kind: ServiceItemInputKind;
+  defaultUnitPrice: number;
+  /** @minLength 1 */
+  unitLabel: string;
+  active?: boolean;
+  sortOrder?: number;
+}
+
+export type ServiceItemUpdateKind = typeof ServiceItemUpdateKind[keyof typeof ServiceItemUpdateKind];
+
+
+export const ServiceItemUpdateKind = {
+  service: 'service',
+  fee: 'fee',
+} as const;
+
+export interface ServiceItemUpdate {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  kind?: ServiceItemUpdateKind;
+  defaultUnitPrice?: number;
+  unitLabel?: string;
+  active?: boolean;
+  sortOrder?: number;
+}
+
+export interface ArtistProfile {
+  id: number;
+  businessName: string;
+  displayName: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  instagram?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArtistProfileUpdate {
+  /** @minLength 1 */
+  businessName?: string;
+  /** @minLength 1 */
+  displayName?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  website?: string | null;
+  /** @nullable */
+  instagram?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface ContractTemplate {
+  id: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  body: string;
+  active: boolean;
+  isDefault: boolean;
+  locked: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractTemplateInput {
+  /** @minLength 1 */
+  name: string;
+  description?: string;
+  /** @minLength 1 */
+  body: string;
+  active?: boolean;
+  isDefault?: boolean;
+}
+
+export interface ContractTemplateUpdate {
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  /** @minLength 1 */
+  body?: string;
+  active?: boolean;
+  isDefault?: boolean;
+}
+
 export type BookingStatus = typeof BookingStatus[keyof typeof BookingStatus];
 
 
@@ -52,6 +187,8 @@ export const BookingStatus = {
 export interface Booking {
   id: number;
   clientId: number;
+  /** @nullable */
+  contractTemplateId?: number | null;
   clientName: string;
   /** e.g. Wedding, Birthday, Prom */
   eventType: string;
@@ -73,6 +210,8 @@ export interface Booking {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  deletedAt?: string | null;
   createdAt: string;
 }
 
@@ -86,8 +225,32 @@ export const BookingInputStatus = {
   cancelled: 'cancelled',
 } as const;
 
+export type BookingLineItemInputKind = typeof BookingLineItemInputKind[keyof typeof BookingLineItemInputKind];
+
+
+export const BookingLineItemInputKind = {
+  service: 'service',
+  fee: 'fee',
+} as const;
+
+export interface BookingLineItemInput {
+  serviceItemId?: number;
+  eventId?: number;
+  /** @minLength 1 */
+  name: string;
+  description?: string;
+  kind: BookingLineItemInputKind;
+  quantity: number;
+  unitPrice: number;
+  /** @minLength 1 */
+  unitLabel: string;
+  calculationNote?: string;
+  sortOrder?: number;
+}
+
 export interface BookingInput {
   clientId: number;
+  contractTemplateId?: number;
   /** @minLength 1 */
   eventType: string;
   /** @minLength 1 */
@@ -101,6 +264,7 @@ export interface BookingInput {
   earlyMorningFee?: number;
   travelFee?: number;
   notes?: string;
+  lineItems?: BookingLineItemInput[];
 }
 
 export type BookingUpdateStatus = typeof BookingUpdateStatus[keyof typeof BookingUpdateStatus];
@@ -114,6 +278,8 @@ export const BookingUpdateStatus = {
 } as const;
 
 export interface BookingUpdate {
+  /** @nullable */
+  contractTemplateId?: number | null;
   eventType?: string;
   location?: string;
   /** @nullable */
@@ -183,9 +349,50 @@ export interface Payment {
   paidAt: string;
 }
 
+export type BookingLineItemKind = typeof BookingLineItemKind[keyof typeof BookingLineItemKind];
+
+
+export const BookingLineItemKind = {
+  service: 'service',
+  fee: 'fee',
+} as const;
+
+export interface BookingLineItem {
+  id: number;
+  bookingId: number;
+  /** @nullable */
+  eventId?: number | null;
+  /** @nullable */
+  serviceItemId?: number | null;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  kind: BookingLineItemKind;
+  quantity: number;
+  unitPrice: number;
+  unitLabel: string;
+  /** @nullable */
+  calculationNote?: string | null;
+  sortOrder: number;
+  total: number;
+}
+
+export interface BookingActivity {
+  id: number;
+  bookingId: number;
+  action: string;
+  title: string;
+  description: string;
+  /** @nullable */
+  metadata?: string | null;
+  createdAt: string;
+}
+
 export interface BookingDetail {
   id: number;
   clientId: number;
+  /** @nullable */
+  contractTemplateId?: number | null;
   clientName: string;
   /** @nullable */
   clientEmail?: string | null;
@@ -210,9 +417,40 @@ export interface BookingDetail {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  deletedAt?: string | null;
   createdAt: string;
   events: BookingEvent[];
   payments: Payment[];
+  lineItems: BookingLineItem[];
+  activity: BookingActivity[];
+}
+
+export type BookingLineItemUpdateKind = typeof BookingLineItemUpdateKind[keyof typeof BookingLineItemUpdateKind];
+
+
+export const BookingLineItemUpdateKind = {
+  service: 'service',
+  fee: 'fee',
+} as const;
+
+export interface BookingLineItemUpdate {
+  /** @nullable */
+  serviceItemId?: number | null;
+  /** @nullable */
+  eventId?: number | null;
+  /** @minLength 1 */
+  name?: string;
+  /** @nullable */
+  description?: string | null;
+  kind?: BookingLineItemUpdateKind;
+  quantity?: number;
+  unitPrice?: number;
+  /** @minLength 1 */
+  unitLabel?: string;
+  /** @nullable */
+  calculationNote?: string | null;
+  sortOrder?: number;
 }
 
 export interface EventInput {
@@ -265,11 +503,14 @@ export interface ContractData {
   booking: BookingDetail;
   client: Client;
   events: BookingEvent[];
+  contractTemplate?: ContractTemplate;
   artistName?: string;
   /** @nullable */
   artistEmail?: string | null;
   /** @nullable */
   artistPhone?: string | null;
+  /** @nullable */
+  artistPaymentMethod?: string | null;
 }
 
 export interface DashboardStats {
@@ -298,4 +539,8 @@ export interface UpcomingEvent {
   servicesBegin?: string | null;
   bookingStatus?: string;
 }
+
+export type ListBookingsParams = {
+includeDeleted?: boolean;
+};
 

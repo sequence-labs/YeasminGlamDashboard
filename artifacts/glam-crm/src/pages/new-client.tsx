@@ -12,11 +12,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { formatUSPhone, isCompleteUSPhone } from "@/lib/phone";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine((value) => !value || isCompleteUSPhone(value), "Enter a full 10-digit phone number"),
   notes: z.string().optional(),
 });
 
@@ -40,7 +41,12 @@ export default function NewClient() {
   });
 
   function onSubmit(data: ClientFormValues) {
-    createClient.mutate({ data }, {
+    createClient.mutate({
+      data: {
+        ...data,
+        phone: data.phone ? formatUSPhone(data.phone) : undefined,
+      },
+    }, {
       onSuccess: (client) => {
         queryClient.invalidateQueries({ queryKey: getListClientsQueryKey() });
         toast({ title: "Client created successfully" });

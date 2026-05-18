@@ -1,14 +1,27 @@
-import { useGetContract, getGetContractQueryKey } from "@workspace/api-client-react";
+import { useGetContract, getGetContractQueryKey, type BookingLineItem } from "@workspace/api-client-react";
 import { useRoute } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO, subDays } from "date-fns";
 import { Printer, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
+import { formatUSPhone } from "@/lib/phone";
+import { Fragment, useEffect } from "react";
+
+const AGREEMENT_TITLE = "Makeup and Hair Service Agreement";
+
+function contractDocumentTitle(clientName?: string) {
+  const safeClientName = clientName
+    ?.trim()
+    .replace(/[\\/:*?"<>|]+/g, "")
+    .replace(/\s+/g, " ");
+
+  return safeClientName ? `${safeClientName} - ${AGREEMENT_TITLE}` : AGREEMENT_TITLE;
+}
 
 function guaranteedServices(event: {
-  hairAndMakeupCount: number;
-  hairOnlyCount: number;
-  makeupOnlyCount: number;
+  hairAndMakeupCount?: number;
+  hairOnlyCount?: number;
+  makeupOnlyCount?: number;
 }) {
   const parts: string[] = [];
   if (event.hairAndMakeupCount) parts.push(`${event.hairAndMakeupCount} Hair & Makeup`);
@@ -18,21 +31,47 @@ function guaranteedServices(event: {
 }
 
 function eventCalcDescription(event: {
-  hairAndMakeupCount: number;
-  hairOnlyCount: number;
-  makeupOnlyCount: number;
-  hairAndMakeupRate: number;
-  hairRate: number;
-  makeupRate: number;
+  hairAndMakeupCount?: number;
+  hairOnlyCount?: number;
+  makeupOnlyCount?: number;
+  hairAndMakeupRate?: number;
+  hairRate?: number;
+  makeupRate?: number;
 }) {
   const parts: string[] = [];
   if (event.hairAndMakeupCount)
-    parts.push(`${event.hairAndMakeupCount} Hair & Makeup × $${event.hairAndMakeupRate}`);
+    parts.push(`${event.hairAndMakeupCount} Hair & Makeup × $${event.hairAndMakeupRate ?? 285}`);
   if (event.hairOnlyCount)
-    parts.push(`${event.hairOnlyCount} Hair Only × $${event.hairRate}`);
+    parts.push(`${event.hairOnlyCount} Hair Only × $${event.hairRate ?? 135}`);
   if (event.makeupOnlyCount)
-    parts.push(`${event.makeupOnlyCount} Makeup Only × $${event.makeupRate}`);
+    parts.push(`${event.makeupOnlyCount} Makeup Only × $${event.makeupRate ?? 150}`);
   return parts.join("; ") || "—";
+}
+
+function lineItemAmount(item: BookingLineItem) {
+  return item.total ?? item.quantity * item.unitPrice;
+}
+
+function lineItemRateDescription(item: BookingLineItem) {
+  const amount = `$${item.unitPrice.toLocaleString()}`;
+  if (item.unitLabel === "booking" || item.unitLabel === "event") {
+    return `${amount} flat`;
+  }
+  return `${amount} per ${item.unitLabel}`;
+}
+
+function formatQuantity(value: number) {
+  return Number.isInteger(value) ? value.toString() : value.toLocaleString();
+}
+
+function quantityUnitLabel(unitLabel: string, quantity: number) {
+  if (unitLabel === "person") return quantity === 1 ? "person" : "people";
+  if (quantity === 1 || unitLabel.endsWith("s")) return unitLabel;
+  return `${unitLabel}s`;
+}
+
+function lineItemQuantityDescription(item: BookingLineItem) {
+  return `${formatQuantity(item.quantity)} ${quantityUnitLabel(item.unitLabel, item.quantity)}`;
 }
 
 export default function ContractView() {
@@ -41,6 +80,17 @@ export default function ContractView() {
   const { data: contract, isLoading } = useGetContract(id, {
     query: { enabled: !!id, queryKey: getGetContractQueryKey(id) },
   });
+
+  useEffect(() => {
+    if (!contract) return;
+
+    const previousTitle = document.title;
+    document.title = contractDocumentTitle(contract.client.name);
+
+    return () => {
+      document.title = previousTitle;
+    };
+  }, [contract]);
 
   if (isLoading) {
     return (
@@ -54,7 +104,29 @@ export default function ContractView() {
   if (!contract) return <div className="p-8 text-center">Contract not found</div>;
 
   const { booking, client, events } = contract;
+  const lineItems = booking.lineItems ?? [];
   const today = new Date();
+  const artistName = contract.artistName ?? "Yeasmin Bhuiyan";
+  const artistEmail = contract.artistEmail ?? "yeasminbhuiyan1997@gmail.com";
+  const artistPhone = contract.artistPhone ?? "";
+  const artistPaymentMethod = contract.artistPaymentMethod ?? "";
+  const artistContact = [artistEmail, artistPhone].filter(Boolean).join(" / ");
+  const clientPhone = client.phone ? formatUSPhone(client.phone) : "";
+  const earlyMorningFee = booking.earlyMorningFee ?? 0;
+  const travelFee = booking.travelFee ?? 0;
+  const pricedEvents = events.filter((event) => event.subtotal > 0);
+  const lineItemsByEventId = new Map<number, BookingLineItem[]>();
+  const bookingLevelLineItems = lineItems.filter((item) => !item.eventId);
+  lineItems.forEach((item) => {
+    if (!item.eventId) return;
+    lineItemsByEventId.set(item.eventId, [...(lineItemsByEventId.get(item.eventId) ?? []), item]);
+  });
+  const eventChargeGroups = events
+    .map((event) => ({
+      event,
+      lineItems: lineItemsByEventId.get(event.id) ?? [],
+    }))
+    .filter((group) => group.event.subtotal > 0 || group.lineItems.length > 0);
 
   const firstDate = booking.firstServiceDate ? parseISO(booking.firstServiceDate) : null;
   const cancel90Date = firstDate ? format(subDays(firstDate, 90), "MMMM d, yyyy") : null;
@@ -68,6 +140,9 @@ export default function ContractView() {
   const defaultMakeupRate = events[0]?.makeupRate ?? 150;
   const defaultHairRate = events[0]?.hairRate ?? 135;
   const defaultHamRate = events[0]?.hairAndMakeupRate ?? 285;
+  const pricingLineItems = lineItems.length > 0
+    ? lineItems
+    : [];
 
   return (
     <div className="bg-white min-h-screen text-black text-[14px]">
@@ -86,15 +161,15 @@ export default function ContractView() {
       </div>
 
       {/* Contract Document */}
-      <div className="max-w-[820px] mx-auto px-10 py-10 print:px-8 print:py-6 font-sans">
+      <div className="contract-print-page max-w-[820px] mx-auto px-10 py-10 print:px-8 print:py-6 font-sans">
 
         {/* Header */}
         <div className="text-center mb-8 pb-6 border-b-2 border-black">
-          <h1 className="text-2xl font-bold tracking-tight uppercase mb-1">Simple Makeup &amp; Hair Service Agreement</h1>
+          <h1 className="text-2xl font-bold tracking-tight uppercase mb-1">Makeup &amp; Hair Service Agreement</h1>
           <p className="text-sm text-gray-600">Professional Makeup and Hair Services for Wedding Events</p>
           <p className="text-sm mt-3 max-w-2xl mx-auto">
             This Makeup &amp; Hair Service Agreement ("Agreement") is between{" "}
-            <strong>{contract.artistName}</strong> ("Artist") and <strong>{client.name}</strong> ("Client") for
+            <strong>{artistName}</strong> ("Artist") and <strong>{client.name}</strong> ("Client") for
             makeup and hair services at <strong>{booking.location}</strong>. This Agreement becomes binding when
             signed by both parties and the non-refundable retainer is received by Artist.
           </p>
@@ -104,10 +179,10 @@ export default function ContractView() {
         <Section number="1" title="Booking Information">
           <table className="w-full border-collapse text-sm">
             <tbody>
-              <InfoRow label="Artist / Service Provider" value={contract.artistName} />
-              <InfoRow label="Client" value={client.name} />
-              <InfoRow label="Client Email / Phone" value={[client.email, client.phone].filter(Boolean).join(" / ")} />
-              <InfoRow label="Artist Email / Phone" value={[contract.artistEmail, contract.artistPhone].filter(Boolean).join(" / ")} />
+              <InfoRow label="Artist / Service Provider" value={artistName} emphasized />
+              <InfoRow label="Client" value={client.name} emphasized />
+              <InfoRow label="Client Email / Phone" value={[client.email, clientPhone].filter(Boolean).join(" / ")} />
+              <InfoRow label="Artist Email / Phone" value={artistContact} />
               <InfoRow label="Primary Service Location" value={booking.location} />
               <InfoRow
                 label="Specific Room / Suite"
@@ -116,19 +191,20 @@ export default function ContractView() {
               <InfoRow
                 label="First Service Date"
                 value={firstDate ? format(firstDate, "MMMM d, yyyy") : "To be confirmed"}
+                emphasized
               />
               <InfoRow label="All Times" value="Eastern Time" />
-              <InfoRow label="Agreement Date" value={format(today, "MMMM d, yyyy")} />
+              <InfoRow label="Agreement Date" value={format(today, "MMMM d, yyyy")} emphasized />
             </tbody>
           </table>
         </Section>
 
         {/* Section 2 */}
-        <Section number="2" title="Service Schedule and Guaranteed Services">
+        <Section number="2" title="Service Schedule">
           <p className="text-sm text-gray-700 mb-4">
-            Services are priced per person and per service, not hourly. The service windows are for scheduling and
-            coordination. Artist is not responsible for the actual start time of any ceremony, reception, cocktail
-            hour, photo session, or other event activity.
+            The service windows below are for scheduling and coordination. Contracted services, quantities,
+            and fees are listed in the Pricing section. Artist is not responsible for the actual start time of
+            any ceremony, reception, cocktail hour, photo session, or other event activity.
           </p>
           {events.length > 0 ? (
             <>
@@ -139,7 +215,6 @@ export default function ContractView() {
                     <Th>Date</Th>
                     <Th>Services Begin</Th>
                     <Th>Completion Target</Th>
-                    <Th>Guaranteed Services</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,15 +224,10 @@ export default function ContractView() {
                       <Td>{format(parseISO(e.eventDate), "MMM. d, yyyy")}</Td>
                       <Td>{e.servicesBegin || "—"}</Td>
                       <Td>{e.completionTarget || "—"}</Td>
-                      <Td>{guaranteedServices(e)}</Td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <p className="text-sm text-gray-700 mt-3">
-                <strong>Guaranteed minimum:</strong> Reductions in the number of people or services after signing
-                will not reduce the total amount owed unless Artist agrees in writing.
-              </p>
             </>
           ) : (
             <p className="italic text-gray-500 text-sm">No events scheduled yet.</p>
@@ -166,66 +236,110 @@ export default function ContractView() {
 
         {/* Section 3 */}
         <Section number="3" title="Pricing">
-          <div className="grid grid-cols-2 gap-6 mb-4">
+          <p className="text-sm text-gray-700 mb-4">
+            The rate schedule lists the unit prices. The booking charges table applies those rates to the
+            selected quantities for this Agreement.
+          </p>
+
+          <div className="mb-5">
+            <h3 className="font-bold text-sm mb-2">Rate Schedule</h3>
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-gray-100">
                   <Th>Service / Fee</Th>
-                  <Th right>Rate / Amount</Th>
+                  <Th right>Unit Rate</Th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-200"><Td>Makeup</Td><Td right>${defaultMakeupRate} per person</Td></tr>
-                <tr className="border-b border-gray-200"><Td>Hair</Td><Td right>${defaultHairRate} per person</Td></tr>
-                <tr className="border-b border-gray-200"><Td>Hair &amp; Makeup</Td><Td right>${defaultHamRate} per person</Td></tr>
-                {booking.earlyMorningFee > 0 && (
-                  <tr className="border-b border-gray-200"><Td>Early Morning Fee</Td><Td right>${booking.earlyMorningFee.toLocaleString()}</Td></tr>
+                {pricingLineItems.length > 0 ? (
+                  pricingLineItems.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-200">
+                      <Td>{item.name}</Td>
+                      <Td right>{lineItemRateDescription(item)}</Td>
+                    </tr>
+                  ))
+                ) : (
+                  <>
+                    <tr className="border-b border-gray-200"><Td>Makeup</Td><Td right>${defaultMakeupRate} per person</Td></tr>
+                    <tr className="border-b border-gray-200"><Td>Hair</Td><Td right>${defaultHairRate} per person</Td></tr>
+                    <tr className="border-b border-gray-200"><Td>Hair &amp; Makeup</Td><Td right>${defaultHamRate} per person</Td></tr>
+                  </>
                 )}
-                {booking.travelFee > 0 && (
-                  <tr className="border-b border-gray-200"><Td>Travel Fee</Td><Td right>${booking.travelFee.toLocaleString()}</Td></tr>
+                {earlyMorningFee > 0 && (
+                  <tr className="border-b border-gray-200"><Td>Early Morning Fee</Td><Td right>${earlyMorningFee.toLocaleString()}</Td></tr>
+                )}
+                {travelFee > 0 && (
+                  <tr className="border-b border-gray-200"><Td>Travel Fee</Td><Td right>${travelFee.toLocaleString()}</Td></tr>
                 )}
               </tbody>
             </table>
           </div>
 
+          <h3 className="font-bold text-sm mb-2">Booking Charges</h3>
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-gray-100">
-                <Th>Event / Fee</Th>
-                <Th>Calculation</Th>
+                <Th>Selected Service / Fee</Th>
+                <Th>Quantity</Th>
+                <Th>Unit Rate</Th>
                 <Th right>Amount</Th>
               </tr>
             </thead>
             <tbody>
-              {events.map(e => (
-                <tr key={e.id} className="border-b border-gray-200">
-                  <Td>{e.eventName}</Td>
-                  <Td>{eventCalcDescription(e)}</Td>
-                  <Td right>${e.subtotal.toLocaleString()}</Td>
+              {eventChargeGroups.map(({ event, lineItems: assignedLineItems }) => (
+                <Fragment key={event.id}>
+                  <tr key={`event-${event.id}`} className="border-b border-gray-200 bg-gray-50">
+                    <Td colSpan={4}><strong>{event.eventName}</strong></Td>
+                  </tr>
+                  {event.subtotal > 0 && (
+                    <tr key={`event-subtotal-${event.id}`} className="border-b border-gray-200">
+                      <Td>{event.eventName}</Td>
+                      <Td>{guaranteedServices(event)}</Td>
+                      <Td>{eventCalcDescription(event)}</Td>
+                      <Td right>${event.subtotal.toLocaleString()}</Td>
+                    </tr>
+                  )}
+                  {assignedLineItems.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-200">
+                      <Td>{item.name}</Td>
+                      <Td>{lineItemQuantityDescription(item)}</Td>
+                      <Td>{lineItemRateDescription(item)}</Td>
+                      <Td right>${lineItemAmount(item).toLocaleString()}</Td>
+                    </tr>
+                  ))}
+                </Fragment>
+              ))}
+              {bookingLevelLineItems.map((item) => (
+                <tr key={item.id} className="border-b border-gray-200">
+                  <Td>{item.name}</Td>
+                  <Td>{lineItemQuantityDescription(item)}</Td>
+                  <Td>{lineItemRateDescription(item)}</Td>
+                  <Td right>${lineItemAmount(item).toLocaleString()}</Td>
                 </tr>
               ))}
-              {booking.earlyMorningFee > 0 && (
+              {earlyMorningFee > 0 && (
                 <tr className="border-b border-gray-200">
                   <Td>Early Morning Fee</Td>
-                  <Td>{events.find(e => e.servicesBegin)?.eventName ? `${events.find(e => e.servicesBegin)?.eventName} ${events.find(e => e.servicesBegin)?.servicesBegin} start` : "Early morning start"}</Td>
-                  <Td right>${booking.earlyMorningFee.toLocaleString()}</Td>
+                  <Td>1 booking</Td>
+                  <Td>${earlyMorningFee.toLocaleString()} flat</Td>
+                  <Td right>${earlyMorningFee.toLocaleString()}</Td>
                 </tr>
               )}
-              {booking.travelFee > 0 && (
+              {travelFee > 0 && (
                 <tr className="border-b border-gray-200">
                   <Td>Travel Fee</Td>
-                  <Td>Travel to listed service location</Td>
-                  <Td right>${booking.travelFee.toLocaleString()}</Td>
+                  <Td>1 booking</Td>
+                  <Td>${travelFee.toLocaleString()} flat</Td>
+                  <Td right>${travelFee.toLocaleString()}</Td>
                 </tr>
               )}
               <tr className="font-bold text-base border-t-2 border-black">
-                <td className="py-2 px-3">Grand Total</td>
-                <td></td>
+                <td className="py-2 px-3" colSpan={3}>Grand Total</td>
                 <td className="py-2 px-3 text-right">${booking.grandTotal.toLocaleString()}</td>
               </tr>
             </tbody>
           </table>
-          <p className="text-sm mt-2">Client Initials: _____</p>
+          <ClientInitials className="mt-2" />
         </Section>
 
         {/* Section 4 */}
@@ -254,7 +368,7 @@ export default function ContractView() {
               </tr>
               <tr className="border-b border-gray-200">
                 <Td>Payment Method</Td>
-                <Td right>{booking.paymentMethod || "As agreed"}</Td>
+                <Td right>{booking.paymentMethod || artistPaymentMethod || "As agreed"}</Td>
               </tr>
             </tbody>
           </table>
@@ -268,7 +382,7 @@ export default function ContractView() {
             begin or continue services until the balance is paid. Client should send payment confirmation after
             payment is completed.
           </p>
-          <p className="text-sm">Client Initials: _____</p>
+          <ClientInitials />
         </Section>
 
         {/* Section 5 */}
@@ -290,7 +404,7 @@ export default function ContractView() {
             service begins.
           </p>
           <p className="text-sm text-gray-700">
-            <strong>Assigned artists:</strong> {contract.artistName} is assigned to provide makeup. Hair may be
+            <strong>Assigned artists:</strong> {artistName} is assigned to provide makeup. Hair may be
             performed by an assistant, second artist, subcontracted hair stylist, or other assigned professional
             selected by Artist. Artist may bring additional artists or assistants as needed to complete the agreed
             services.
@@ -354,7 +468,7 @@ export default function ContractView() {
             responsible for reactions caused by undisclosed conditions, unknown sensitivities, prior treatments,
             or failure to follow preparation instructions.
           </p>
-          <p className="text-sm mb-3">Client Initials: _____</p>
+          <ClientInitials className="mb-3" />
           <p className="text-sm text-gray-700 mb-2">
             <strong>Smoking, alcohol, drugs, and unsafe conduct:</strong> No smoking, vaping, hookah, drug use,
             or open alcoholic drinks are allowed in the immediate service area. Persons actively receiving
@@ -369,10 +483,10 @@ export default function ContractView() {
             actual damage to Artist products, tools, lighting, supplies, or equipment, except ordinary wear and
             tear.
           </p>
-          <p className="text-sm mb-3">Client Initials: _____</p>
-          {booking.travelFee > 0 && (
+          <ClientInitials className="mb-3" />
+          {travelFee > 0 && (
             <p className="text-sm text-gray-700">
-              <strong>Travel and venue costs:</strong> The ${booking.travelFee.toLocaleString()} travel fee is
+              <strong>Travel and venue costs:</strong> The ${travelFee.toLocaleString()} travel fee is
               all-inclusive and covers every travel-related cost for the Artist to and from the {booking.location}{" "}
               service location, including parking, valet, tolls, rideshare, loading fees, room access fees, and
               any other transportation expenses. No additional travel-related charges will be billed to the
@@ -391,31 +505,55 @@ export default function ContractView() {
           <table className="w-full border-collapse text-sm mb-4">
             <thead>
               <tr className="bg-gray-100">
-                <Th>Cancellation Timing</Th>
+                <Th>If Client Cancels</Th>
                 <Th right>Total Amount Owed by Client (Including Retainer)</Th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-b border-gray-200 align-top">
                 <Td>
-                  90 calendar days or more before first service date
-                  {cancel90Date && <div className="text-gray-500">(on or before {cancel90Date})</div>}
+                  <div>
+                    <strong>90 calendar days</strong> or more before the First Service Date
+                  </div>
+                  <div className="text-gray-700 italic mt-1">
+                    {cancel90Date
+                      ? `(on or before ${cancel90Date})`
+                      : "(Cancellation-date cutoff will be calculated after First Service Date is set)"}
+                  </div>
                 </Td>
-                <Td right>${booking.retainerAmount.toLocaleString()} — the non-refundable retainer only</Td>
+                <Td right>
+                  <strong>${booking.retainerAmount.toLocaleString()}</strong> — the non-refundable retainer only
+                </Td>
               </tr>
               <tr className="border-b border-gray-200 align-top">
                 <Td>
-                  31 to 89 calendar days before first service date
-                  {cancel89Date && cancel31Date && <div className="text-gray-500">({cancel89Date} – {cancel31Date})</div>}
+                  <div>
+                    <strong>31 to 89 calendar days</strong> before the First Service Date
+                  </div>
+                  <div className="text-gray-700 italic mt-1">
+                    {cancel89Date && cancel31Date
+                      ? `(${cancel89Date} – ${cancel31Date})`
+                      : "(Cancellation-date range will be calculated after First Service Date is set)"}
+                  </div>
                 </Td>
-                <Td right>${parseFloat(halfTotal).toLocaleString()} — 50% of the total contract amount</Td>
+                <Td right>
+                  <strong>${parseFloat(halfTotal).toLocaleString()}</strong> — 50% of the total contract amount
+                </Td>
               </tr>
               <tr className="border-b border-gray-200 align-top">
                 <Td>
-                  30 calendar days or fewer before first service date
-                  {cancel30Date && <div className="text-gray-500">(on or after {cancel30Date})</div>}
+                  <div>
+                    <strong>30 calendar days</strong> or fewer before the First Service Date
+                  </div>
+                  <div className="text-gray-700 italic mt-1">
+                    {cancel30Date
+                      ? `(on or after ${cancel30Date})`
+                      : "(Cancellation-date cutoff will be calculated after First Service Date is set)"}
+                  </div>
                 </Td>
-                <Td right>${booking.grandTotal.toLocaleString()} — 100% of the total contract amount</Td>
+                <Td right>
+                  <strong>${booking.grandTotal.toLocaleString()}</strong> — 100% of the total contract amount
+                </Td>
               </tr>
             </tbody>
           </table>
@@ -432,7 +570,7 @@ export default function ContractView() {
             tier and total amount owed are determined by the date the Client submitted the reschedule request,
             measured against the original First Service Date{firstDate ? ` of ${format(firstDate, "MMMM d, yyyy")}` : ""}.
           </p>
-          <p className="text-sm">Client Initials: _____</p>
+          <ClientInitials />
         </Section>
 
         {/* Section 9 */}
@@ -454,7 +592,7 @@ export default function ContractView() {
             preparation, timing, safety, or schedule issues, the Client will receive a refund of the amount paid
             for that specific unperformed service.
           </p>
-          <p className="text-sm">Client Initials: _____</p>
+          <ClientInitials />
         </Section>
 
         {/* Section 10 */}
@@ -491,21 +629,21 @@ export default function ContractView() {
               <SignatureLine label="Signature" blank />
               <SignatureLine label="Date" blank />
               <SignatureLine label="Email" value={client.email} />
-              <SignatureLine label="Phone" value={client.phone || ""} blank={!client.phone} />
+              <SignatureLine label="Phone" value={clientPhone} blank={!clientPhone} />
             </div>
             <div>
               <div className="font-bold text-center mb-4 uppercase tracking-wide text-xs">ARTIST</div>
-              <SignatureLine label="Name" value={contract.artistName} />
+              <SignatureLine label="Name" value={artistName} />
               <SignatureLine label="Signature" blank />
               <SignatureLine label="Date" blank />
-              <SignatureLine label="Email" value={contract.artistEmail || "yeasminbhuiyan1997@gmail.com"} />
-              <SignatureLine label="Phone" value={contract.artistPhone || ""} blank={!contract.artistPhone} />
+              <SignatureLine label="Email" value={artistEmail} />
+              <SignatureLine label="Phone" value={artistPhone} blank={!artistPhone} />
             </div>
           </div>
         </Section>
 
         <div className="text-center text-xs text-gray-400 mt-10 pt-6 border-t">
-          Simple Makeup &amp; Hair Service Agreement · {contract.artistName} · Generated {format(today, "MMMM d, yyyy")}
+          Makeup &amp; Hair Service Agreement · {artistName} · Generated {format(today, "MMMM d, yyyy")}
         </div>
       </div>
     </div>
@@ -523,11 +661,19 @@ function Section({ number, title, children }: { number: string; title: string; c
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  label,
+  value,
+  emphasized,
+}: {
+  label: string;
+  value: React.ReactNode;
+  emphasized?: boolean;
+}) {
   return (
     <tr className="border-b border-gray-200">
       <th className="text-left py-2 px-3 font-medium w-1/3 bg-gray-50">{label}</th>
-      <td className="py-2 px-3">{value || "—"}</td>
+      <td className={`py-2 px-3 ${emphasized ? "font-semibold" : ""}`}>{value || "—"}</td>
     </tr>
   );
 }
@@ -538,10 +684,14 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
   );
 }
 
-function Td({ children, right }: { children: React.ReactNode; right?: boolean }) {
+function Td({ children, right, colSpan }: { children: React.ReactNode; right?: boolean; colSpan?: number }) {
   return (
-    <td className={`py-2 px-3 ${right ? "text-right" : ""}`}>{children}</td>
+    <td colSpan={colSpan} className={`py-2 px-3 ${right ? "text-right" : ""}`}>{children}</td>
   );
+}
+
+function ClientInitials({ className = "" }: { className?: string }) {
+  return <p className={`text-sm font-semibold ${className}`}>Client Initials: _____</p>;
 }
 
 function SignatureLine({ label, value, blank }: { label: string; value?: string; blank?: boolean }) {

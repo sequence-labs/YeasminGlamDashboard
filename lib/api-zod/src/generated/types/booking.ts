@@ -10,6 +10,8 @@ import type { BookingStatus } from './bookingStatus';
 export interface Booking {
   id: number;
   clientId: number;
+  /** @nullable */
+  contractTemplateId?: number | null;
   clientName: string;
   /** e.g. Wedding, Birthday, Prom */
   eventType: string;
@@ -31,5 +33,7 @@ export interface Booking {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  deletedAt?: string | null;
   createdAt: string;
 }

@@ -1,26 +1,55 @@
 import { Shell } from "@/components/layout/Shell";
-import { useCreateBooking, useListClients, getListBookingsQueryKey } from "@workspace/api-client-react";
-import { useForm } from "react-hook-form";
+import {
+  useCreateBooking,
+  useCreateClient,
+  useCreateEvent,
+  getListClientsQueryKey,
+  useListServiceItems,
+  getListBookingsQueryKey,
+  type ServiceItem,
+} from "@workspace/api-client-react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLocation, useSearch } from "wouter";
-import { ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEffect } from "react";
+import { formatUSPhone, isCompleteUSPhone } from "@/lib/phone";
+import { useState } from "react";
+import { TimePartsInput } from "@/components/TimePartsInput";
+
+const lineItemSchema = z.object({
+  serviceItemId: z.number().optional(),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  kind: z.enum(["service", "fee"]),
+  quantity: z.coerce.number().min(0, "Quantity cannot be negative"),
+  unitPrice: z.coerce.number().min(0, "Rate cannot be negative"),
+  unitLabel: z.string().min(1, "Unit is required"),
+  calculationNote: z.string().optional(),
+  sortOrder: z.number().optional(),
+});
 
 const bookingSchema = z.object({
-  clientId: z.coerce.number().min(1, "Please select a client"),
+  clientName: z.string().min(1, "Client name is required"),
+  clientEmail: z.string().min(1, "Client email is required").email("Enter a valid email"),
+  clientPhone: z.string().min(1, "Client phone is required").refine(isCompleteUSPhone, "Enter a full 10-digit phone number"),
+  clientNotes: z.string().optional(),
   eventType: z.string().min(1, "Event type is required"),
   location: z.string().min(1, "Location is required"),
   locationDetail: z.string().optional(),
   firstServiceDate: z.string().optional(),
+  initialEventName: z.string().optional(),
+  initialServicesBegin: z.string().optional(),
+  initialCompletionTarget: z.string().optional(),
   status: z.enum(["draft", "active", "completed", "cancelled"]).default("draft"),
   retainerAmount: z.coerce.number().min(0).default(0),
   balanceDueDate: z.string().optional(),
@@ -28,30 +57,60 @@ const bookingSchema = z.object({
   earlyMorningFee: z.coerce.number().min(0).default(0),
   travelFee: z.coerce.number().min(0).default(0),
   notes: z.string().optional(),
+  lineItems: z.array(lineItemSchema).default([]),
+}).superRefine((data, ctx) => {
+  const hasInitialEvent =
+    !!data.initialEventName?.trim() ||
+    !!data.initialServicesBegin?.trim() ||
+    !!data.initialCompletionTarget?.trim();
+
+  if (!hasInitialEvent) return;
+
+  if (!data.initialEventName?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["initialEventName"],
+      message: "Event name is required when adding a first event",
+    });
+  }
+
+  if (!data.firstServiceDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["firstServiceDate"],
+      message: "First Service Date is required when adding a first event",
+    });
+  }
 });
 
 type BookingFormValues = z.infer<typeof bookingSchema>;
 
 export default function NewBooking() {
   const [, setLocation] = useLocation();
-  const searchString = useSearch();
-  const params = new URLSearchParams(searchString);
-  const prefilledClientId = params.get("clientId");
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: clients, isLoading: loadingClients } = useListClients();
+  const { data: serviceItems, isLoading: loadingServiceItems } = useListServiceItems();
+  const createClient = useCreateClient();
   const createBooking = useCreateBooking();
+  const createEvent = useCreateEvent();
+  const [selectedServiceItemId, setSelectedServiceItemId] = useState("");
 
   const form = useForm<BookingFormValues>({
     resolver: zodResolver(bookingSchema),
     defaultValues: {
-      clientId: prefilledClientId ? parseInt(prefilledClientId, 10) : 0,
+      clientName: "",
+      clientEmail: "",
+      clientPhone: "",
+      clientNotes: "",
       eventType: "",
       location: "",
       locationDetail: "",
       firstServiceDate: "",
+      initialEventName: "",
+      initialServicesBegin: "",
+      initialCompletionTarget: "",
       status: "draft",
       retainerAmount: 0,
       balanceDueDate: "",
@@ -59,26 +118,116 @@ export default function NewBooking() {
       earlyMorningFee: 0,
       travelFee: 0,
       notes: "",
+      lineItems: [],
     },
   });
 
-  useEffect(() => {
-    if (prefilledClientId && !form.getValues("clientId")) {
-      form.setValue("clientId", parseInt(prefilledClientId, 10));
-    }
-  }, [prefilledClientId, form]);
+  const { fields: lineItemFields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "lineItems",
+  });
 
-  function onSubmit(data: BookingFormValues) {
-    createBooking.mutate({ data }, {
-      onSuccess: (booking) => {
-        queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
-        toast({ title: "Booking created successfully" });
-        setLocation(`/bookings/${booking.id}`);
-      },
-      onError: () => {
-        toast({ title: "Failed to create booking", variant: "destructive" });
-      }
+  const activeServiceItems = serviceItems?.filter((item) => item.active) ?? [];
+  const selectedServiceItem = activeServiceItems.find((item) => item.id.toString() === selectedServiceItemId);
+  const lineItems = form.watch("lineItems") ?? [];
+  const lineItemsTotal = lineItems.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+  const estimatedRetainer = lineItemsTotal * 0.25;
+
+  function appendServiceItem(item: ServiceItem) {
+    append({
+      serviceItemId: item.id,
+      name: item.name,
+      description: item.description ?? "",
+      kind: item.kind,
+      quantity: 1,
+      unitPrice: item.defaultUnitPrice,
+      unitLabel: item.unitLabel,
+      calculationNote: item.kind === "fee" ? item.description ?? "" : `1 ${item.name} @ $${item.defaultUnitPrice}`,
+      sortOrder: lineItemFields.length * 10,
     });
+    setSelectedServiceItemId("");
+  }
+
+  function appendCustomLineItem(kind: "service" | "fee") {
+    append({
+      name: kind === "fee" ? "Custom Fee" : "Custom Service",
+      description: "",
+      kind,
+      quantity: 1,
+      unitPrice: 0,
+      unitLabel: kind === "fee" ? "booking" : "person",
+      calculationNote: "",
+      sortOrder: lineItemFields.length * 10,
+    });
+  }
+
+  function optionalText(value?: string) {
+    const trimmed = value?.trim();
+    return trimmed ? trimmed : undefined;
+  }
+
+  async function onSubmit(data: BookingFormValues) {
+    try {
+      const client = await createClient.mutateAsync({
+        data: {
+          name: data.clientName.trim(),
+          email: data.clientEmail.trim(),
+          phone: formatUSPhone(data.clientPhone),
+          notes: optionalText(data.clientNotes),
+        },
+      });
+
+      const bookingData = {
+        clientId: client.id,
+        eventType: data.eventType,
+        location: data.location,
+        locationDetail: optionalText(data.locationDetail),
+        firstServiceDate: optionalText(data.firstServiceDate),
+        status: data.status,
+        balanceDueDate: optionalText(data.balanceDueDate),
+        paymentMethod: optionalText(data.paymentMethod),
+        earlyMorningFee: 0,
+        travelFee: 0,
+        retainerAmount: 0,
+        notes: optionalText(data.notes),
+        lineItems: data.lineItems.map((lineItem, index) => ({
+          ...lineItem,
+          description: optionalText(lineItem.description),
+          calculationNote: optionalText(lineItem.calculationNote),
+          sortOrder: lineItem.sortOrder ?? index * 10,
+        })),
+      };
+
+      const booking = await createBooking.mutateAsync({ data: bookingData });
+      const initialEventName = optionalText(data.initialEventName);
+      const shouldCreateInitialEvent =
+        !!initialEventName ||
+        !!data.initialServicesBegin?.trim() ||
+        !!data.initialCompletionTarget?.trim();
+
+      if (shouldCreateInitialEvent && data.firstServiceDate && initialEventName) {
+        try {
+          await createEvent.mutateAsync({
+            id: booking.id,
+            data: {
+              eventName: initialEventName,
+              eventDate: data.firstServiceDate,
+              servicesBegin: optionalText(data.initialServicesBegin),
+              completionTarget: optionalText(data.initialCompletionTarget),
+            },
+          });
+        } catch {
+          toast({ title: "Booking created, but the first event was not added", variant: "destructive" });
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: getListClientsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
+      toast({ title: "Booking created successfully" });
+      setLocation(`/bookings/${booking.id}`);
+    } catch {
+      toast({ title: "Failed to create booking", variant: "destructive" });
+    }
   }
 
   return (
@@ -100,35 +249,46 @@ export default function NewBooking() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
-              <h2 className="text-xl font-serif border-b pb-2">Client & Event Details</h2>
+              <h2 className="text-xl font-serif border-b pb-2">Client Contact & Event Details</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="clientId"
+                  name="clientName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client *</FormLabel>
-                      <Select
-                        onValueChange={(val) => field.onChange(parseInt(val, 10))}
-                        value={field.value ? field.value.toString() : ""}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-client">
-                            <SelectValue placeholder="Select a client" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {clients?.map(client => (
-                            <SelectItem key={client.id} value={client.id.toString()}>
-                              {client.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Don't see them? <Link href="/clients/new" className="text-primary hover:underline">Add client first</Link>
-                      </FormDescription>
+                      <FormLabel>Client Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Client full name" {...field} data-testid="input-client-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="clientEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Email *</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="client@example.com" {...field} data-testid="input-client-email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="clientPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Phone *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="(555) 123-4567" {...field} data-testid="input-client-phone" />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -142,20 +302,6 @@ export default function NewBooking() {
                       <FormLabel>Event Type *</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. Wedding, Birthday, Photoshoot" {...field} data-testid="input-event-type" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="firstServiceDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Primary Date</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} data-testid="input-date" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -181,6 +327,25 @@ export default function NewBooking() {
                           <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="clientNotes"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Client Notes</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Contact preferences, inquiry context, or notes that belong on the client profile"
+                          className="resize-none min-h-[90px]"
+                          {...field}
+                          data-testid="input-client-notes"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -223,23 +388,274 @@ export default function NewBooking() {
             </div>
 
             <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
-              <h2 className="text-xl font-serif border-b pb-2">Financials & Fees</h2>
+              <div className="border-b pb-3">
+                <h2 className="text-xl font-serif">First Event Schedule</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Add the first service schedule now if the timing is known. More events can be added later.
+                </p>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="retainerAmount"
+                  name="initialEventName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Retainer Required ($)</FormLabel>
+                      <FormLabel>Event Name</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="0" {...field} data-testid="input-retainer" />
+                        <Input placeholder="e.g. Wedding morning, Reception glam" {...field} data-testid="input-initial-event-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="firstServiceDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Service Date</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="initialServicesBegin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Services Begin</FormLabel>
+                      <FormControl>
+                        <TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-initial-services-begin" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="initialCompletionTarget"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Completion Target</FormLabel>
+                      <FormControl>
+                        <TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-initial-completion-target" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+              <div className="border-b pb-3">
+                <h2 className="text-xl font-serif">Services & Fees</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Select reusable catalog items and snapshot the quantity, rate, and contract calculation for this booking.
+                </p>
+              </div>
+
+              <div className="flex flex-col lg:flex-row gap-3">
+                <Select value={selectedServiceItemId} onValueChange={setSelectedServiceItemId}>
+                  <SelectTrigger className="flex-1" data-testid="select-service-item">
+                    <SelectValue placeholder={loadingServiceItems ? "Loading services..." : "Choose service or fee"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeServiceItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id.toString()}>
+                        {item.name} - ${item.defaultUnitPrice} / {item.unitLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  onClick={() => selectedServiceItem && appendServiceItem(selectedServiceItem)}
+                  disabled={!selectedServiceItem}
+                  data-testid="button-add-selected-service"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Selected
+                </Button>
+                <Button type="button" variant="outline" onClick={() => appendCustomLineItem("service")}>
+                  Custom Service
+                </Button>
+                <Button type="button" variant="outline" onClick={() => appendCustomLineItem("fee")}>
+                  Custom Fee
+                </Button>
+              </div>
+
+              {activeServiceItems.length === 0 && !loadingServiceItems && (
+                <div className="text-sm text-muted-foreground border rounded-md p-4">
+                  No active catalog items yet. <Link href="/services" className="text-primary hover:underline">Add services and fees</Link>.
+                </div>
+              )}
+
+              {lineItemFields.length > 0 ? (
+                <div className="space-y-4">
+                  {lineItemFields.map((field, index) => {
+                    const current = lineItems[index];
+                    const rowTotal = (current?.quantity || 0) * (current?.unitPrice || 0);
+
+                    return (
+                      <div key={field.id} className="border rounded-md p-4 space-y-4" data-testid={`line-item-${index}`}>
+                        <div className="flex items-center justify-between gap-3">
+                          <Badge variant={current?.kind === "fee" ? "secondary" : "outline"}>
+                            {current?.kind === "fee" ? "Fee" : "Service"}
+                          </Badge>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => remove(index)}
+                            aria-label="Remove line item"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-[1fr_130px] gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`lineItems.${index}.name` as const}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                  <Input {...field} data-testid={`input-line-item-name-${index}`} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`lineItems.${index}.kind` as const}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Type</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="service">Service</SelectItem>
+                                    <SelectItem value="fee">Fee</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-[110px_130px_120px_1fr] gap-4">
+                          <FormField
+                            control={form.control}
+                            name={`lineItems.${index}.quantity` as const}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Qty</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.01" {...field} data-testid={`input-line-item-qty-${index}`} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`lineItems.${index}.unitPrice` as const}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Rate ($)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" step="0.01" {...field} data-testid={`input-line-item-rate-${index}`} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`lineItems.${index}.unitLabel` as const}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Unit</FormLabel>
+                                <FormControl>
+                                  <Input {...field} data-testid={`input-line-item-unit-${index}`} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name={`lineItems.${index}.calculationNote` as const}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Contract Calculation</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder={`${current?.quantity || 0} ${current?.name || "item"} @ $${current?.unitPrice || 0}`}
+                                    {...field}
+                                    data-testid={`input-line-item-note-${index}`}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="flex justify-end text-sm">
+                          <span className="text-muted-foreground mr-2">Line total</span>
+                          <span className="font-serif text-lg">${rowTotal.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="border rounded-md border-dashed p-8 text-center text-muted-foreground">
+                  Add services and fees before creating the contract draft.
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-5">
+                <div className="rounded-md border p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Services & Fees</div>
+                  <div className="text-2xl font-serif mt-1">${lineItemsTotal.toLocaleString()}</div>
+                </div>
+                <div className="rounded-md border p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Estimated Retainer</div>
+                  <div className="text-2xl font-serif mt-1">${estimatedRetainer.toLocaleString()}</div>
+                </div>
+                <div className="rounded-md border p-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Estimated Balance</div>
+                  <div className="text-2xl font-serif mt-1">${Math.max(0, lineItemsTotal - estimatedRetainer).toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+              <h2 className="text-xl font-serif border-b pb-2">Payment Details</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="balanceDueDate"
@@ -256,37 +672,9 @@ export default function NewBooking() {
 
                 <FormField
                   control={form.control}
-                  name="travelFee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Travel Fee ($)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="0" {...field} data-testid="input-travel-fee" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="earlyMorningFee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Early Morning Fee ($)</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="0" {...field} data-testid="input-early-fee" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="paymentMethod"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-2">
+                    <FormItem>
                       <FormLabel>Payment Method</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. Zelle @username, Venmo @handle, Cash" {...field} data-testid="input-payment-method" />
@@ -320,8 +708,15 @@ export default function NewBooking() {
             </div>
 
             <div className="flex justify-end pt-4 pb-12">
-              <Button type="submit" size="lg" disabled={createBooking.isPending || loadingClients} data-testid="button-submit-booking">
-                {createBooking.isPending ? "Creating Booking..." : "Create Booking & Add Events"}
+              <Button
+                type="submit"
+                size="lg"
+                disabled={createClient.isPending || createBooking.isPending || createEvent.isPending || loadingServiceItems}
+                data-testid="button-submit-booking"
+              >
+                {createClient.isPending || createBooking.isPending || createEvent.isPending
+                  ? "Creating Booking..."
+                  : "Create Booking"}
               </Button>
             </div>
           </form>

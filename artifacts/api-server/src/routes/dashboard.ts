@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, gte, and } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { db, clientsTable, bookingsTable, eventsTable } from "@workspace/db";
 import {
   GetDashboardStatsResponse,
@@ -23,7 +23,10 @@ function serializeBooking(b: typeof bookingsTable.$inferSelect, clientName: stri
 
 router.get("/dashboard/stats", async (req, res): Promise<void> => {
   const allClients = await db.select().from(clientsTable);
-  const allBookings = await db.select({ booking: bookingsTable }).from(bookingsTable);
+  const allBookings = await db
+    .select({ booking: bookingsTable })
+    .from(bookingsTable)
+    .where(isNull(bookingsTable.deletedAt));
 
   const totalClients = allClients.length;
   const activeBookings = allBookings.filter(r => r.booking.status === "active").length;
@@ -65,6 +68,7 @@ router.get("/dashboard/upcoming", async (req, res): Promise<void> => {
     .from(eventsTable)
     .innerJoin(bookingsTable, eq(eventsTable.bookingId, bookingsTable.id))
     .innerJoin(clientsTable, eq(bookingsTable.clientId, clientsTable.id))
+    .where(isNull(bookingsTable.deletedAt))
     .orderBy(eventsTable.eventDate);
 
   const upcoming = rows.filter(r =>
@@ -90,6 +94,7 @@ router.get("/dashboard/recent-bookings", async (req, res): Promise<void> => {
     .select({ booking: bookingsTable, clientName: clientsTable.name })
     .from(bookingsTable)
     .innerJoin(clientsTable, eq(bookingsTable.clientId, clientsTable.id))
+    .where(isNull(bookingsTable.deletedAt))
     .orderBy(bookingsTable.createdAt)
     .limit(10);
 
