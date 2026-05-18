@@ -165,6 +165,20 @@ async function recomputeGrandTotal(bookingId: number) {
     .where(eq(bookingsTable.id, bookingId));
 }
 
+async function syncFirstServiceDateFromEvents(bookingId: number) {
+  const [firstEvent] = await db
+    .select({ eventDate: eventsTable.eventDate })
+    .from(eventsTable)
+    .where(eq(eventsTable.bookingId, bookingId))
+    .orderBy(eventsTable.eventDate, eventsTable.id)
+    .limit(1);
+  const firstServiceDate = firstEvent?.eventDate ?? null;
+  await db.update(bookingsTable)
+    .set({ firstServiceDate })
+    .where(eq(bookingsTable.id, bookingId));
+  return firstServiceDate;
+}
+
 function buildLineItemValues(
   bookingId: number,
   lineItem: {
@@ -303,6 +317,7 @@ router.get("/bookings/:id", async (req, res): Promise<void> => {
     return;
   }
   const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, params.data.id));
+  const firstServiceDate = await syncFirstServiceDateFromEvents(params.data.id);
   const payments = await db.select().from(paymentsTable).where(eq(paymentsTable.bookingId, params.data.id));
   const lineItems = await db
     .select()
@@ -315,7 +330,7 @@ router.get("/bookings/:id", async (req, res): Promise<void> => {
     .where(eq(bookingActivityTable.bookingId, params.data.id))
     .orderBy(desc(bookingActivityTable.createdAt), desc(bookingActivityTable.id));
   res.json(GetBookingResponse.parse({
-    ...serializeBooking(row.booking, row.client.name),
+    ...serializeBooking({ ...row.booking, firstServiceDate }, row.client.name),
     clientEmail: row.client.email,
     clientPhone: row.client.phone ?? null,
     events: events.map(serializeEvent),
@@ -482,6 +497,7 @@ router.post("/bookings/:id/events", async (req, res): Promise<void> => {
     subtotal: subtotal.toFixed(2),
   }).returning();
   await recomputeGrandTotal(params.data.id);
+  await syncFirstServiceDateFromEvents(params.data.id);
   await recordBookingActivity(
     params.data.id,
     "event.created",
@@ -654,6 +670,7 @@ router.patch("/bookings/:id/events/:eventId", async (req, res): Promise<void> =>
   if (parsed.data.completionTarget !== undefined) updateData.completionTarget = parsed.data.completionTarget;
   const [updated] = await db.update(eventsTable).set(updateData).where(eq(eventsTable.id, params.data.eventId)).returning();
   await recomputeGrandTotal(params.data.id);
+  await syncFirstServiceDateFromEvents(params.data.id);
   await recordBookingActivity(
     params.data.id,
     "event.updated",
@@ -678,6 +695,7 @@ router.delete("/bookings/:id/events/:eventId", async (req, res): Promise<void> =
     return;
   }
   await recomputeGrandTotal(params.data.id);
+  await syncFirstServiceDateFromEvents(params.data.id);
   await recordBookingActivity(
     params.data.id,
     "event.deleted",
@@ -704,6 +722,7 @@ router.get("/bookings/:id/contract", async (req, res): Promise<void> => {
     return;
   }
   const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, params.data.id));
+  const firstServiceDate = await syncFirstServiceDateFromEvents(params.data.id);
   const payments = await db.select().from(paymentsTable).where(eq(paymentsTable.bookingId, params.data.id));
   const lineItems = await db
     .select()
@@ -716,7 +735,7 @@ router.get("/bookings/:id/contract", async (req, res): Promise<void> => {
     .where(eq(bookingActivityTable.bookingId, params.data.id))
     .orderBy(desc(bookingActivityTable.createdAt), desc(bookingActivityTable.id));
   const bookingSerialized = {
-    ...serializeBooking(row.booking, row.client.name),
+    ...serializeBooking({ ...row.booking, firstServiceDate }, row.client.name),
     clientEmail: row.client.email,
     clientPhone: row.client.phone ?? null,
     events: events.map(serializeEvent),
@@ -734,12 +753,16 @@ router.get("/bookings/:id/contract", async (req, res): Promise<void> => {
     ? await db.select().from(contractTemplatesTable).where(eq(contractTemplatesTable.id, row.booking.contractTemplateId))
     : [];
   const contractTemplate = selectedTemplate?.active ? selectedTemplate : defaultTemplate;
+  const artistBusinessName = (artistProfile as { businessName?: string | null; [key: string]: unknown }).businessName?.trim()
+    || ((artistProfile as { business_name?: string | null })["business_name"]?.trim() || "");
+
   res.json(GetContractResponse.parse({
     booking: bookingSerialized,
     client: clientSerialized,
     events: events.map(serializeEvent),
     contractTemplate: serializeContractTemplate(contractTemplate),
     artistName: artistProfile.displayName,
+    artistBusinessName: artistBusinessName || artistProfile.displayName,
     artistEmail: artistProfile.email,
     artistPhone: artistProfile.phone,
     artistPaymentMethod: artistProfile.paymentMethod,

@@ -1,5 +1,88 @@
 # Makeup Artist Hub Documentation
 
+
+## 2026-05-18 - New Booking Phone Optional
+
+## 2026-05-18 - New Booking Payment Method Auto-Fill
+
+Intent:
+- Pre-fill payment details in New Booking Intake from saved artist profile defaults so user does not need to type them every time.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/new-booking.tsx`:
+  - Added `useGetArtistProfile` fetch.
+  - Automatically sets `paymentMethod` to artist profile `paymentMethod` when available and the field is still empty.
+  - Kept existing manual override behavior when a value is already entered.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+
+## 2026-05-18 - First Service Date Derived From Events
+
+Start:
+- Make booking detail use the first actual service/event date as the booking first service date when a booking has multiple events.
+
+Update:
+- Added API synchronization in `artifacts/api-server/src/routes/bookings.ts` so booking `firstServiceDate` is derived from the earliest event date.
+- Booking detail and contract responses now serialize `firstServiceDate` from the earliest event, including existing bookings whose stored booking date may be stale.
+- Event create, update, and delete now resync the booking first service date after changing the service schedule.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` failed because existing generated API types do not expose `contractTemplateId` in `CreateBookingBody`/`UpdateBookingBody`, while `bookings.ts` already references that field.
+- Restarted local API and frontend dev servers.
+- API build/start completed through `pnpm dev:api`; server is listening on port `8787`.
+- Frontend dev server is listening on `http://localhost:5173/`.
+- `curl -s http://localhost:8787/api/bookings/6 | jq '{firstServiceDate, events: [.events[] | {eventName, eventDate}]}'` returned `firstServiceDate: "2026-09-11"` for the Sangeet event before the September 12 events.
+- `curl -s http://localhost:8787/api/bookings/6/contract | jq '.booking.firstServiceDate'` returned `"2026-09-11"`.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6` returned `200`.
+
+## 2026-05-18 - Booking Detail Split Count Correction
+
+Start:
+- Fix selected service counts after split/edit flows left extra unit rows behind, causing Sangeet Hair Only to display `7 x` even though the edited count is `3`.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` grouping so a line item with `quantity > 1` is treated as the authoritative edited count for that service/event group.
+- Updated the Selected Services & Fees section total and invoice summary to use grouped effective totals instead of raw duplicated split rows.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6` returned `200`.
+- `curl -s http://localhost:8787/api/healthz` returned `{"status":"ok"}`.
+- `pnpm --filter @workspace/glam-crm run build` passed (existing sourcemap and chunk-size warnings are unchanged).
+
+Intent:
+- Make `Client Phone` optional during New Booking Intake and ensure creation works without it.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/new-booking.tsx`:
+  - `clientPhone` validation now accepts empty values and only validates complete numbers when provided.
+  - Updated create booking payload to include `phone` only when present.
+  - Renamed New Booking form label from `Client Phone *` to `Client Phone` to match optional behavior.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` (first run) failed due to strict `string | undefined` phone typing in submit payload.
+- `pnpm --filter @workspace/glam-crm run typecheck` (second run) passed after conditional phone payload patch.
+- `pnpm --filter @workspace/glam-crm run build` passed (existing sourcemap and chunk-size warnings are unchanged).
+
+## 2026-05-18 - Contract Payment Header Business Name Fix
+
+Intent:
+- Ensure the contract payment section shows the artist business name from Artist Profile, not just the payment method.
+
+Update:
+- Updated `artifacts/api-server/src/routes/bookings.ts` so `GET /bookings/:id/contract` always resolves business name from persisted profile data and always includes `artistBusinessName` in the response (with a safe fallback).
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` to derive a readable label from contract data plus profile name fallback.
+- Rebuilt API and regenerated API contracts so frontend types include `artistBusinessName` again.
+
+Validation:
+- `pnpm --filter @workspace/api-server run build` passed.
+- API restart on port `8787` completed and `/api/bookings/2/contract` now returns `artistBusinessName: "Alyaan Inc."`.
+- `pnpm --filter @workspace/api-spec run codegen` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed (existing Vite sourcemap warnings noted).
+- `pnpm --filter @workspace/api-server run typecheck` still reports pre-existing `contractTemplateId` type mismatches in several booking route payload references and is not considered part of this contract-page fix.
+
 ## 2026-05-17 21:58 EDT - Local Migration Start
 
 Intent:
@@ -896,3 +979,126 @@ Plan:
 - Update the Add Template flow to copy the locked default agreement body.
 - Add a persisted booking contract-template selection, expose it in intake and booking detail, and include the selected template in contract generation.
 - Run schema/codegen/typecheck/build/API/browser validation.
+
+## 2026-05-18 - Booking Detail Line Item Split
+
+Intent:
+- Add an edit-page action to split line items with quantity greater than 1 so each unit can be assigned to its own event.
+
+Files in scope:
+- `artifacts/glam-crm/src/pages/booking-detail.tsx`
+- `Documentation.md`
+
+Update:
+- Added `Split` action in `artifacts/glam-crm/src/pages/booking-detail.tsx` for multi-quantity line items, splitting them into unit-quantity rows via existing create/update mutations.
+- The split action updates the source row to quantity 1 and creates additional rows with the same event assignment, description, rates, and sort-order increment.
+- Updated row layout to include split action inline when quantity > 1.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed. Vite still reports existing sourcemap warnings for `tooltip.tsx`, `select.tsx`, and `label.tsx`, plus the existing large chunk warning.
+
+## 2026-05-18 - Booking Detail Intake Fields Editable
+
+Start:
+- Make `booking detail` edit screen support editing booking-level intake fields directly: primary client name, location, first service date, and the first event name.
+
+Update:
+- Added a `BookingMetaDialog` on `artifacts/glam-crm/src/pages/booking-detail.tsx`.
+- Added inline mutation flow to update booking `location`/`firstServiceDate`, client `name` via `client` mutation, and first event `eventName` via event mutation.
+- Added focused invalidation for booking, bookings list, primary client, and clients list queries.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed. Existing sourcemap warnings for `tooltip.tsx`, `select.tsx`, and `label.tsx` remain. Existing chunk-size warning remains.
+
+## 2026-05-18 - Grouped Line Items in Booking Detail
+
+Start:
+- Keep split line items manageable in the edit view by collapsing identical line items back into grouped rows after assignment.
+
+Update:
+- Added grouped-line calculation in `artifacts/glam-crm/src/pages/booking-detail.tsx` so the “Selected Services & Fees” list renders grouped by shared service/fee attributes and event assignment, using total quantity and total amount.
+- Added grouped actions so event reassignment and deletion operate across the grouped entries together, preserving current single-row split/edit flows when an item still has quantity > 1.
+- Kept the split operation untouched for multi-quantity rows while ensuring its output can display as combined “3 × Service” style rows instead of repeated “1” rows.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed. Existing sourcemap warnings for `tooltip.tsx`, `select.tsx`, and `label.tsx` remain. Existing chunk-size warning remains.
+
+## 2026-05-18 - Split Action Stabilization (Booking Detail)
+
+Start:
+- Prevent split/grouped line-item actions from conflict-running and destabilizing the booking detail render path.
+
+Update:
+- Added a lightweight mutation guard in `artifacts/glam-crm/src/pages/booking-detail.tsx` to serialize grouped updates for:
+  - split operations,
+  - group event reassignment,
+  - group deletion.
+- Switched grouped reassignment/deletion handlers from parallel `Promise.all` mutations to sequential awaits to reduce transactional contention and preserve deterministic UI state.
+- Wired action controls to the active mutation key so repeated clicks cannot trigger overlapping mutations on the same group.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed. Existing sourcemap warnings for `tooltip.tsx`, `select.tsx`, and `label.tsx` remain. Existing chunk-size warning remains.
+
+## 2026-05-18 - Queue Split Operations for Booking Detail Save
+
+Start:
+- Resolve split action instability by decoupling split clicks from immediate persistence and requiring an explicit save for staged split changes.
+
+Update:
+- Added queued split workflow in `artifacts/glam-crm/src/pages/booking-detail.tsx`:
+  - `Split` now stages selected multi-quantity line items into a queue instead of executing immediately.
+  - Added `Save line item changes` and `Discard queued changes` controls to commit or clear staged split operations.
+  - Added shared split performer to execute queued changes sequentially and invalidate booking/list queries once after completion.
+  - Preserved grouped event/reassign/delete behavior and kept split actions isolated to line items with `quantity > 1`.
+- UI now shows queued count and disabled button states while operations are pending.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed. Existing sourcemap warnings for `tooltip.tsx`, `select.tsx`, and `label.tsx` remain. Existing chunk-size warning remains.
+
+## 2026-05-18 02:36:56 - BookingDetail Hooks Stabilization
+- Start: fix conditional early return path in booking detail that breaks hook ordering after split/queue workflow changes.
+
+## 2026-05-18 - Split Button Visibility Fix for Grouped Multi-Count Services
+
+Start:
+- Fix split action visibility regression where grouped services with more than one total count were no longer showing `Split` because the grouped renderer only allowed split when `items.length === 1`.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` to render split action whenever a grouped row has at least one underlying line item still at `quantity > 1`.
+- The button now targets a `splitCandidate` row (`find`s first item with `quantity > 1`) so grouped services with count>1 still expose split, while fully split groups (all `quantity === 1`) correctly keep split hidden.
+- Kept queued split behavior and existing split/apply/discard flow intact.
+
+Validation:
+- Not run during this step (requested UI visibility fix only).
+
+## 2026-05-18 - Split Visibility for Fully Decomposed Multi-Count Groups
+
+Start:
+- Address remaining split visibility gaps for grouped services with more than 1 total quantity when all underlying rows are already quantity 1.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` so grouped rows now show a split control for any group with `totalQuantity > 1`.
+- If a group has no remaining multi-quantity source row, the action is shown as disabled with `No split needed` and a toast clarifies it is already split at unit level.
+- Kept queued split behavior unchanged for rows with a valid split candidate.
+- Hardened grouping keying by including `serviceItemId` for better separation between similarly described services.
+
+Validation:
+- Not run during this step (requested immediate UI logic fix only).
+
+## 2026-05-18 - Split Button Expands Unitized Groups
+
+Start:
+- Fix the `No split needed` state in booking detail because multi-count grouped options still need an actionable `Split` control.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` so grouped multi-count rows always show `Split`, never `No split needed`.
+- If the grouped row still contains an underlying line item with `quantity > 1`, the button keeps using the existing queued split/save workflow.
+- If the grouped row is already made from unit-level line items, the button expands that grouped option into separate line-item cards in the current view.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
