@@ -92,6 +92,69 @@ Run API and frontend together:
 pnpm dev
 ```
 
+## GitHub Pages Frontend Deployment
+
+The frontend deploys from `.github/workflows/pages.yml`.
+
+Pages settings should use:
+
+```text
+Source: GitHub Actions
+```
+
+The workflow builds the frontend with:
+
+```sh
+BASE_PATH=/YeasminGlamDashboard/ VITE_API_BASE_URL=https://whisperflowserver.onrender.com/glam-api pnpm --filter @workspace/glam-crm run build
+```
+
+The deployed frontend calls the shared Render API at:
+
+```text
+https://whisperflowserver.onrender.com/glam-api/api/*
+```
+
+## Shared Render API Setup
+
+The existing `IftatBhuiyan/WhisperSpeechServer` Render service hosts the CRM API under:
+
+```text
+/glam-api/api/*
+```
+
+Required Render environment variables:
+
+```sh
+GLAM_DATABASE_URL=<supabase pooled postgres url>
+GLAM_ADMIN_PASSWORD=<private crm admin password>
+GLAM_SESSION_SECRET=<long random secret>
+GLAM_CORS_ORIGINS=https://sequence-labs.github.io
+GLAM_COOKIE_SECURE=true
+GLAM_COOKIE_PATH=/glam-api
+```
+
+Keep the existing WhisperSpeechServer environment variables unchanged.
+
+## Supabase Postgres Setup
+
+Supabase is used as hosted Postgres for Makeup Artist Hub. The app still uses the current Drizzle/Postgres schema; this is not a rewrite to Supabase client APIs.
+
+After creating the Supabase project, use the pooled Postgres connection string as `GLAM_DATABASE_URL` in Render. For schema/data setup, use a direct or pooled connection string locally as `DATABASE_URL`.
+
+Schema push:
+
+```sh
+DATABASE_URL=<supabase postgres url> pnpm --filter @workspace/db run push
+```
+
+Restore latest saved data:
+
+```sh
+psql <supabase postgres url> < data/backups/makeup_artist_hub-20260519-030003.sql
+```
+
+Do not paste Supabase passwords or API keys into repository files.
+
 ## Worktree Setup
 
 No separate worktree is required for the initial local migration. Use a worktree for risky experiments or independent future workstreams.

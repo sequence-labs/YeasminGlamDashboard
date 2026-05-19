@@ -68,6 +68,8 @@ Validation commands:
 - Local migration requires replacing generated source files wholesale.
 - Database setup would require destructive local database operations without approval.
 - A package update introduces unrelated large dependency churn.
+- Deployment would expose CRM data without authentication.
+- Shared Render routing breaks existing WhisperSpeechServer health or websocket behavior.
 
 ## Milestone 2: Services, Fees, and Contract Line Items
 
@@ -219,3 +221,51 @@ Validation commands:
 - `pnpm --filter @workspace/glam-crm run build`
 - `pnpm run typecheck`
 - Browser validation on `http://localhost:5173/contract-templates`
+
+## Milestone 3: Low-Cost Production Deployment
+
+### Work Package 3.1: GitHub Pages Frontend
+
+Status: In progress.
+
+Acceptance criteria:
+- GitHub Actions builds the Vite frontend from `artifacts/glam-crm`.
+- GitHub Pages uses `/YeasminGlamDashboard/` as the frontend base path.
+- Client-side routes work after refresh through a `404.html` SPA fallback.
+- The built frontend calls the shared Render Glam API base URL instead of same-origin `/api`.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- GitHub Actions Pages deployment on `main`.
+
+### Work Package 3.2: Shared Render API Mount
+
+Status: In progress.
+
+Acceptance criteria:
+- The Makeup Artist Hub API can be imported as a mountable bundle.
+- WhisperSpeechServer serves Glam CRM routes only under `/glam-api/api`.
+- Existing WhisperSpeechServer `/health` and websocket behavior remain unchanged.
+- Glam CRM API requires an admin password session before exposing CRM data.
+
+Validation commands:
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/api-server run build`
+- `npm test` in `/Users/iftatbhuiyan/WhisperSpeechServer`
+- Local `curl` checks for `/health`, `/glam-api/api/healthz`, unauthenticated `/glam-api/api/clients`, and authenticated `/glam-api/api/clients`.
+
+### Work Package 3.3: Supabase Postgres Migration
+
+Status: Pending external account setup.
+
+Acceptance criteria:
+- Supabase project exists for Makeup Artist Hub.
+- Schema is pushed to Supabase Postgres.
+- Latest local CRM data backup is restored to Supabase.
+- Render has `GLAM_DATABASE_URL` pointing at Supabase.
+
+Validation commands:
+- `DATABASE_URL=<supabase-url> pnpm --filter @workspace/db run push`
+- `psql <supabase-url> < data/backups/makeup_artist_hub-20260519-030003.sql`
+- `curl https://whisperflowserver.onrender.com/glam-api/api/healthz`

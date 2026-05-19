@@ -10,11 +10,14 @@ The project was originally generated and run in Replit, then exported locally. T
 
 The current product goal is to support reusable makeup/hair services and extra fees that can be selected during booking intake and clearly shown in the generated client contract. The booking intake should also capture first-contact client information directly, create the client record behind the scenes, and avoid requiring a separate "add client first, then add booking" workflow. The implementation should be informed by `/Users/iftatbhuiyan/Downloads/SampleContract.pdf`.
 
+The current deployment goal is to keep Render cost low by mounting the Makeup Artist Hub API onto the existing WhisperSpeechServer Render service under an isolated `/glam-api/api` path, use Supabase as the hosted Postgres database, and serve the static Vite frontend from GitHub Pages.
+
 ## Non-Goals
 
 - Do not redesign the product UI unless explicitly requested.
 - Do not replace the data model or generated API contract unless needed to make the local app work.
-- Do not add hosting or deployment work yet.
+- Do not add a second paid Render web service unless the user explicitly changes direction.
+- Do not expose CRM client, booking, contract, payment, or artist data through a public unauthenticated API.
 - Do not introduce broad rewrites or full-file replacement edits.
 
 ## Constraints

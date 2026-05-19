@@ -1531,3 +1531,25 @@ Update:
 
 Validation:
 - `pg_dump` completed successfully against the local `makeup_artist_hub` database.
+
+## 2026-05-19 - Shared Render/Supabase/GitHub Pages Deployment
+
+Start:
+- Prepare deployment so Makeup Artist Hub uses Supabase-hosted Postgres, mounts its API onto the existing WhisperSpeechServer Render service without breaking WhisperSpeech behavior, and serves the frontend from GitHub Pages.
+- Treat Supabase as hosted Postgres rather than rewriting away from the current Drizzle/Postgres data model.
+
+Update:
+- Added a mountable Glam CRM API bundle entrypoint for the existing WhisperSpeechServer Render service.
+- Added API session-password protection so public GitHub Pages cannot expose CRM data without the private admin password.
+- Added frontend `VITE_API_BASE_URL` support and a login gate for the protected CRM API.
+- Added a GitHub Pages Actions workflow that builds `artifacts/glam-crm` with `/YeasminGlamDashboard/` as the base path and deploys `artifacts/glam-crm/dist/public`.
+- Patched `/Users/iftatbhuiyan/WhisperSpeechServer` to lazy-load the bundled CRM API only for `/glam-api/api/*` requests, preserving existing WhisperSpeechServer routes.
+- Updated `Prompt.md`, `Plan.md`, and `Setup.md` for the new deployment scope.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/api-server run build` passed and produced `dist/embedded.mjs`.
+- `pnpm --filter @workspace/glam-crm run build` passed.
+- `npm test` passed in `/Users/iftatbhuiyan/WhisperSpeechServer`.
+- Local shared-server smoke passed: `/health` returned Whisper health, `/glam-api/api/healthz` returned Glam API health, unauthenticated `/glam-api/api/clients` returned `401`, and authenticated `/glam-api/api/clients` returned CRM client data.
