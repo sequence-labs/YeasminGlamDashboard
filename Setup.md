@@ -125,7 +125,7 @@ The existing `IftatBhuiyan/WhisperSpeechServer` Render service hosts the CRM API
 Required Render environment variables:
 
 ```sh
-GLAM_DATABASE_URL=<supabase pooled postgres url>
+GLAM_DATABASE_URL=<supabase pooled postgres url with sslmode=no-verify for node-postgres>
 GLAM_ADMIN_PASSWORD=<private crm admin password>
 GLAM_SESSION_SECRET=<long random secret>
 GLAM_CORS_ORIGINS=https://sequence-labs.github.io
@@ -139,7 +139,25 @@ Keep the existing WhisperSpeechServer environment variables unchanged.
 
 Supabase is used as hosted Postgres for Makeup Artist Hub. The app still uses the current Drizzle/Postgres schema; this is not a rewrite to Supabase client APIs.
 
-After creating the Supabase project, use the pooled Postgres connection string as `GLAM_DATABASE_URL` in Render. For schema/data setup, use a direct or pooled connection string locally as `DATABASE_URL`.
+Production project:
+
+```text
+Project: Makeup Artist Hub
+Project ref: revpsisofkxznnudzvoq
+Project URL: https://revpsisofkxznnudzvoq.supabase.co
+Region: us-east-1
+Data API: disabled
+```
+
+After creating the Supabase project, use the pooled Postgres connection string as `GLAM_DATABASE_URL` in Render. For Node's `pg` driver, use the Supabase pooler URL with `sslmode=no-verify`; the earlier `sslmode=require` form connects through `psql` but fails in this app with `SELF_SIGNED_CERT_IN_CHAIN`.
+
+Local generated deployment credentials are stored outside git at:
+
+```text
+.local/deployment-secrets.env
+```
+
+For schema/data setup, use a direct or pooled connection string locally as `DATABASE_URL`.
 
 Schema push:
 
@@ -150,7 +168,7 @@ DATABASE_URL=<supabase postgres url> pnpm --filter @workspace/db run push
 Restore latest saved data:
 
 ```sh
-psql <supabase postgres url> < data/backups/makeup_artist_hub-20260519-030003.sql
+sed 's/OWNER TO makeup_artist_hub/OWNER TO postgres/g' data/backups/makeup_artist_hub-20260519-030003.sql | psql <supabase postgres url> -v ON_ERROR_STOP=1
 ```
 
 Do not paste Supabase passwords or API keys into repository files.

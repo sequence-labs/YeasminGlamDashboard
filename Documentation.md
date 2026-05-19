@@ -1553,3 +1553,35 @@ Validation:
 - `pnpm --filter @workspace/glam-crm run build` passed.
 - `npm test` passed in `/Users/iftatbhuiyan/WhisperSpeechServer`.
 - Local shared-server smoke passed: `/health` returned Whisper health, `/glam-api/api/healthz` returned Glam API health, unauthenticated `/glam-api/api/clients` returned `401`, and authenticated `/glam-api/api/clients` returned CRM client data.
+
+## 2026-05-19 - Supabase/Render Account Setup Pass
+
+Start:
+- Continue production deployment setup in the signed-in Dia browser.
+- Goal is to create/configure Supabase-hosted Postgres, restore the latest local CRM data snapshot, configure the existing WhisperSpeechServer Render service with Glam CRM environment variables, and finish GitHub Pages activation without adding another paid Render project.
+- Stop before any account-side action that creates persistent secrets/resources, changes billing, or requires credential/secret handling that cannot be safely completed unattended.
+
+Blocked:
+- Supabase dashboard is signed in and the new project form is prepared with project name `Makeup Artist Hub`, region `East US (North Virginia)`, and Data API disabled because the app uses direct Postgres through the existing API server rather than Supabase client APIs.
+- Paused before entering/generating the database password and before clicking `Create new project`, because that creates persistent cloud credentials/resources and requires action-time confirmation.
+
+Resumed:
+- User explicitly confirmed creating the Supabase project, generating and using database credentials, configuring Render environment variables, restoring CRM data, and finishing GitHub Pages deployment.
+
+Update:
+- Created Supabase project `Makeup Artist Hub` in `us-east-1` with project ref `revpsisofkxznnudzvoq`.
+- Stored generated deployment credentials locally in `.local/deployment-secrets.env` and excluded that file through `.git/info/exclude`.
+- Restored `data/backups/makeup_artist_hub-20260519-030003.sql` into Supabase Postgres after rewriting local owner references from `makeup_artist_hub` to `postgres`.
+- Configured the existing Render `WhisperSpeechServer` service (`srv-d6rsnl9j16oc73ed9kug`) with Glam-only env vars: database URL, admin password, session secret, CORS origin, secure cookie flag, and `/glam-api` cookie path.
+- Switched GitHub Pages for `sequence-labs/YeasminGlamDashboard` to GitHub Actions publishing.
+- Updated `GLAM_DATABASE_URL` to use the Supabase pooler URL with `sslmode=no-verify`; the `sslmode=require` URL worked in `psql` but caused Node `pg` to fail with `SELF_SIGNED_CERT_IN_CHAIN`.
+
+Validation:
+- Supabase restore counts verified with SQL: `clients=5`, `bookings=5`, `services=12`, `templates=3`.
+- Local API smoke against Supabase passed: authenticated `/api/clients` returned `200` with `5` clients.
+- Remote Whisper health stayed live: `https://whisperflowserver.onrender.com/health` returned `200`.
+- Remote Glam API health passed: `https://whisperflowserver.onrender.com/glam-api/api/healthz` returned `200`.
+- Remote unauthenticated `/glam-api/api/clients` returned `401`.
+- Remote authenticated checks passed: `/clients=5`, `/bookings=5`, `/services=12`, `/contract-templates=3`, and `/artist-profile` returned an object.
+- GitHub Pages workflow run `26084374054` completed successfully.
+- GitHub Pages root returned the deployed app HTML, app JS contains `https://whisperflowserver.onrender.com/glam-api`, and `/YeasminGlamDashboard/bookings` returns the SPA fallback body.

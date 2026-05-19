@@ -75,7 +75,7 @@ Validation commands:
 
 ### Work Package 2.1: Contract Reference Review
 
-Status: In progress.
+Status: Complete.
 
 Acceptance criteria:
 - Sample contract service/fee structure is inspected visually and by text extraction.
@@ -129,7 +129,7 @@ Validation commands:
 
 ### Work Package 2.5: Inline Client Intake
 
-Status: In progress.
+Status: Complete.
 
 Acceptance criteria:
 - New booking intake captures client name and contact information directly.
@@ -257,11 +257,11 @@ Validation commands:
 
 ### Work Package 3.3: Supabase Postgres Migration
 
-Status: Pending external account setup.
+Status: Complete.
 
 Acceptance criteria:
 - Supabase project exists for Makeup Artist Hub.
-- Schema is pushed to Supabase Postgres.
+- Supabase Postgres schema exists through the restored production data snapshot.
 - Latest local CRM data backup is restored to Supabase.
 - Render has `GLAM_DATABASE_URL` pointing at Supabase.
 
