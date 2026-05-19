@@ -47,6 +47,249 @@ Update:
 
 Validation:
 - `pnpm --filter @workspace/glam-crm run typecheck` passed.
+
+## 2026-05-18 - Contract View Bundled Split Line Items
+
+Start:
+- Fix contract pricing output where split/unit line items printed individually instead of bundled under each event.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` to group selected service/fee line items by service, rate, unit, note, and event assignment before rendering contract tables.
+- The contract now treats a multi-quantity edited row as the authoritative count for that grouped service/event, matching booking detail behavior after split/edit flows.
+- Rate schedule, event booking charges, booking-level charges, and visible contract totals now use grouped effective line items instead of raw duplicated split rows.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+- API evidence still shows raw split rows in `booking.lineItems`; the contract bundling is applied in the frontend render path.
+
+## 2026-05-18 - Contract Rate Schedule Deduping
+
+Start:
+- Fix the contract Rate Schedule still showing repeated `Hair Only` and `Makeup Only` rows after booking charges were bundled.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` so the Rate Schedule dedupes selected services/fees by service identity, unit rate, and unit label across all event assignments.
+- Booking Charges remain grouped by event and quantity, while Rate Schedule now lists each unique service/rate once.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Contract Service Scope Hair Rate Clarification
+
+Start:
+- Clarify contract Service Scope so standalone Hair Only uses its actual standalone rate and the discounted combined rate only applies when the same person receives Hair & Makeup.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` to derive standalone makeup, standalone hair, and combined hair-and-makeup rates from selected contract services when available.
+- Reworded Service Scope hair language to state that Hair Only is not discounted unless the same person is booked for combined Hair & Makeup.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Contract Custom Hair Scope Clarification
+
+Start:
+- Clarify that the Hair & Makeup bundled rate only covers offered hairstyle categories, while custom/outside-category hair must be booked as standalone Hair Only.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` Service Scope hair language to explain eligible bundled hairstyle categories and custom hair routing without mentioning separate stylist hiring.
+- Kept standalone Hair Only priced at the standalone hair rate and the combined Hair & Makeup discount limited to eligible combined service recipients.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Contract Currency Formatting Cleanup
+
+Start:
+- Clean up contract payment text where retainer and balance amounts rendered with uneven decimal places such as `$1,137.5`.
+
+Update:
+- Added shared money formatting in `artifacts/glam-crm/src/pages/contract-view.tsx`.
+- Applied the formatter to contract pricing, retainer, remaining balance, cancellation amounts, and travel fee text.
+- Updated retainer wording from comma-separated text to `amount due upon signing`.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Contract Client Responsibility Notice
+
+Start:
+- Make the client responsibility sentence in Client Preparation and Setup stand out so clients do not miss it.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` to render the preparation-sharing responsibility as an emphasized notice block with a label, gray background, and black left border.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Contract Health Disclosure Notice
+
+Start:
+- Make the sanitation and allergies clause stand out as an important health disclosure.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` to render the sanitation/allergies paragraph as an emphasized notice block with a `Required Health Disclosure` label.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Financials Effective Total Alignment
+
+Start:
+- Fix booking financials where retainer, balance due, and invoice summary still reflected stale raw split-row totals.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` financials tab to calculate visible grand total from event subtotals, grouped effective line-item totals, and booking fees.
+- Retainer and balance due now derive from that effective total and use consistent currency formatting.
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` retainer and cancellation-retainer references to use the same effective 25% retainer calculation so the contract and financials agree.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6` returned `200`.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Pending Retainer Invoice Balance Behavior
+
+Start:
+- Make the invoice summary show retainer subtraction only after the retainer payment is marked paid.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` so the invoice summary hides the retainer credit while `booking.retainerPaid` is false.
+- Balance Due now equals the full effective grand total while retainer is pending, and subtracts the retainer only after the retainer switch is marked paid.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6` returned `200`.
+
+## 2026-05-18 - Contract Booking-Level Charge Group
+
+Start:
+- Separate booking-level services and fees from event-specific charge groups in the contract pricing table.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` so booking-level selected line items and booking-level fees render under a `Booking-Level Charges` row instead of appearing immediately after the last event group.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Contract Booking Charges Header Wording
+
+Start:
+- Simplify the Booking Charges table first-column wording.
+
+Update:
+- Changed the contract Booking Charges header from `Selected Service / Fee` to `Service / Fee` in `artifacts/glam-crm/src/pages/contract-view.tsx`.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-18 - Contract Makeup Cut Crease Exclusion
+
+Start:
+- Add cut crease to the makeup scope exclusions.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` Service Scope makeup paragraph to state that cut crease is not included unless agreed in writing.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-19 - Bookings List Effective Total Sync
+
+Start:
+- Fix the bookings list total so it matches booking detail and contract effective totals after split/group corrections.
+
+Update:
+- Updated `artifacts/api-server/src/routes/bookings.ts` so booking total recomputation and list serialization use effective grouped line-item totals.
+- The `/api/bookings` list now returns corrected `grandTotal` and `retainerAmount` values instead of stale raw split-row totals.
+
+Validation:
+- `pnpm --filter @workspace/api-server run build` passed.
+- Restarted local API server on port `8787`.
+- `curl -s http://localhost:8787/api/bookings | jq '.[] | select(.id == 6) | {id, grandTotal, retainerAmount}'` returned `grandTotal: 3950` and `retainerAmount: 987.5`.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings` returned `200`.
+
+## 2026-05-19 - Revert Contract Hair Combo Scope Wording
+
+Start:
+- Undo the Hair & Makeup combo-specific Service Scope wording because it was added by mistake.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` to restore the simpler Hair scope paragraph using the standalone hair rate and offered hairstyle categories.
+- Preserved the makeup cut-crease exclusion and other contract presentation fixes.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-19 - Contract Non-Bridal Hair Scope Wording
+
+Start:
+- Clarify that the hair rate in Service Scope is for non-bridal party/event hair, not bridal hair planning or bridal styling.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` hair scope text to state that the standalone hair rate applies to non-bridal party/event hair services.
+- Added language excluding bridal hair planning, bridal hair design, elaborate bridal styling, and advanced/custom hair services unless separately agreed in writing.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-19 - Contract Assigned Artists Makeup Assistants
+
+Start:
+- Update assigned artists language so assistants or assigned professionals may provide makeup as well as hair.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/contract-view.tsx` assigned artists clause to say makeup and hair may be performed by the Artist, an assistant, second artist, subcontracted stylist, or other assigned professional.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6/contract` returned `200`.
+
+## 2026-05-19 - Immediate Split Assignment Flow
+
+Start:
+- Fix split behavior where clicking `Split` only queued the split and did not immediately create individual assignable line items.
+
+Update:
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` so `Split` immediately persists the split, refreshes booking/list data, and expands the split group.
+- The split button now shows `Splitting...` while the operation runs, and the resulting rows can be assigned individually after the refresh.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/8` returned `200`.
+
+## 2026-05-19 - Drag Reorder Events and Line Items
+
+Start:
+- Add drag-and-drop reordering for booking events and selected services/fees on booking detail.
+
+Update:
+- Added `sortOrder` to `booking_events` in `lib/db/src/schema/events.ts` and OpenAPI, then regenerated API client/Zod types.
+- Updated `artifacts/api-server/src/routes/bookings.ts` to serialize events ordered by `sortOrder`, accept event `sortOrder` updates, and keep list/detail ordering stable.
+- Updated `artifacts/glam-crm/src/pages/booking-detail.tsx` with drag handles on event cards and selected service/fee rows.
+- Dropping an event rewrites event sort orders; dropping a service/fee row rewrites line-item sort orders.
+
+Validation:
+- `pnpm --filter @workspace/api-spec run codegen` passed.
+- `pnpm db:push` passed and applied the event `sort_order` column.
+- `pnpm --filter @workspace/api-server run build` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/api-server run typecheck` still fails on the pre-existing generated `contractTemplateId` typing mismatch in `bookings.ts`.
+- Restarted local API server on port `8787`.
+- `curl -s http://localhost:8787/api/bookings/8 | jq '{events: [.events[] | {id,eventName,sortOrder}], lineItems: [.lineItems[] | {id,name,sortOrder,eventId}]}'` returned ordered events and line items.
+- `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/8` returned `200`.
 - `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173/bookings/6` returned `200`.
 - `curl -s http://localhost:8787/api/healthz` returned `{"status":"ok"}`.
 - `pnpm --filter @workspace/glam-crm run build` passed (existing sourcemap and chunk-size warnings are unchanged).
@@ -1102,3 +1345,21 @@ Update:
 
 Validation:
 - `pnpm --filter @workspace/glam-crm run typecheck` passed.
+
+## 2026-05-19 - Event and Service Drag Reorder
+
+Start:
+- Add manual drag-and-drop ordering for booking events and selected services/fees on the booking detail Events & Services tab.
+
+Update:
+- Added persistent `sortOrder` support to booking events in `lib/db/src/schema/events.ts`, `lib/api-spec/openapi.yaml`, and generated API/Zod clients.
+- Updated booking event reads to order by `sortOrder`, then date/id for stable fallback behavior.
+- Updated new event creation to append after the current max sort order when no explicit sort order is provided.
+- Added drag handles and drop handlers in `artifacts/glam-crm/src/pages/booking-detail.tsx` for event cards and grouped service/fee rows.
+- Service/fee drag reorder persists the visible grouped order by rewriting underlying line-item sort orders.
+
+Validation:
+- `pnpm db:push` passed and applied the event `sort_order` column.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/api-server run build` pending in current run.
+- Existing `pnpm --filter @workspace/api-server run typecheck` failure remains the pre-existing generated `contractTemplateId` mismatch in booking create/update bodies.

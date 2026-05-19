@@ -10,6 +10,7 @@ export const eventsTable = pgTable("booking_events", {
   eventDate: text("event_date").notNull(),
   servicesBegin: text("services_begin"),
   completionTarget: text("completion_target"),
+  sortOrder: integer("sort_order").notNull().default(0),
   hairAndMakeupCount: integer("hair_and_makeup_count").notNull().default(0),
   hairOnlyCount: integer("hair_only_count").notNull().default(0),
   makeupOnlyCount: integer("makeup_only_count").notNull().default(0),

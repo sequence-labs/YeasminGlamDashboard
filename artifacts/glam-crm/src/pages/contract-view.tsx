@@ -52,8 +52,15 @@ function lineItemAmount(item: BookingLineItem) {
   return item.total ?? item.quantity * item.unitPrice;
 }
 
+function formatMoney(value: number) {
+  return `$${value.toLocaleString(undefined, {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 function lineItemRateDescription(item: BookingLineItem) {
-  const amount = `$${item.unitPrice.toLocaleString()}`;
+  const amount = formatMoney(item.unitPrice);
   if (item.unitLabel === "booking" || item.unitLabel === "event") {
     return `${amount} flat`;
   }
@@ -72,6 +79,89 @@ function quantityUnitLabel(unitLabel: string, quantity: number) {
 
 function lineItemQuantityDescription(item: BookingLineItem) {
   return `${formatQuantity(item.quantity)} ${quantityUnitLabel(item.unitLabel, item.quantity)}`;
+}
+
+function lineItemGroupKey(item: BookingLineItem) {
+  return [
+    item.kind,
+    item.serviceItemId ?? "custom",
+    item.name,
+    item.description ?? "",
+    item.unitPrice,
+    item.unitLabel,
+    item.calculationNote ?? "",
+    item.eventId ?? "booking",
+  ].join("|");
+}
+
+function groupedEffectiveLineItems(items: BookingLineItem[]) {
+  const groups = new Map<string, {
+    key: string;
+    items: BookingLineItem[];
+    representativeItem: BookingLineItem;
+    totalQuantity: number;
+    totalAmount: number;
+    sortOrder: number;
+  }>();
+
+  items.forEach((item) => {
+    const key = lineItemGroupKey(item);
+    const existing = groups.get(key);
+
+    if (!existing) {
+      groups.set(key, {
+        key,
+        items: [item],
+        representativeItem: item,
+        totalQuantity: item.quantity,
+        totalAmount: lineItemAmount(item),
+        sortOrder: item.sortOrder,
+      });
+      return;
+    }
+
+    existing.items.push(item);
+    existing.totalQuantity += item.quantity;
+    existing.totalAmount += lineItemAmount(item);
+    existing.sortOrder = Math.min(existing.sortOrder, item.sortOrder);
+  });
+
+  return [...groups.values()]
+    .map((group) => {
+      const authoritativeQuantityItem = group.items.find((item) => item.quantity > 1);
+      if (!authoritativeQuantityItem) {
+        return group;
+      }
+
+      return {
+        ...group,
+        representativeItem: authoritativeQuantityItem,
+        totalQuantity: authoritativeQuantityItem.quantity,
+        totalAmount: lineItemAmount(authoritativeQuantityItem),
+      };
+    })
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+function uniqueRateScheduleLineItems(groups: ReturnType<typeof groupedEffectiveLineItems>) {
+  const rates = new Map<string, ReturnType<typeof groupedEffectiveLineItems>[number]>();
+
+  groups.forEach((group) => {
+    const item = group.representativeItem;
+    const key = [
+      item.kind,
+      item.serviceItemId ?? "custom",
+      item.name,
+      item.unitPrice,
+      item.unitLabel,
+    ].join("|");
+
+    if (!rates.has(key)) {
+      rates.set(key, group);
+    }
+  });
+
+  return [...rates.values()].sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export default function ContractView() {
@@ -107,41 +197,63 @@ export default function ContractView() {
   const lineItems = booking.lineItems ?? [];
   const today = new Date();
   const artistName = contract.artistName ?? "Yeasmin Bhuiyan";
+  const artistBusinessName = (contract.artistBusinessName?.trim() || artistName).trim();
   const artistEmail = contract.artistEmail ?? "yeasminbhuiyan1997@gmail.com";
   const artistPhone = contract.artistPhone ?? "";
-  const artistPaymentMethod = contract.artistPaymentMethod ?? "";
+  const artistPaymentMethod = contract.artistPaymentMethod?.trim() || "";
+  const paymentMethodDisplay = [
+    artistBusinessName,
+    artistPaymentMethod || booking.paymentMethod,
+  ]
+    .filter(Boolean)
+    .join(", ") || "As agreed";
   const artistContact = [artistEmail, artistPhone].filter(Boolean).join(" / ");
   const clientPhone = client.phone ? formatUSPhone(client.phone) : "";
   const earlyMorningFee = booking.earlyMorningFee ?? 0;
   const travelFee = booking.travelFee ?? 0;
   const pricedEvents = events.filter((event) => event.subtotal > 0);
-  const lineItemsByEventId = new Map<number, BookingLineItem[]>();
-  const bookingLevelLineItems = lineItems.filter((item) => !item.eventId);
-  lineItems.forEach((item) => {
-    if (!item.eventId) return;
-    lineItemsByEventId.set(item.eventId, [...(lineItemsByEventId.get(item.eventId) ?? []), item]);
+  const groupedLineItems = groupedEffectiveLineItems(lineItems);
+  const lineItemGroupsByEventId = new Map<number, typeof groupedLineItems>();
+  const bookingLevelLineItemGroups = groupedLineItems.filter((group) => !group.representativeItem.eventId);
+  groupedLineItems.forEach((group) => {
+    const eventId = group.representativeItem.eventId;
+    if (!eventId) return;
+    lineItemGroupsByEventId.set(eventId, [...(lineItemGroupsByEventId.get(eventId) ?? []), group]);
   });
   const eventChargeGroups = events
     .map((event) => ({
       event,
-      lineItems: lineItemsByEventId.get(event.id) ?? [],
+      lineItemGroups: lineItemGroupsByEventId.get(event.id) ?? [],
     }))
-    .filter((group) => group.event.subtotal > 0 || group.lineItems.length > 0);
+    .filter((group) => group.event.subtotal > 0 || group.lineItemGroups.length > 0);
+  const effectiveLineItemsTotal = groupedLineItems.reduce((sum, group) => sum + group.totalAmount, 0);
+  const effectiveEventsTotal = events.reduce((sum, event) => sum + event.subtotal, 0);
+  const effectiveGrandTotal = effectiveEventsTotal + effectiveLineItemsTotal + earlyMorningFee + travelFee;
 
   const firstDate = booking.firstServiceDate ? parseISO(booking.firstServiceDate) : null;
   const cancel90Date = firstDate ? format(subDays(firstDate, 90), "MMMM d, yyyy") : null;
   const cancel89Date = firstDate ? format(subDays(firstDate, 89), "MMMM d, yyyy") : null;
   const cancel31Date = firstDate ? format(subDays(firstDate, 31), "MMMM d, yyyy") : null;
   const cancel30Date = firstDate ? format(subDays(firstDate, 30), "MMMM d, yyyy") : null;
+  const finalPaymentDeadlineDefault = firstDate
+    ? `5:00 PM Eastern Time on ${format(subDays(firstDate, 1), "MMMM d, yyyy")}`
+    : "On or before the date of service";
 
-  const remainingBalance = Math.max(0, booking.grandTotal - booking.retainerAmount);
-  const halfTotal = (booking.grandTotal * 0.5).toFixed(2);
+  const effectiveRetainerAmount = effectiveGrandTotal * 0.25;
+  const remainingBalance = Math.max(0, effectiveGrandTotal - effectiveRetainerAmount);
+  const halfTotal = (effectiveGrandTotal * 0.5).toFixed(2);
 
-  const defaultMakeupRate = events[0]?.makeupRate ?? 150;
-  const defaultHairRate = events[0]?.hairRate ?? 135;
-  const defaultHamRate = events[0]?.hairAndMakeupRate ?? 285;
-  const pricingLineItems = lineItems.length > 0
-    ? lineItems
+  const standaloneMakeupRate = groupedLineItems.find((group) => group.representativeItem.name.toLowerCase() === "makeup only")?.representativeItem.unitPrice
+    ?? events[0]?.makeupRate
+    ?? 150;
+  const standaloneHairRate = groupedLineItems.find((group) => group.representativeItem.name.toLowerCase() === "hair only")?.representativeItem.unitPrice
+    ?? events[0]?.hairRate
+    ?? 150;
+  const combinedHairMakeupRate = groupedLineItems.find((group) => group.representativeItem.name.toLowerCase().includes("hair") && group.representativeItem.name.toLowerCase().includes("makeup"))?.representativeItem.unitPrice
+    ?? events[0]?.hairAndMakeupRate
+    ?? 285;
+  const pricingLineItems = groupedLineItems.length > 0
+    ? uniqueRateScheduleLineItems(groupedLineItems)
     : [];
 
   return (
@@ -252,24 +364,24 @@ export default function ContractView() {
               </thead>
               <tbody>
                 {pricingLineItems.length > 0 ? (
-                  pricingLineItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-200">
-                      <Td>{item.name}</Td>
-                      <Td right>{lineItemRateDescription(item)}</Td>
+                  pricingLineItems.map((group) => (
+                    <tr key={group.key} className="border-b border-gray-200">
+                      <Td>{group.representativeItem.name}</Td>
+                      <Td right>{lineItemRateDescription(group.representativeItem)}</Td>
                     </tr>
                   ))
                 ) : (
                   <>
-                    <tr className="border-b border-gray-200"><Td>Makeup</Td><Td right>${defaultMakeupRate} per person</Td></tr>
-                    <tr className="border-b border-gray-200"><Td>Hair</Td><Td right>${defaultHairRate} per person</Td></tr>
-                    <tr className="border-b border-gray-200"><Td>Hair &amp; Makeup</Td><Td right>${defaultHamRate} per person</Td></tr>
+                    <tr className="border-b border-gray-200"><Td>Makeup</Td><Td right>${standaloneMakeupRate} per person</Td></tr>
+                    <tr className="border-b border-gray-200"><Td>Hair</Td><Td right>${standaloneHairRate} per person</Td></tr>
+                    <tr className="border-b border-gray-200"><Td>Hair &amp; Makeup</Td><Td right>${combinedHairMakeupRate} per person</Td></tr>
                   </>
                 )}
                 {earlyMorningFee > 0 && (
-                  <tr className="border-b border-gray-200"><Td>Early Morning Fee</Td><Td right>${earlyMorningFee.toLocaleString()}</Td></tr>
+                  <tr className="border-b border-gray-200"><Td>Early Morning Fee</Td><Td right>{formatMoney(earlyMorningFee)}</Td></tr>
                 )}
                 {travelFee > 0 && (
-                  <tr className="border-b border-gray-200"><Td>Travel Fee</Td><Td right>${travelFee.toLocaleString()}</Td></tr>
+                  <tr className="border-b border-gray-200"><Td>Travel Fee</Td><Td right>{formatMoney(travelFee)}</Td></tr>
                 )}
               </tbody>
             </table>
@@ -279,14 +391,14 @@ export default function ContractView() {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-gray-100">
-                <Th>Selected Service / Fee</Th>
+                <Th>Service / Fee</Th>
                 <Th>Quantity</Th>
                 <Th>Unit Rate</Th>
                 <Th right>Amount</Th>
               </tr>
             </thead>
             <tbody>
-              {eventChargeGroups.map(({ event, lineItems: assignedLineItems }) => (
+              {eventChargeGroups.map(({ event, lineItemGroups }) => (
                 <Fragment key={event.id}>
                   <tr key={`event-${event.id}`} className="border-b border-gray-200 bg-gray-50">
                     <Td colSpan={4}><strong>{event.eventName}</strong></Td>
@@ -296,46 +408,53 @@ export default function ContractView() {
                       <Td>{event.eventName}</Td>
                       <Td>{guaranteedServices(event)}</Td>
                       <Td>{eventCalcDescription(event)}</Td>
-                      <Td right>${event.subtotal.toLocaleString()}</Td>
+                      <Td right>{formatMoney(event.subtotal)}</Td>
                     </tr>
                   )}
-                  {assignedLineItems.map((item) => (
-                    <tr key={item.id} className="border-b border-gray-200">
-                      <Td>{item.name}</Td>
-                      <Td>{lineItemQuantityDescription(item)}</Td>
-                      <Td>{lineItemRateDescription(item)}</Td>
-                      <Td right>${lineItemAmount(item).toLocaleString()}</Td>
+                  {lineItemGroups.map((group) => (
+                    <tr key={group.key} className="border-b border-gray-200">
+                      <Td>{group.representativeItem.name}</Td>
+                      <Td>{`${formatQuantity(group.totalQuantity)} ${quantityUnitLabel(group.representativeItem.unitLabel, group.totalQuantity)}`}</Td>
+                      <Td>{lineItemRateDescription(group.representativeItem)}</Td>
+                      <Td right>{formatMoney(group.totalAmount)}</Td>
                     </tr>
                   ))}
                 </Fragment>
               ))}
-              {bookingLevelLineItems.map((item) => (
-                <tr key={item.id} className="border-b border-gray-200">
-                  <Td>{item.name}</Td>
-                  <Td>{lineItemQuantityDescription(item)}</Td>
-                  <Td>{lineItemRateDescription(item)}</Td>
-                  <Td right>${lineItemAmount(item).toLocaleString()}</Td>
-                </tr>
-              ))}
-              {earlyMorningFee > 0 && (
-                <tr className="border-b border-gray-200">
-                  <Td>Early Morning Fee</Td>
-                  <Td>1 booking</Td>
-                  <Td>${earlyMorningFee.toLocaleString()} flat</Td>
-                  <Td right>${earlyMorningFee.toLocaleString()}</Td>
-                </tr>
-              )}
-              {travelFee > 0 && (
-                <tr className="border-b border-gray-200">
-                  <Td>Travel Fee</Td>
-                  <Td>1 booking</Td>
-                  <Td>${travelFee.toLocaleString()} flat</Td>
-                  <Td right>${travelFee.toLocaleString()}</Td>
-                </tr>
-              )}
+              {bookingLevelLineItemGroups.length > 0 || earlyMorningFee > 0 || travelFee > 0 ? (
+                <>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <Td colSpan={4}><strong>Booking-Level Charges</strong></Td>
+                  </tr>
+                  {bookingLevelLineItemGroups.map((group) => (
+                    <tr key={group.key} className="border-b border-gray-200">
+                      <Td>{group.representativeItem.name}</Td>
+                      <Td>{`${formatQuantity(group.totalQuantity)} ${quantityUnitLabel(group.representativeItem.unitLabel, group.totalQuantity)}`}</Td>
+                      <Td>{lineItemRateDescription(group.representativeItem)}</Td>
+                      <Td right>{formatMoney(group.totalAmount)}</Td>
+                    </tr>
+                  ))}
+                  {earlyMorningFee > 0 && (
+                    <tr className="border-b border-gray-200">
+                      <Td>Early Morning Fee</Td>
+                      <Td>1 booking</Td>
+                      <Td>{formatMoney(earlyMorningFee)} flat</Td>
+                      <Td right>{formatMoney(earlyMorningFee)}</Td>
+                    </tr>
+                  )}
+                  {travelFee > 0 && (
+                    <tr className="border-b border-gray-200">
+                      <Td>Travel Fee</Td>
+                      <Td>1 booking</Td>
+                      <Td>{formatMoney(travelFee)} flat</Td>
+                      <Td right>{formatMoney(travelFee)}</Td>
+                    </tr>
+                  )}
+                </>
+              ) : null}
               <tr className="font-bold text-base border-t-2 border-black">
                 <td className="py-2 px-3" colSpan={3}>Grand Total</td>
-                <td className="py-2 px-3 text-right">${booking.grandTotal.toLocaleString()}</td>
+                <td className="py-2 px-3 text-right">{formatMoney(effectiveGrandTotal)}</td>
               </tr>
             </tbody>
           </table>
@@ -352,23 +471,23 @@ export default function ContractView() {
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b border-gray-200 font-semibold"><Td>Grand Total</Td><Td right>${booking.grandTotal.toLocaleString()}</Td></tr>
+              <tr className="border-b border-gray-200 font-semibold"><Td>Grand Total</Td><Td right>{formatMoney(effectiveGrandTotal)}</Td></tr>
               <tr className="border-b border-gray-200">
                 <Td>Non-Refundable Retainer / Booking Fee</Td>
-                <Td right>${booking.retainerAmount.toLocaleString()}, due upon signing</Td>
+                <Td right>{formatMoney(effectiveRetainerAmount)} due upon signing</Td>
               </tr>
-              <tr className="border-b border-gray-200"><Td>Remaining Balance</Td><Td right>${remainingBalance.toLocaleString()}</Td></tr>
+              <tr className="border-b border-gray-200"><Td>Remaining Balance</Td><Td right>{formatMoney(remainingBalance)}</Td></tr>
               <tr className="border-b border-gray-200">
                 <Td>Final Payment Deadline</Td>
                 <Td right>
                   {booking.balanceDueDate
                     ? `5:00 PM Eastern Time on ${format(parseISO(booking.balanceDueDate), "MMMM d, yyyy")}`
-                    : "On or before the date of service"}
+                    : finalPaymentDeadlineDefault}
                 </Td>
               </tr>
               <tr className="border-b border-gray-200">
                 <Td>Payment Method</Td>
-                <Td right>{booking.paymentMethod || artistPaymentMethod || "As agreed"}</Td>
+                <Td right>{paymentMethodDisplay}</Td>
               </tr>
             </tbody>
           </table>
@@ -388,15 +507,16 @@ export default function ContractView() {
         {/* Section 5 */}
         <Section number="5" title="Service Scope">
           <p className="text-sm text-gray-700 mb-2">
-            <strong>Makeup:</strong> The ${defaultMakeupRate} makeup rate applies to non-bridal event makeup / soft glam. Full bridal
-            makeup, highly detailed eye looks, rhinestones, glitter-heavy looks, face/body art, tattoo coverage,
-            or other advanced/custom looks are not included unless agreed in writing.
+            <strong>Makeup:</strong> The ${standaloneMakeupRate} makeup rate applies to non-bridal event makeup / soft glam. Full bridal
+            makeup, cut crease, highly detailed eye looks, rhinestones, glitter-heavy looks, face/body art, tattoo
+            coverage, or other advanced/custom looks are not included unless agreed in writing.
           </p>
           <p className="text-sm text-gray-700 mb-2">
-            <strong>Hair:</strong> The ${defaultHairRate} hair rate applies only when clients for the same event choose the same
-            hairstyle category: curls, half-up half-down, or bun styles. Washing, blow-drying, drying wet hair,
-            extensions, hair padding, hair accessories, veil/dupatta placement, jewelry setting, or elaborate
-            bridal hair are not included unless agreed in writing.
+            <strong>Hair:</strong> The ${standaloneHairRate} hair rate applies to non-bridal party/event hair services.
+            This rate does not include bridal hair planning, bridal hair design, or elaborate bridal styling unless
+            separately agreed in writing. Washing, blow-drying, drying wet hair, extensions, hair padding, hair
+            accessories, veil/dupatta placement, jewelry setting, or other advanced/custom hair services are not
+            included unless agreed in writing.
           </p>
           <p className="text-sm text-gray-700 mb-2">
             <strong>Add-ons:</strong> Touch-up kits, extra touch-ups, style changes, upgrades, and additional
@@ -404,8 +524,8 @@ export default function ContractView() {
             service begins.
           </p>
           <p className="text-sm text-gray-700">
-            <strong>Assigned artists:</strong> {artistName} is assigned to provide makeup. Hair may be
-            performed by an assistant, second artist, subcontracted hair stylist, or other assigned professional
+            <strong>Assigned artists:</strong> {artistName} is assigned to provide services. Makeup and hair may be
+            performed by Artist, an assistant, second artist, subcontracted stylist, or other assigned professional
             selected by Artist. Artist may bring additional artists or assistants as needed to complete the agreed
             services.
           </p>
@@ -439,10 +559,13 @@ export default function ContractView() {
               </tr>
             </tbody>
           </table>
-          <p className="text-sm text-gray-700 mt-3">
-            Client is responsible for sharing preparation, timing, allergy-disclosure, conduct, and setup
-            requirements with every person receiving services.
-          </p>
+          <div className="mt-4 border-l-4 border-black bg-gray-100 px-4 py-3 text-sm text-black">
+            <p className="font-bold uppercase tracking-wide text-xs mb-1">Important Client Responsibility</p>
+            <p>
+              Client is responsible for sharing preparation, timing, allergy-disclosure, conduct, and setup
+              requirements with every person receiving services.
+            </p>
+          </div>
         </Section>
 
         {/* Section 7 */}
@@ -460,14 +583,17 @@ export default function ContractView() {
             schedule changes outside Artist's control. Client-caused overtime is $100 per hour, billed in
             30-minute increments, subject to Artist availability.
           </p>
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Sanitation and allergies:</strong> Artist and assigned assistants will use reasonable
-            professional sanitation practices. Client and all people receiving services must disclose allergies,
-            sensitivities, skin/eye/scalp conditions, medical concerns, recent procedures, or product reactions
-            before service. Artist may refuse or stop a service if it appears unsafe or unsanitary. Artist is not
-            responsible for reactions caused by undisclosed conditions, unknown sensitivities, prior treatments,
-            or failure to follow preparation instructions.
-          </p>
+          <div className="mb-3 border-l-4 border-black bg-gray-100 px-4 py-3 text-sm text-black">
+            <p className="font-bold uppercase tracking-wide text-xs mb-1">Required Health Disclosure</p>
+            <p>
+              <strong>Sanitation and allergies:</strong> Artist and assigned assistants will use reasonable
+              professional sanitation practices. Client and all people receiving services must disclose allergies,
+              sensitivities, skin/eye/scalp conditions, medical concerns, recent procedures, or product reactions
+              before service. Artist may refuse or stop a service if it appears unsafe or unsanitary. Artist is not
+              responsible for reactions caused by undisclosed conditions, unknown sensitivities, prior treatments,
+              or failure to follow preparation instructions.
+            </p>
+          </div>
           <ClientInitials className="mb-3" />
           <p className="text-sm text-gray-700 mb-2">
             <strong>Smoking, alcohol, drugs, and unsafe conduct:</strong> No smoking, vaping, hookah, drug use,
@@ -486,7 +612,7 @@ export default function ContractView() {
           <ClientInitials className="mb-3" />
           {travelFee > 0 && (
             <p className="text-sm text-gray-700">
-              <strong>Travel and venue costs:</strong> The ${travelFee.toLocaleString()} travel fee is
+              <strong>Travel and venue costs:</strong> The {formatMoney(travelFee)} travel fee is
               all-inclusive and covers every travel-related cost for the Artist to and from the {booking.location}{" "}
               service location, including parking, valet, tolls, rideshare, loading fees, room access fees, and
               any other transportation expenses. No additional travel-related charges will be billed to the
@@ -522,7 +648,7 @@ export default function ContractView() {
                   </div>
                 </Td>
                 <Td right>
-                  <strong>${booking.retainerAmount.toLocaleString()}</strong> — the non-refundable retainer only
+                  <strong>{formatMoney(effectiveRetainerAmount)}</strong> — the non-refundable retainer only
                 </Td>
               </tr>
               <tr className="border-b border-gray-200 align-top">
@@ -537,7 +663,7 @@ export default function ContractView() {
                   </div>
                 </Td>
                 <Td right>
-                  <strong>${parseFloat(halfTotal).toLocaleString()}</strong> — 50% of the total contract amount
+                  <strong>{formatMoney(parseFloat(halfTotal))}</strong> — 50% of the total contract amount
                 </Td>
               </tr>
               <tr className="border-b border-gray-200 align-top">
@@ -552,13 +678,13 @@ export default function ContractView() {
                   </div>
                 </Td>
                 <Td right>
-                  <strong>${booking.grandTotal.toLocaleString()}</strong> — 100% of the total contract amount
+                  <strong>{formatMoney(effectiveGrandTotal)}</strong> — 100% of the total contract amount
                 </Td>
               </tr>
             </tbody>
           </table>
           <p className="text-sm text-gray-700 mb-2">
-            Any amount the Client has already paid (including the ${booking.retainerAmount.toLocaleString()} retainer) is applied
+            Any amount the Client has already paid (including the {formatMoney(effectiveRetainerAmount)} retainer) is applied
             to the total owed above. If the Client has paid less than the amount owed, the difference is due
             immediately upon cancellation. If the Client has paid more, the excess will be refunded, except for
             the non-refundable retainer.

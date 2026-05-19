@@ -1209,7 +1209,7 @@ components:
 
     BookingEvent:
       type: object
-      required: [id, bookingId, eventName, eventDate, servicesBegin, completionTarget, subtotal]
+      required: [id, bookingId, eventName, eventDate, servicesBegin, completionTarget, sortOrder, subtotal]
       properties:
         id:
           type: integer
@@ -1224,6 +1224,8 @@ components:
           type: ["string", "null"]
         completionTarget:
           type: ["string", "null"]
+        sortOrder:
+          type: integer
         hairAndMakeupCount:
           type: integer
         hairOnlyCount:
@@ -1252,6 +1254,8 @@ components:
           type: string
         completionTarget:
           type: string
+        sortOrder:
+          type: integer
         hairAndMakeupCount:
           type: integer
         hairOnlyCount:
@@ -1276,6 +1280,8 @@ components:
           type: ["string", "null"]
         completionTarget:
           type: ["string", "null"]
+        sortOrder:
+          type: integer
         hairAndMakeupCount:
           type: integer
         hairOnlyCount:
@@ -1339,6 +1345,8 @@ components:
             $ref: "#/components/schemas/BookingEvent"
         artistName:
           type: string
+        artistBusinessName:
+          type: ["string", "null"]
         artistEmail:
           type: ["string", "null"]
         artistPhone:

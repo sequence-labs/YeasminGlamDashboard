@@ -16,6 +16,7 @@ export interface BookingEvent {
   servicesBegin: string | null;
   /** @nullable */
   completionTarget: string | null;
+  sortOrder: number;
   hairAndMakeupCount?: number;
   hairOnlyCount?: number;
   makeupOnlyCount?: number;

@@ -12,6 +12,7 @@ export interface EventInput {
   eventDate: string;
   servicesBegin?: string;
   completionTarget?: string;
+  sortOrder?: number;
   hairAndMakeupCount?: number;
   hairOnlyCount?: number;
   makeupOnlyCount?: number;

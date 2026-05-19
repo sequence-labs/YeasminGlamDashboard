@@ -147,22 +147,68 @@ function serializeLineItem(item: typeof bookingLineItemsTable.$inferSelect) {
 }
 
 async function recomputeGrandTotal(bookingId: number) {
-  const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, bookingId));
-  const lineItems = await db.select().from(bookingLineItemsTable).where(eq(bookingLineItemsTable.bookingId, bookingId));
   const [booking] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, bookingId));
   if (!booking) return;
+  const totals = await effectiveBookingTotals(booking);
+  await db.update(bookingsTable)
+    .set({
+      grandTotal: totals.grandTotal.toFixed(2),
+      retainerAmount: totals.retainerAmount.toFixed(2),
+    })
+    .where(eq(bookingsTable.id, bookingId));
+}
+
+async function effectiveBookingTotals(booking: typeof bookingsTable.$inferSelect) {
+  const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, booking.id));
+  const lineItems = await db.select().from(bookingLineItemsTable).where(eq(bookingLineItemsTable.bookingId, booking.id));
   const eventsTotal = events.reduce((sum, e) => sum + parseFloat(e.subtotal as unknown as string), 0);
-  const lineItemsTotal = lineItems.reduce((sum, item) => {
+  const groups = new Map<string, {
+    totalAmount: number;
+    sortOrder: number;
+    authoritativeAmount?: number;
+  }>();
+
+  for (const item of lineItems) {
     const quantity = parseFloat(item.quantity as unknown as string);
     const unitPrice = parseFloat(item.unitPrice as unknown as string);
-    return sum + (quantity * unitPrice);
-  }, 0);
+    const amount = quantity * unitPrice;
+    const key = [
+      item.kind,
+      item.serviceItemId ?? "custom",
+      item.name,
+      item.description ?? "",
+      unitPrice,
+      item.unitLabel,
+      item.calculationNote ?? "",
+      item.eventId ?? "booking",
+    ].join("|");
+    const existing = groups.get(key);
+
+    if (!existing) {
+      groups.set(key, {
+        totalAmount: amount,
+        sortOrder: item.sortOrder,
+        authoritativeAmount: quantity > 1 ? amount : undefined,
+      });
+      continue;
+    }
+
+    existing.totalAmount += amount;
+    existing.sortOrder = Math.min(existing.sortOrder, item.sortOrder);
+    if (quantity > 1 && existing.authoritativeAmount === undefined) {
+      existing.authoritativeAmount = amount;
+    }
+  }
+
+  const lineItemsTotal = [...groups.values()]
+    .reduce((sum, group) => sum + (group.authoritativeAmount ?? group.totalAmount), 0);
   const fees = parseFloat(booking.earlyMorningFee as unknown as string) + parseFloat(booking.travelFee as unknown as string);
-  const grandTotal = (eventsTotal + lineItemsTotal + fees).toFixed(2);
-  const retainerAmount = (parseFloat(grandTotal) * 0.25).toFixed(2);
-  await db.update(bookingsTable)
-    .set({ grandTotal, retainerAmount })
-    .where(eq(bookingsTable.id, bookingId));
+  const grandTotal = eventsTotal + lineItemsTotal + fees;
+
+  return {
+    grandTotal,
+    retainerAmount: grandTotal * 0.25,
+  };
 }
 
 async function syncFirstServiceDateFromEvents(bookingId: number) {
@@ -240,7 +286,16 @@ router.get("/bookings", async (req, res): Promise<void> => {
       .where(isNull(bookingsTable.deletedAt))
       .orderBy(bookingsTable.createdAt);
 
-  res.json(ListBookingsResponse.parse(rows.map(r => serializeBooking(r.booking, r.clientName))));
+  const serialized = await Promise.all(rows.map(async (r) => {
+    const totals = await effectiveBookingTotals(r.booking);
+    return serializeBooking({
+      ...r.booking,
+      grandTotal: totals.grandTotal.toFixed(2),
+      retainerAmount: totals.retainerAmount.toFixed(2),
+    }, r.clientName);
+  }));
+
+  res.json(ListBookingsResponse.parse(serialized));
 });
 
 // Create booking
@@ -316,7 +371,7 @@ router.get("/bookings/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Booking not found" });
     return;
   }
-  const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, params.data.id));
+  const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, params.data.id)).orderBy(eventsTable.sortOrder, eventsTable.eventDate, eventsTable.id);
   const firstServiceDate = await syncFirstServiceDateFromEvents(params.data.id);
   const payments = await db.select().from(paymentsTable).where(eq(paymentsTable.bookingId, params.data.id));
   const lineItems = await db
@@ -482,12 +537,21 @@ router.post("/bookings/:id/events", async (req, res): Promise<void> => {
   const hRate = parsed.data.hairRate ?? 135;
   const mRate = parsed.data.makeupRate ?? 150;
   const subtotal = computeSubtotal(ham, ho, mo, hamRate, hRate, mRate);
+  const existingEvents = await db.select({ sortOrder: eventsTable.sortOrder })
+    .from(eventsTable)
+    .where(eq(eventsTable.bookingId, params.data.id));
+  const nextSortOrder = parsed.data.sortOrder ?? (
+    existingEvents.length > 0
+      ? Math.max(...existingEvents.map((existingEvent) => existingEvent.sortOrder)) + 10
+      : 0
+  );
   const [event] = await db.insert(eventsTable).values({
     bookingId: params.data.id,
     eventName: parsed.data.eventName,
     eventDate: parsed.data.eventDate,
     servicesBegin: parsed.data.servicesBegin ?? null,
     completionTarget: parsed.data.completionTarget ?? null,
+    sortOrder: nextSortOrder,
     hairAndMakeupCount: ham,
     hairOnlyCount: ho,
     makeupOnlyCount: mo,
@@ -668,6 +732,7 @@ router.patch("/bookings/:id/events/:eventId", async (req, res): Promise<void> =>
   if (parsed.data.eventDate !== undefined) updateData.eventDate = parsed.data.eventDate;
   if (parsed.data.servicesBegin !== undefined) updateData.servicesBegin = parsed.data.servicesBegin;
   if (parsed.data.completionTarget !== undefined) updateData.completionTarget = parsed.data.completionTarget;
+  if (parsed.data.sortOrder !== undefined) updateData.sortOrder = parsed.data.sortOrder;
   const [updated] = await db.update(eventsTable).set(updateData).where(eq(eventsTable.id, params.data.eventId)).returning();
   await recomputeGrandTotal(params.data.id);
   await syncFirstServiceDateFromEvents(params.data.id);
@@ -721,7 +786,7 @@ router.get("/bookings/:id/contract", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Booking not found" });
     return;
   }
-  const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, params.data.id));
+  const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, params.data.id)).orderBy(eventsTable.sortOrder, eventsTable.eventDate, eventsTable.id);
   const firstServiceDate = await syncFirstServiceDateFromEvents(params.data.id);
   const payments = await db.select().from(paymentsTable).where(eq(paymentsTable.bookingId, params.data.id));
   const lineItems = await db

@@ -21,7 +21,7 @@ import {
   type ServiceItem
 } from "@workspace/api-client-react";
 import { useRoute } from "wouter";
-import { ArrowLeft, Printer, CheckCircle, CreditCard, Calendar, Plus, Trash2, Edit, History } from "lucide-react";
+import { ArrowLeft, Printer, CheckCircle, CreditCard, Calendar, Plus, Trash2, Edit, History, GripVertical } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
@@ -44,6 +44,13 @@ import { TimePartsInput } from "@/components/TimePartsInput";
 
 function lineItemAmount(item: BookingLineItem) {
   return item.total ?? item.quantity * item.unitPrice;
+}
+
+function formatMoney(value: number) {
+  return `$${value.toLocaleString(undefined, {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function optionalText(value?: string | null) {
@@ -77,6 +84,7 @@ export default function BookingDetail() {
   const { data: booking, isLoading } = useGetBooking(id, { query: { enabled: !!id, queryKey: getGetBookingQueryKey(id) } });
   const updateBooking = useUpdateBooking();
   const deleteBooking = useDeleteBooking();
+  const updateEvent = useUpdateEvent();
   const { data: serviceItems, isLoading: loadingServiceItems } = useListServiceItems();
   const createLineItem = useCreateBookingLineItem();
   const updateLineItem = useUpdateBookingLineItem();
@@ -85,6 +93,8 @@ export default function BookingDetail() {
   const [mutatingGroupKey, setMutatingGroupKey] = useState<string | null>(null);
   const [queuedSplitLineItemIds, setQueuedSplitLineItemIds] = useState<number[]>([]);
   const [expandedLineItemGroupKeys, setExpandedLineItemGroupKeys] = useState<string[]>([]);
+  const [draggedEventId, setDraggedEventId] = useState<number | null>(null);
+  const [draggedLineItemGroupKey, setDraggedLineItemGroupKey] = useState<string | null>(null);
   const lineItems = booking?.lineItems ?? [];
   const events = booking?.events ?? [];
 
@@ -178,6 +188,11 @@ export default function BookingDetail() {
       .sort((a, b) => a.sortOrder - b.sortOrder);
   }, [booking, lineItems, events]);
   const lineItemsTotal = groupedLineItems.reduce((sum, group) => sum + group.totalAmount, 0);
+  const eventsTotal = events.reduce((sum, event) => sum + event.subtotal, 0);
+  const effectiveGrandTotal = eventsTotal + lineItemsTotal + earlyMorningFee + travelFee;
+  const effectiveRetainerAmount = effectiveGrandTotal * 0.25;
+  const effectiveRetainerCredit = booking?.retainerPaid ? effectiveRetainerAmount : 0;
+  const effectiveBalanceDue = Math.max(0, effectiveGrandTotal - effectiveRetainerCredit);
   const displayedLineItemGroups = useMemo(() => {
     return groupedLineItems.flatMap((group) => {
       if (!expandedLineItemGroupKeys.includes(group.key)) {
@@ -240,14 +255,6 @@ export default function BookingDetail() {
     });
   };
 
-  const queueLineItemSplit = (lineItem: BookingLineItem) => {
-    if (queuedSplitLineItemIds.includes(lineItem.id)) {
-      return;
-    }
-    setQueuedSplitLineItemIds((current) => [...current, lineItem.id]);
-    toast({ title: "Split queued. Save to apply the split changes." });
-  };
-
   const performLineItemSplit = async (lineItem: BookingLineItem) => {
     if (!Number.isInteger(lineItem.quantity) || lineItem.quantity <= 1) {
       toast({
@@ -278,6 +285,27 @@ export default function BookingDetail() {
           sortOrder: (lineItem.sortOrder ?? 0) + index + 1,
         },
       });
+    }
+  };
+
+  const handleLineItemSplit = async (lineItem: BookingLineItem, groupKey: string) => {
+    if (mutatingGroupKey !== null) return;
+    setMutatingGroupKey(`split:${lineItem.id}`);
+
+    try {
+      await performLineItemSplit(lineItem);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getGetBookingQueryKey(id) }),
+        queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() }),
+      ]);
+      setExpandedLineItemGroupKeys((current) => (
+        current.includes(groupKey) ? current : [...current, groupKey]
+      ));
+      toast({ title: "Split applied. You can now assign each item individually." });
+    } catch {
+      toast({ title: "Failed to split service or fee", variant: "destructive" });
+    } finally {
+      setMutatingGroupKey(null);
     }
   };
 
@@ -372,6 +400,70 @@ export default function BookingDetail() {
     }
   };
 
+  const handleEventDrop = async (targetEventId: number) => {
+    if (!draggedEventId || draggedEventId === targetEventId || mutatingGroupKey !== null) return;
+    const currentIndex = events.findIndex((event) => event.id === draggedEventId);
+    const targetIndex = events.findIndex((event) => event.id === targetEventId);
+    if (currentIndex < 0 || targetIndex < 0) return;
+
+    const nextEvents = [...events];
+    const [draggedEvent] = nextEvents.splice(currentIndex, 1);
+    nextEvents.splice(targetIndex, 0, draggedEvent);
+
+    setMutatingGroupKey("event-reorder");
+    try {
+      for (const [index, event] of nextEvents.entries()) {
+        await updateEvent.mutateAsync({
+          id,
+          eventId: event.id,
+          data: { sortOrder: index * 10 },
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: getGetBookingQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
+      toast({ title: "Event order updated" });
+    } catch {
+      toast({ title: "Failed to reorder events", variant: "destructive" });
+    } finally {
+      setDraggedEventId(null);
+      setMutatingGroupKey(null);
+    }
+  };
+
+  const handleLineItemGroupDrop = async (targetGroupKey: string) => {
+    if (!draggedLineItemGroupKey || draggedLineItemGroupKey === targetGroupKey || mutatingGroupKey !== null) return;
+    const currentIndex = displayedLineItemGroups.findIndex((group) => group.key === draggedLineItemGroupKey);
+    const targetIndex = displayedLineItemGroups.findIndex((group) => group.key === targetGroupKey);
+    if (currentIndex < 0 || targetIndex < 0) return;
+
+    const nextGroups = [...displayedLineItemGroups];
+    const [draggedGroup] = nextGroups.splice(currentIndex, 1);
+    nextGroups.splice(targetIndex, 0, draggedGroup);
+
+    setMutatingGroupKey("line-item-reorder");
+    try {
+      let nextSortOrder = 0;
+      for (const group of nextGroups) {
+        for (const item of group.items) {
+          await updateLineItem.mutateAsync({
+            id,
+            lineItemId: item.id,
+            data: { sortOrder: nextSortOrder },
+          });
+          nextSortOrder += 10;
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: getGetBookingQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
+      toast({ title: "Service and fee order updated" });
+    } catch {
+      toast({ title: "Failed to reorder services and fees", variant: "destructive" });
+    } finally {
+      setDraggedLineItemGroupKey(null);
+      setMutatingGroupKey(null);
+    }
+  };
+
   return (
     <Shell>
       <div className="space-y-8 pb-12">
@@ -454,14 +546,28 @@ export default function BookingDetail() {
 
             {booking.events.length > 0 ? (
               <div className="grid gap-4">
-                {booking.events.map((event, index) => (
-                  <div key={event.id} className="bg-card border rounded-lg p-5 shadow-sm" data-testid={`event-card-${event.id}`}>
+                {booking.events.map((event) => (
+                  <div
+                    key={event.id}
+                    draggable={mutatingGroupKey === null}
+                    onDragStart={() => setDraggedEventId(event.id)}
+                    onDragOver={(dragEvent) => dragEvent.preventDefault()}
+                    onDrop={() => handleEventDrop(event.id)}
+                    onDragEnd={() => setDraggedEventId(null)}
+                    className={`bg-card border rounded-lg p-5 shadow-sm ${draggedEventId === event.id ? "opacity-60" : ""}`}
+                    data-testid={`event-card-${event.id}`}
+                  >
                     <div className="flex justify-between items-start mb-4 pb-4 border-b">
-                      <div>
-                        <h3 className="font-serif text-lg text-primary">{event.eventName}</h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>{format(parseISO(event.eventDate), "EEEE, MMMM d, yyyy")}</span>
+                      <div className="flex min-w-0 gap-3">
+                        <div className="mt-1 cursor-grab text-muted-foreground active:cursor-grabbing" aria-label="Drag to reorder event">
+                          <GripVertical className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-serif text-lg text-primary">{event.eventName}</h3>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>{format(parseISO(event.eventDate), "EEEE, MMMM d, yyyy")}</span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-2">
@@ -541,21 +647,34 @@ export default function BookingDetail() {
                     const canShowSplit = group.totalQuantity > 1;
 
                     return (
-                    <div key={group.key} className="grid grid-cols-1 gap-3 text-sm border rounded-md p-3 lg:grid-cols-[1fr_140px_220px_auto_auto_auto] lg:items-center">
-                      <div>
-                        <div className="font-medium text-foreground">
-                          {group.eventId ? `${group.totalQuantity} × ${group.representativeItem.name}` : `${group.totalQuantity} × ${group.representativeItem.name}`}
+                    <div
+                      key={group.key}
+                      draggable={mutatingGroupKey === null}
+                      onDragStart={() => setDraggedLineItemGroupKey(group.key)}
+                      onDragOver={(dragEvent) => dragEvent.preventDefault()}
+                      onDrop={() => handleLineItemGroupDrop(group.key)}
+                      onDragEnd={() => setDraggedLineItemGroupKey(null)}
+                      className={`grid grid-cols-1 gap-3 text-sm border rounded-md p-3 lg:grid-cols-[1fr_140px_220px_auto_auto_auto] lg:items-center ${draggedLineItemGroupKey === group.key ? "opacity-60" : ""}`}
+                    >
+                      <div className="flex min-w-0 gap-3">
+                        <div className="mt-0.5 cursor-grab text-muted-foreground active:cursor-grabbing" aria-label="Drag to reorder service or fee">
+                          <GripVertical className="h-4 w-4" />
                         </div>
-                        {group.representativeItem.description && (
-                          <div className="text-muted-foreground mt-1">
-                            {group.representativeItem.description}
+                        <div className="min-w-0">
+                          <div className="font-medium text-foreground">
+                            {group.eventId ? `${group.totalQuantity} × ${group.representativeItem.name}` : `${group.totalQuantity} × ${group.representativeItem.name}`}
                           </div>
-                        )}
-                        {group.items.length > 1 ? (
-                          <div className="mt-1 text-xs text-muted-foreground">
-                            Assigned in {group.items.length} line entries
-                          </div>
-                        ) : null}
+                          {group.representativeItem.description && (
+                            <div className="text-muted-foreground mt-1">
+                              {group.representativeItem.description}
+                            </div>
+                          )}
+                          {group.items.length > 1 ? (
+                            <div className="mt-1 text-xs text-muted-foreground">
+                              Assigned in {group.items.length} line entries
+                            </div>
+                          ) : null}
+                        </div>
                       </div>
                       <div className="text-muted-foreground">
                         {group.totalQuantity} x ${group.representativeItem.unitPrice}
@@ -595,18 +714,17 @@ export default function BookingDetail() {
                                 ));
                                 return;
                               }
-                              queueLineItemSplit(splitCandidate);
+                              handleLineItemSplit(splitCandidate, group.key);
                             }}
                             disabled={
                               createLineItem.isPending ||
                               updateLineItem.isPending ||
                               deleteLineItem.isPending ||
-                              mutatingGroupKey === `split:${splitCandidate?.id}` ||
-                              (splitCandidate ? queuedSplitLineItemIds.includes(splitCandidate.id) : false)
+                              mutatingGroupKey === `split:${splitCandidate?.id}`
                             }
                             data-testid={`btn-split-line-item-${group.key}`}
                           >
-                            {splitCandidate && queuedSplitLineItemIds.includes(splitCandidate.id) ? "Queued" : "Split"}
+                            {splitCandidate && mutatingGroupKey === `split:${splitCandidate.id}` ? "Splitting..." : "Split"}
                           </Button>
                         ) : null}
                           <LineItemDialog
@@ -676,7 +794,7 @@ export default function BookingDetail() {
                     <div className="flex items-center justify-between p-4 rounded-md border bg-accent/20">
                       <div>
                         <div className="font-medium text-foreground">Retainer Payment</div>
-                        <div className="text-sm text-muted-foreground">${booking.retainerAmount.toLocaleString()} required to secure date</div>
+                        <div className="text-sm text-muted-foreground">{formatMoney(effectiveRetainerAmount)} required to secure date</div>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-medium">{booking.retainerPaid ? "Paid" : "Pending"}</span>
@@ -691,7 +809,7 @@ export default function BookingDetail() {
                     <div className="flex items-center justify-between p-4 rounded-md border bg-accent/20">
                       <div>
                         <div className="font-medium text-foreground">Balance Payment</div>
-                        <div className="text-sm text-muted-foreground">${(booking.grandTotal - booking.retainerAmount).toLocaleString()} due {booking.balanceDueDate ? `on ${format(parseISO(booking.balanceDueDate), "MMM d")}` : ""}</div>
+                        <div className="text-sm text-muted-foreground">{formatMoney(effectiveBalanceDue)} due {booking.balanceDueDate ? `on ${format(parseISO(booking.balanceDueDate), "MMM d")}` : ""}</div>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-medium">{booking.balancePaid ? "Paid" : "Pending"}</span>
@@ -723,7 +841,7 @@ export default function BookingDetail() {
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
-                            <span className="font-medium font-serif">${payment.amount.toLocaleString()}</span>
+                            <span className="font-medium font-serif">{formatMoney(payment.amount)}</span>
                             <DeletePaymentButton paymentId={payment.id} bookingId={id} />
                           </div>
                         </div>
@@ -745,44 +863,46 @@ export default function BookingDetail() {
                     {booking.events.filter(event => event.subtotal > 0).map(event => (
                       <div key={event.id} className="flex justify-between">
                         <span className="text-muted-foreground">{event.eventName}</span>
-                        <span>${event.subtotal.toLocaleString()}</span>
+                        <span>{formatMoney(event.subtotal)}</span>
                       </div>
                     ))}
 
                     {groupedLineItems.map((group) => (
                       <div key={group.key} className="flex justify-between gap-3">
                         <span className="text-muted-foreground">{group.representativeItem.name}</span>
-                        <span>${group.totalAmount.toLocaleString()}</span>
+                        <span>{formatMoney(group.totalAmount)}</span>
                       </div>
                     ))}
                     
                     {earlyMorningFee > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Early Morning Fee</span>
-                        <span>${earlyMorningFee.toLocaleString()}</span>
+                        <span>{formatMoney(earlyMorningFee)}</span>
                       </div>
                     )}
                     
                     {travelFee > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Travel Fee</span>
-                        <span>${travelFee.toLocaleString()}</span>
+                        <span>{formatMoney(travelFee)}</span>
                       </div>
                     )}
                     
                     <div className="pt-4 mt-4 border-t border-border flex justify-between font-serif text-xl text-foreground">
                       <span>Grand Total</span>
-                      <span data-testid="text-grand-total">${booking.grandTotal.toLocaleString()}</span>
+                      <span data-testid="text-grand-total">{formatMoney(effectiveGrandTotal)}</span>
                     </div>
 
                     <div className="pt-4 space-y-2">
-                      <div className="flex justify-between text-muted-foreground">
-                        <span>Retainer</span>
-                        <span>-${booking.retainerAmount.toLocaleString()}</span>
-                      </div>
+                      {booking.retainerPaid ? (
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Retainer Paid</span>
+                          <span>-{formatMoney(effectiveRetainerAmount)}</span>
+                        </div>
+                      ) : null}
                       <div className="flex justify-between font-medium">
                         <span>Balance Due</span>
-                        <span data-testid="text-balance-due">${Math.max(0, booking.grandTotal - booking.retainerAmount).toLocaleString()}</span>
+                        <span data-testid="text-balance-due">{formatMoney(effectiveBalanceDue)}</span>
                       </div>
                     </div>
                   </div>

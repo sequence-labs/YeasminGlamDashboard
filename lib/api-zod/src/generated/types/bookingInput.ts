@@ -10,7 +10,6 @@ import type { BookingLineItemInput } from './bookingLineItemInput';
 
 export interface BookingInput {
   clientId: number;
-  contractTemplateId?: number;
   /** @minLength 1 */
   eventType: string;
   /** @minLength 1 */

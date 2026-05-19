@@ -4,6 +4,7 @@ import {
   useCreateClient,
   useCreateEvent,
   getListClientsQueryKey,
+  useGetArtistProfile,
   useListServiceItems,
   getListBookingsQueryKey,
   type ServiceItem,
@@ -23,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatUSPhone, isCompleteUSPhone } from "@/lib/phone";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TimePartsInput } from "@/components/TimePartsInput";
 
 const lineItemSchema = z.object({
@@ -41,7 +42,7 @@ const lineItemSchema = z.object({
 const bookingSchema = z.object({
   clientName: z.string().min(1, "Client name is required"),
   clientEmail: z.string().min(1, "Client email is required").email("Enter a valid email"),
-  clientPhone: z.string().min(1, "Client phone is required").refine(isCompleteUSPhone, "Enter a full 10-digit phone number"),
+  clientPhone: z.string().optional().refine((value) => !value || isCompleteUSPhone(value), "Enter a full 10-digit phone number"),
   clientNotes: z.string().optional(),
   eventType: z.string().min(1, "Event type is required"),
   location: z.string().min(1, "Location is required"),
@@ -92,6 +93,7 @@ export default function NewBooking() {
   const { toast } = useToast();
 
   const { data: serviceItems, isLoading: loadingServiceItems } = useListServiceItems();
+  const { data: artistProfile } = useGetArtistProfile();
   const createClient = useCreateClient();
   const createBooking = useCreateBooking();
   const createEvent = useCreateEvent();
@@ -121,6 +123,16 @@ export default function NewBooking() {
       lineItems: [],
     },
   });
+
+  useEffect(() => {
+    const profilePaymentMethod = optionalText(artistProfile?.paymentMethod ?? "");
+    if (profilePaymentMethod) {
+      const currentPaymentMethod = form.getValues("paymentMethod");
+      if (!currentPaymentMethod) {
+        form.setValue("paymentMethod", profilePaymentMethod);
+      }
+    }
+  }, [artistProfile, form]);
 
   const { fields: lineItemFields, append, remove } = useFieldArray({
     control: form.control,
@@ -168,11 +180,12 @@ export default function NewBooking() {
 
   async function onSubmit(data: BookingFormValues) {
     try {
+      const clientPhone = optionalText(formatUSPhone(data.clientPhone ?? ""));
       const client = await createClient.mutateAsync({
         data: {
           name: data.clientName.trim(),
           email: data.clientEmail.trim(),
-          phone: formatUSPhone(data.clientPhone),
+          ...(clientPhone ? { phone: clientPhone } : {}),
           notes: optionalText(data.clientNotes),
         },
       });
@@ -285,7 +298,7 @@ export default function NewBooking() {
                   name="clientPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Client Phone *</FormLabel>
+                      <FormLabel>Client Phone</FormLabel>
                       <FormControl>
                         <Input placeholder="(555) 123-4567" {...field} data-testid="input-client-phone" />
                       </FormControl>

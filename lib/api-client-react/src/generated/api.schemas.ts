@@ -148,7 +148,6 @@ export interface ContractTemplate {
   body: string;
   active: boolean;
   isDefault: boolean;
-  locked: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -187,8 +186,6 @@ export const BookingStatus = {
 export interface Booking {
   id: number;
   clientId: number;
-  /** @nullable */
-  contractTemplateId?: number | null;
   clientName: string;
   /** e.g. Wedding, Birthday, Prom */
   eventType: string;
@@ -250,7 +247,6 @@ export interface BookingLineItemInput {
 
 export interface BookingInput {
   clientId: number;
-  contractTemplateId?: number;
   /** @minLength 1 */
   eventType: string;
   /** @minLength 1 */
@@ -278,8 +274,6 @@ export const BookingUpdateStatus = {
 } as const;
 
 export interface BookingUpdate {
-  /** @nullable */
-  contractTemplateId?: number | null;
   eventType?: string;
   location?: string;
   /** @nullable */
@@ -320,6 +314,7 @@ export interface BookingEvent {
   servicesBegin: string | null;
   /** @nullable */
   completionTarget: string | null;
+  sortOrder: number;
   hairAndMakeupCount?: number;
   hairOnlyCount?: number;
   makeupOnlyCount?: number;
@@ -391,8 +386,6 @@ export interface BookingActivity {
 export interface BookingDetail {
   id: number;
   clientId: number;
-  /** @nullable */
-  contractTemplateId?: number | null;
   clientName: string;
   /** @nullable */
   clientEmail?: string | null;
@@ -459,6 +452,7 @@ export interface EventInput {
   eventDate: string;
   servicesBegin?: string;
   completionTarget?: string;
+  sortOrder?: number;
   hairAndMakeupCount?: number;
   hairOnlyCount?: number;
   makeupOnlyCount?: number;
@@ -474,6 +468,7 @@ export interface EventUpdate {
   servicesBegin?: string | null;
   /** @nullable */
   completionTarget?: string | null;
+  sortOrder?: number;
   hairAndMakeupCount?: number;
   hairOnlyCount?: number;
   makeupOnlyCount?: number;
@@ -503,8 +498,9 @@ export interface ContractData {
   booking: BookingDetail;
   client: Client;
   events: BookingEvent[];
-  contractTemplate?: ContractTemplate;
   artistName?: string;
+  /** @nullable */
+  artistBusinessName?: string | null;
   /** @nullable */
   artistEmail?: string | null;
   /** @nullable */
