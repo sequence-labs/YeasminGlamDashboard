@@ -1489,3 +1489,15 @@ Update:
 
 Validation:
 - Not run; small booking detail form update.
+
+## 2026-05-19 - Repository Push and Local Data Snapshot
+
+Start:
+- Save the current local CRM database state before pushing the repository to GitHub so local bookings, clients, artist profile, contracts, services, and related records are preserved.
+
+Update:
+- Created a timestamped PostgreSQL dump at `data/backups/makeup_artist_hub-20260519-023306.sql`.
+- Added `data/backups/README.md` with restore notes.
+
+Validation:
+- `pg_dump` completed successfully against the local `makeup_artist_hub` database.
