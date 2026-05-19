@@ -180,3 +180,9 @@ No separate worktree is required for the initial local migration. Use a worktree
 ## Automation Setup
 
 Do not create recurring automations until the local setup has been tested manually in a normal thread.
+
+## Local deployment-secret loading
+
+The local API server now auto-loads `.local/deployment-secrets.env` when `NODE_ENV` is not `production`. Values already present in the shell win, so explicit exports can still override the local file.
+
+This keeps `GLAM_ADMIN_PASSWORD` consistent between localhost and the deployed Render API without committing secrets. Keep `.local/deployment-secrets.env` out of git.

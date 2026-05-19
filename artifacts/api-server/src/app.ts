@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import "./lib/local-env";
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -69,6 +70,20 @@ function verifySession(token?: string) {
   return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
+function sessionTokenFromRequest(req: Request) {
+  const authorization = req.headers.authorization ?? "";
+  const bearerToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
+  const cookieToken = req.cookies?.[sessionCookieName];
+
+  if (verifySession(cookieToken)) return cookieToken;
+  if (verifySession(bearerToken)) return bearerToken;
+  return cookieToken ?? bearerToken;
+}
+
+function requestHasValidSession(req: Request) {
+  return verifySession(sessionTokenFromRequest(req));
+}
+
 function cookieOptions() {
   const secure = process.env.GLAM_COOKIE_SECURE === "true";
 
@@ -92,7 +107,7 @@ function authRequiredMiddleware(req: Request, res: Response, next: NextFunction)
     return;
   }
 
-  if (verifySession(req.cookies?.[sessionCookieName])) {
+  if (requestHasValidSession(req)) {
     next();
     return;
   }
@@ -103,9 +118,11 @@ function authRequiredMiddleware(req: Request, res: Response, next: NextFunction)
 function registerSessionRoutes(api: express.Router) {
   api.get("/session", (req, res) => {
     const authRequired = sessionEnabled();
+    const authenticated = authRequired ? requestHasValidSession(req) : true;
     res.json({
-      authenticated: authRequired ? verifySession(req.cookies?.[sessionCookieName]) : true,
+      authenticated,
       authRequired,
+      token: authRequired && authenticated ? sessionTokenFromRequest(req) : undefined,
     });
   });
 
@@ -133,7 +150,7 @@ function registerSessionRoutes(api: express.Router) {
     }
 
     res.cookie(sessionCookieName, token, cookieOptions());
-    res.json({ authenticated: true, authRequired: true });
+    res.json({ authenticated: true, authRequired: true, token });
   });
 
   api.delete("/session", (_req, res) => {

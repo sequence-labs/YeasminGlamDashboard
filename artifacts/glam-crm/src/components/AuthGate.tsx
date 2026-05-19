@@ -1,15 +1,19 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { apiUrl } from "@/lib/api-base";
+import { apiUrl, authHeaders, clearStoredSessionToken, storeSessionToken } from "@/lib/api-base";
 
 type SessionStatus = {
   authenticated: boolean;
   authRequired: boolean;
+  token?: string;
 };
 
 async function readSession(): Promise<SessionStatus> {
-  const response = await fetch(apiUrl("/api/session"), { credentials: "include" });
+  const response = await fetch(apiUrl("/api/session"), {
+    credentials: "include",
+    headers: authHeaders(),
+  });
   if (!response.ok) throw new Error("Unable to check session");
   return response.json() as Promise<SessionStatus>;
 }
@@ -25,10 +29,19 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     readSession()
       .then((session) => {
-        if (!cancelled) setAuthenticated(session.authenticated);
+        if (cancelled) return;
+        if (session.authenticated) {
+          storeSessionToken(session.token);
+        } else {
+          clearStoredSessionToken();
+        }
+        setAuthenticated(session.authenticated);
       })
       .catch(() => {
-        if (!cancelled) setAuthenticated(false);
+        if (!cancelled) {
+          clearStoredSessionToken();
+          setAuthenticated(false);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -48,7 +61,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       const response = await fetch(apiUrl("/api/session"), {
         method: "POST",
         credentials: "include",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...authHeaders() },
         body: JSON.stringify({ password }),
       });
 
@@ -57,6 +70,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      const session = await response.json() as SessionStatus;
+      storeSessionToken(session.token);
       setAuthenticated(true);
     } catch {
       setError("Could not connect to the CRM API.");

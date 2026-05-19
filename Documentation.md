@@ -1585,3 +1585,29 @@ Validation:
 - Remote authenticated checks passed: `/clients=5`, `/bookings=5`, `/services=12`, `/contract-templates=3`, and `/artist-profile` returned an object.
 - GitHub Pages workflow run `26084374054` completed successfully.
 - GitHub Pages root returned the deployed app HTML, app JS contains `https://whisperflowserver.onrender.com/glam-api`, and `/YeasminGlamDashboard/bookings` returns the SPA fallback body.
+
+## 2026-05-19 - GitHub Pages Session and Local Admin Password Fix
+
+Start:
+- Fix GitHub Pages loading into an empty bookings state even though the remote API has CRM data.
+- Fix local development so `GLAM_ADMIN_PASSWORD` from the deployment secrets file is loaded by the API process without manual shell export.
+
+Findings:
+- Remote authenticated `/glam-api/api/bookings` returns CRM booking data, so Supabase data is present.
+- GitHub Pages is cross-origin from the Render API; relying only on a third-party session cookie can fail in browsers/privacy modes and leave generated API calls unauthenticated.
+- The generated API client already supports bearer tokens, but the CRM frontend was not registering a token getter and the API session route was not returning a token.
+
+Validation note:
+- Initial local session smoke attempted to import `dist/index.mjs` as an Express app default export and failed before server start because that bundle is the executable server entrypoint, not an app export. Retrying through the real start path.
+
+Update:
+- Added a local-only deployment env loader for the API server so localhost reads `GLAM_ADMIN_PASSWORD` from `.local/deployment-secrets.env` when the shell has not exported it.
+- Added cross-origin bearer session support for the Glam API while preserving the existing secure cookie path.
+- Updated the CRM frontend to store the signed session token after unlock and attach it through the generated API client.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/api-server run build` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the existing sourcemap/chunk-size warnings.
+- Local API session smoke passed: local secrets loaded, password login succeeded, a session token was returned, and bearer session verification succeeded.
