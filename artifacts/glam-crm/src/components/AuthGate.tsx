@@ -9,6 +9,13 @@ type SessionStatus = {
   token?: string;
 };
 
+function isLocalDevelopmentHost() {
+  if (!import.meta.env.DEV || typeof window === "undefined") return false;
+
+  const hostname = window.location.hostname;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
+}
+
 async function readSession(): Promise<SessionStatus> {
   const response = await fetch(apiUrl("/api/session"), {
     credentials: "include",
@@ -27,6 +34,15 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     let cancelled = false;
+
+    if (isLocalDevelopmentHost()) {
+      setAuthenticated(true);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     readSession()
       .then((session) => {
         if (cancelled) return;
