@@ -869,7 +869,7 @@ components:
 
     ContractTemplate:
       type: object
-      required: [id, name, body, active, isDefault, createdAt, updatedAt]
+      required: [id, name, body, active, isDefault, locked, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -882,6 +882,8 @@ components:
         active:
           type: boolean
         isDefault:
+          type: boolean
+        locked:
           type: boolean
         createdAt:
           type: string
@@ -931,6 +933,8 @@ components:
           type: integer
         clientId:
           type: integer
+        contractTemplateId:
+          type: ["integer", "null"]
         clientName:
           type: string
         eventType:
@@ -974,6 +978,8 @@ components:
       properties:
         clientId:
           type: integer
+        contractTemplateId:
+          type: integer
         eventType:
           type: string
           minLength: 1
@@ -1007,6 +1013,8 @@ components:
     BookingUpdate:
       type: object
       properties:
+        contractTemplateId:
+          type: ["integer", "null"]
         eventType:
           type: string
         location:
@@ -1043,6 +1051,8 @@ components:
           type: integer
         clientId:
           type: integer
+        contractTemplateId:
+          type: ["integer", "null"]
         clientName:
           type: string
         clientEmail:
@@ -1343,6 +1353,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BookingEvent"
+        contractTemplate:
+          $ref: "#/components/schemas/ContractTemplate"
         artistName:
           type: string
         artistBusinessName:

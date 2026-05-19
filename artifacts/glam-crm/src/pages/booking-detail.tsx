@@ -13,6 +13,7 @@ import {
   useRecordPayment,
   useDeletePayment,
   useUpdateClient,
+  useListContractTemplates,
   getGetBookingQueryKey,
   getListBookingsQueryKey,
   getListClientsQueryKey,
@@ -86,6 +87,7 @@ export default function BookingDetail() {
   const deleteBooking = useDeleteBooking();
   const updateEvent = useUpdateEvent();
   const { data: serviceItems, isLoading: loadingServiceItems } = useListServiceItems();
+  const { data: contractTemplates } = useListContractTemplates();
   const createLineItem = useCreateBookingLineItem();
   const updateLineItem = useUpdateBookingLineItem();
   const deleteLineItem = useDeleteBookingLineItem();
@@ -517,6 +519,8 @@ export default function BookingDetail() {
                   bookingId={id}
                   bookingClientName={booking.clientName}
                   bookingClientId={booking.clientId}
+                  contractTemplateId={booking.contractTemplateId ?? null}
+                  contractTemplates={contractTemplates ?? []}
                   location={booking.location}
                   firstServiceDate={booking.firstServiceDate ?? null}
                   primaryEventId={booking.events[0]?.id}
@@ -965,6 +969,7 @@ const lineItemFormSchema = z.object({
 
 const bookingMetaSchema = z.object({
   clientName: z.string().min(1, "Client name is required"),
+  contractTemplateId: z.string().min(1, "Contract is required"),
   location: z.string().min(1, "Location is required"),
   firstServiceDate: z.string().optional(),
   eventName: z.string().optional(),
@@ -1198,6 +1203,8 @@ function BookingMetaDialog({
   bookingId,
   bookingClientName,
   bookingClientId,
+  contractTemplateId,
+  contractTemplates,
   location,
   firstServiceDate,
   primaryEventId,
@@ -1206,6 +1213,8 @@ function BookingMetaDialog({
   bookingId: number;
   bookingClientName: string;
   bookingClientId: number;
+  contractTemplateId: number | null;
+  contractTemplates: Array<{ id: number; name: string; active: boolean; isDefault: boolean }>;
   location: string;
   firstServiceDate: string | null;
   primaryEventId?: number;
@@ -1221,11 +1230,16 @@ function BookingMetaDialog({
   const updateEvent = useUpdateEvent();
 
   const hasPrimaryEvent = Boolean(primaryEventId);
+  const fallbackContractTemplateId = contractTemplates.find((contract) => contract.isDefault && contract.active)?.id
+    ?? contractTemplates.find((contract) => contract.active)?.id
+    ?? null;
+  const currentContractTemplateId = contractTemplateId ?? fallbackContractTemplateId;
 
   const form = useForm<BookingMetaFormValues>({
     resolver: zodResolver(bookingMetaSchema),
     defaultValues: {
       clientName: bookingClientName,
+      contractTemplateId: currentContractTemplateId ? String(currentContractTemplateId) : "",
       location,
       firstServiceDate: toDateInputValue(firstServiceDate),
       eventName: primaryEventName ?? "",
@@ -1235,6 +1249,7 @@ function BookingMetaDialog({
   async function onSubmit(data: BookingMetaFormValues) {
     const trimmedClientName = data.clientName.trim();
     const trimmedLocation = data.location.trim();
+    const newContractTemplateId = Number(data.contractTemplateId);
     const newFirstServiceDate = data.firstServiceDate?.trim() || "";
     const currentFirstServiceDate = toDateInputValue(firstServiceDate);
     const trimmedEventName = data.eventName?.trim() || "";
@@ -1247,18 +1262,22 @@ function BookingMetaDialog({
 
     const isClientNameChanged = trimmedClientName !== bookingClientName;
     const isLocationChanged = trimmedLocation !== location;
+    const isContractChanged = newContractTemplateId !== currentContractTemplateId;
     const isDateChanged = newFirstServiceDate !== currentFirstServiceDate;
     const isEventNameChanged = hasPrimaryEvent && trimmedEventName !== currentEventName;
 
-    if (!isClientNameChanged && !isLocationChanged && !isDateChanged && !isEventNameChanged) {
+    if (!isClientNameChanged && !isLocationChanged && !isContractChanged && !isDateChanged && !isEventNameChanged) {
       setOpen(false);
       return;
     }
 
     setIsSaving(true);
 
-    const bookingUpdate: { location?: string; firstServiceDate?: string | null } = {};
+    const bookingUpdate: { contractTemplateId?: number; location?: string; firstServiceDate?: string | null } = {};
 
+    if (isContractChanged) {
+      bookingUpdate.contractTemplateId = newContractTemplateId;
+    }
     if (isLocationChanged) {
       bookingUpdate.location = trimmedLocation;
     }
@@ -1338,6 +1357,26 @@ function BookingMetaDialog({
               )} />
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <FormField control={form.control} name="contractTemplateId" render={({ field }) => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel>Contract</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-booking-contract">
+                        <SelectValue placeholder="Select contract" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {contractTemplates.filter((contract) => contract.active || contract.id === currentContractTemplateId).map((contract) => (
+                        <SelectItem key={contract.id} value={String(contract.id)}>
+                          {contract.name}{contract.isDefault ? " (Default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
               <FormField control={form.control} name="firstServiceDate" render={({ field }) => (
                 <FormItem>
                   <FormLabel>First Service Date</FormLabel>

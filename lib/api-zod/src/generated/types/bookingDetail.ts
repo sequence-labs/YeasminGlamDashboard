@@ -14,6 +14,8 @@ import type { Payment } from './payment';
 export interface BookingDetail {
   id: number;
   clientId: number;
+  /** @nullable */
+  contractTemplateId?: number | null;
   clientName: string;
   /** @nullable */
   clientEmail?: string | null;

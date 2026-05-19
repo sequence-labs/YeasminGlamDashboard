@@ -10,6 +10,8 @@ import type { BookingStatus } from './bookingStatus';
 export interface Booking {
   id: number;
   clientId: number;
+  /** @nullable */
+  contractTemplateId?: number | null;
   clientName: string;
   /** e.g. Wedding, Birthday, Prom */
   eventType: string;

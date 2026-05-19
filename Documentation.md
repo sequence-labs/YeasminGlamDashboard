@@ -1363,3 +1363,30 @@ Validation:
 - `pnpm --filter @workspace/glam-crm run typecheck` passed.
 - `pnpm --filter @workspace/api-server run build` pending in current run.
 - Existing `pnpm --filter @workspace/api-server run typecheck` failure remains the pre-existing generated `contractTemplateId` mismatch in booking create/update bodies.
+
+## 2026-05-19 - Contract Version Selection
+
+Start:
+- Preserve the current contract view as the locked non-bridal makeup and hair service agreement, replace the user-facing Templates wording with Contracts, add a bridal contract view duplicate for later edits, and let bookings select which contract version applies.
+
+Update:
+- Preserved the current generated contract view as the non-bridal contract view.
+- Added `artifacts/glam-crm/src/pages/bridal-contract-view.tsx` as a duplicated bridal contract view for later bridal-specific edits.
+- Added a contract route selector so `/bookings/:id/contract` renders the bridal duplicate when the selected contract version is bridal.
+- Renamed the sidebar/page language from Templates to Contracts while keeping `/contract-templates` as a compatibility route alias.
+- Made locked built-in contract records read-only in the Contracts page.
+- Added built-in locked contract versions for non-bridal and bridal agreements in the API seed/normalization path.
+- Added `contractTemplateId`, locked contract metadata, and contract data template metadata to the OpenAPI source, then regenerated API/Zod clients.
+- Added contract selection to new booking intake and the booking detail edit dialog.
+
+Validation:
+- `pnpm --filter @workspace/api-spec run codegen` passed, including workspace library typecheck.
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+Follow-up:
+- Archived old editable contract-template records from the built-in contract seeding path so the active contract choices reset to the locked non-bridal and bridal agreements.
+- Hid inactive leftover contract records from the Contracts page list.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed after cleanup changes.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed after cleanup changes.

@@ -235,6 +235,7 @@ export const ListContractTemplatesResponseItem = zod.object({
   "body": zod.string(),
   "active": zod.boolean(),
   "isDefault": zod.boolean(),
+  "locked": zod.boolean(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -283,6 +284,7 @@ export const UpdateContractTemplateResponse = zod.object({
   "body": zod.string(),
   "active": zod.boolean(),
   "isDefault": zod.boolean(),
+  "locked": zod.boolean(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -306,6 +308,7 @@ export const ListBookingsQueryParams = zod.object({
 export const ListBookingsResponseItem = zod.object({
   "id": zod.number(),
   "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
   "clientName": zod.string(),
   "eventType": zod.string().describe('e.g. Wedding, Birthday, Prom'),
   "location": zod.string(),
@@ -338,6 +341,7 @@ export const ListBookingsResponse = zod.array(ListBookingsResponseItem)
 
 export const CreateBookingBody = zod.object({
   "clientId": zod.number(),
+  "contractTemplateId": zod.number().optional(),
   "eventType": zod.string().min(1),
   "location": zod.string().min(1),
   "locationDetail": zod.string().optional(),
@@ -374,6 +378,7 @@ export const GetBookingParams = zod.object({
 export const GetBookingResponse = zod.object({
   "id": zod.number(),
   "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
   "clientName": zod.string(),
   "clientEmail": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
@@ -452,6 +457,7 @@ export const UpdateBookingParams = zod.object({
 })
 
 export const UpdateBookingBody = zod.object({
+  "contractTemplateId": zod.number().nullish(),
   "eventType": zod.string().optional(),
   "location": zod.string().optional(),
   "locationDetail": zod.string().nullish(),
@@ -470,6 +476,7 @@ export const UpdateBookingBody = zod.object({
 export const UpdateBookingResponse = zod.object({
   "id": zod.number(),
   "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
   "clientName": zod.string(),
   "eventType": zod.string().describe('e.g. Wedding, Birthday, Prom'),
   "location": zod.string(),
@@ -508,6 +515,7 @@ export const RestoreBookingParams = zod.object({
 export const RestoreBookingResponse = zod.object({
   "id": zod.number(),
   "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
   "clientName": zod.string(),
   "eventType": zod.string().describe('e.g. Wedding, Birthday, Prom'),
   "location": zod.string(),
@@ -697,6 +705,7 @@ export const GetContractResponse = zod.object({
   "booking": zod.object({
   "id": zod.number(),
   "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
   "clientName": zod.string(),
   "clientEmail": zod.string().nullish(),
   "clientPhone": zod.string().nullish(),
@@ -789,6 +798,17 @@ export const GetContractResponse = zod.object({
   "hairAndMakeupRate": zod.number().optional(),
   "subtotal": zod.number()
 })),
+  "contractTemplate": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "body": zod.string(),
+  "active": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "locked": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).optional(),
   "artistName": zod.string().optional(),
   "artistBusinessName": zod.string().nullish(),
   "artistEmail": zod.string().nullish(),
@@ -857,6 +877,7 @@ export const GetUpcomingEventsResponse = zod.array(GetUpcomingEventsResponseItem
 export const GetRecentBookingsResponseItem = zod.object({
   "id": zod.number(),
   "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
   "clientName": zod.string(),
   "eventType": zod.string().describe('e.g. Wedding, Birthday, Prom'),
   "location": zod.string(),

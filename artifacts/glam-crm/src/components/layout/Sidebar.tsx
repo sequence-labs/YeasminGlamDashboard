@@ -12,7 +12,7 @@ export function Sidebar() {
     { href: "/services", label: "Services", icon: Sparkles },
     { href: "/clients", label: "Clients", icon: Users },
     { href: "/artist", label: "Artist", icon: UserRound },
-    { href: "/contract-templates", label: "Templates", icon: FileText },
+    { href: "/contracts", label: "Contracts", icon: FileText },
   ];
 
   return (

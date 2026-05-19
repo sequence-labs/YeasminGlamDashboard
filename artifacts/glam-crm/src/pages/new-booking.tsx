@@ -5,6 +5,7 @@ import {
   useCreateEvent,
   getListClientsQueryKey,
   useGetArtistProfile,
+  useListContractTemplates,
   useListServiceItems,
   getListBookingsQueryKey,
   type ServiceItem,
@@ -45,6 +46,7 @@ const bookingSchema = z.object({
   clientPhone: z.string().optional().refine((value) => !value || isCompleteUSPhone(value), "Enter a full 10-digit phone number"),
   clientNotes: z.string().optional(),
   eventType: z.string().min(1, "Event type is required"),
+  contractTemplateId: z.string().min(1, "Contract is required"),
   location: z.string().min(1, "Location is required"),
   locationDetail: z.string().optional(),
   firstServiceDate: z.string().optional(),
@@ -93,6 +95,7 @@ export default function NewBooking() {
   const { toast } = useToast();
 
   const { data: serviceItems, isLoading: loadingServiceItems } = useListServiceItems();
+  const { data: contractTemplates, isLoading: loadingContractTemplates } = useListContractTemplates();
   const { data: artistProfile } = useGetArtistProfile();
   const createClient = useCreateClient();
   const createBooking = useCreateBooking();
@@ -107,6 +110,7 @@ export default function NewBooking() {
       clientPhone: "",
       clientNotes: "",
       eventType: "",
+      contractTemplateId: "",
       location: "",
       locationDetail: "",
       firstServiceDate: "",
@@ -133,6 +137,15 @@ export default function NewBooking() {
       }
     }
   }, [artistProfile, form]);
+
+  useEffect(() => {
+    if (!contractTemplates || form.getValues("contractTemplateId")) return;
+    const defaultContract = contractTemplates.find((contract) => contract.isDefault && contract.active)
+      ?? contractTemplates.find((contract) => contract.active);
+    if (defaultContract) {
+      form.setValue("contractTemplateId", String(defaultContract.id));
+    }
+  }, [contractTemplates, form]);
 
   const { fields: lineItemFields, append, remove } = useFieldArray({
     control: form.control,
@@ -192,6 +205,7 @@ export default function NewBooking() {
 
       const bookingData = {
         clientId: client.id,
+        contractTemplateId: Number(data.contractTemplateId),
         eventType: data.eventType,
         location: data.location,
         locationDetail: optionalText(data.locationDetail),
@@ -316,6 +330,31 @@ export default function NewBooking() {
                       <FormControl>
                         <Input placeholder="e.g. Wedding, Birthday, Photoshoot" {...field} data-testid="input-event-type" />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="contractTemplateId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contract *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={loadingContractTemplates}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-contract">
+                            <SelectValue placeholder={loadingContractTemplates ? "Loading contracts..." : "Select contract"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {(contractTemplates ?? []).filter((contract) => contract.active).map((contract) => (
+                            <SelectItem key={contract.id} value={String(contract.id)}>
+                              {contract.name}{contract.isDefault ? " (Default)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -724,7 +763,7 @@ export default function NewBooking() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={createClient.isPending || createBooking.isPending || createEvent.isPending || loadingServiceItems}
+                disabled={createClient.isPending || createBooking.isPending || createEvent.isPending || loadingServiceItems || loadingContractTemplates}
                 data-testid="button-submit-booking"
               >
                 {createClient.isPending || createBooking.isPending || createEvent.isPending

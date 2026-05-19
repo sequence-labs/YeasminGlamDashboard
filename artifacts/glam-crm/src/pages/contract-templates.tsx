@@ -10,19 +10,18 @@ import { useToast } from "@/hooks/use-toast";
 import {
   getListContractTemplatesQueryKey,
   type ContractTemplate,
-  useCreateContractTemplate,
   useDeleteContractTemplate,
   useListContractTemplates,
   useUpdateContractTemplate,
 } from "@workspace/api-client-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Archive, CopyPlus, FileText, Save } from "lucide-react";
+import { Archive, FileText, Save } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-const templateFormSchema = z.object({
+const contractFormSchema = z.object({
   name: z.string().min(1, "Template name is required"),
   description: z.string().optional(),
   body: z.string().min(1, "Template body is required"),
@@ -30,11 +29,11 @@ const templateFormSchema = z.object({
   isDefault: z.boolean().default(false),
 });
 
-type TemplateFormValues = z.infer<typeof templateFormSchema>;
+type TemplateFormValues = z.infer<typeof contractFormSchema>;
 
 const blankTemplate = `Contract Template
 
-Use this area for clauses, sections, or contract notes that should be available as a reusable template.`;
+Use this area for clauses, sections, or contract notes that should be available as a reusable contract.`;
 
 const defaultTemplateClauses = {
   intro:
@@ -64,7 +63,7 @@ const defaultTemplateClauses = {
 type TemplateClauseKey = keyof typeof defaultTemplateClauses;
 type TemplateClauses = Record<TemplateClauseKey, string>;
 
-const templateClauseLabels: Array<{ key: TemplateClauseKey; label: string }> = [
+const contractClauseLabels: Array<{ key: TemplateClauseKey; label: string }> = [
   { key: "intro", label: "Opening Agreement Language" },
   { key: "schedule", label: "Schedule Language" },
   { key: "pricing", label: "Pricing Language" },
@@ -96,52 +95,21 @@ function optionalText(value?: string) {
   return trimmed ? trimmed : null;
 }
 
-export default function ContractTemplates() {
-  const { data: templates, isLoading } = useListContractTemplates();
-  const createTemplate = useCreateContractTemplate();
+export default function ContractContracts() {
+  const { data: contracts, isLoading } = useListContractTemplates();
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
 
-  const selectedTemplate = templates?.find((template) => template.id === selectedTemplateId) ?? templates?.[0] ?? null;
+  const visibleContracts = contracts?.filter((contract) => contract.active || contract.locked) ?? [];
+  const selectedTemplate = visibleContracts.find((contract) => contract.id === selectedTemplateId) ?? visibleContracts[0] ?? null;
 
   return (
     <Shell>
       <div className="space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-serif text-foreground">Contract Templates</h1>
-            <p className="text-muted-foreground mt-1">Manage reusable contract language. The current agreement is saved as the default template.</p>
+            <h1 className="text-3xl font-serif text-foreground">Contracts</h1>
+            <p className="text-muted-foreground mt-1">Stored agreement versions. Built-in contracts are locked so the approved wording stays safe.</p>
           </div>
-          <Button
-            type="button"
-            onClick={() => {
-              createTemplate.mutate({
-                data: {
-                  name: "New Contract Template",
-                  description: "Draft contract template.",
-                  body: serializeTemplateClauses({
-                    ...defaultTemplateClauses,
-                    intro: blankTemplate,
-                  }),
-                  active: true,
-                  isDefault: false,
-                },
-              }, {
-                onSuccess: (template) => {
-                  queryClient.invalidateQueries({ queryKey: getListContractTemplatesQueryKey() });
-                  setSelectedTemplateId(template.id);
-                  toast({ title: "Contract template added" });
-                },
-                onError: () => toast({ title: "Failed to add contract template", variant: "destructive" }),
-              });
-            }}
-            disabled={createTemplate.isPending}
-            data-testid="btn-add-contract-template"
-          >
-            <CopyPlus className="w-4 h-4 mr-2" />
-            Add Template
-          </Button>
         </div>
 
         {isLoading ? (
@@ -153,45 +121,45 @@ export default function ContractTemplates() {
           <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-6 items-start">
             <div className="bg-card border rounded-lg p-4 shadow-sm space-y-3">
               <div>
-                <h2 className="text-lg font-serif">Templates</h2>
-                <p className="text-sm text-muted-foreground">Select a template to edit.</p>
+                <h2 className="text-lg font-serif">Contracts</h2>
+                <p className="text-sm text-muted-foreground">Select a contract to review.</p>
               </div>
 
-              {templates && templates.length > 0 ? (
+              {visibleContracts.length > 0 ? (
                 <div className="space-y-2">
-                  {templates.map((template) => (
+                  {visibleContracts.map((contract) => (
                     <button
-                      key={template.id}
+                      key={contract.id}
                       type="button"
-                      onClick={() => setSelectedTemplateId(template.id)}
+                      onClick={() => setSelectedTemplateId(contract.id)}
                       className={`w-full rounded-md border p-3 text-left transition-colors ${
-                        selectedTemplate?.id === template.id ? "border-primary bg-primary/5" : "hover:bg-muted/40"
+                        selectedTemplate?.id === contract.id ? "border-primary bg-primary/5" : "hover:bg-muted/40"
                       }`}
-                      data-testid={`btn-contract-template-${template.id}`}
+                      data-testid={`btn-contract-${contract.id}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="font-medium text-foreground">{template.name}</div>
-                          {template.description && <div className="mt-1 text-sm text-muted-foreground">{template.description}</div>}
+                          <div className="font-medium text-foreground">{contract.name}</div>
+                          {contract.description && <div className="mt-1 text-sm text-muted-foreground">{contract.description}</div>}
                         </div>
-                        {template.isDefault && <Badge variant="secondary">Default</Badge>}
+                        {contract.isDefault && <Badge variant="secondary">Default</Badge>}
                       </div>
-                      {!template.active && <div className="mt-2 text-xs font-medium text-muted-foreground">Archived</div>}
+                      {!contract.active && <div className="mt-2 text-xs font-medium text-muted-foreground">Archived</div>}
                     </button>
                   ))}
                 </div>
               ) : (
                 <div className="rounded-md border border-dashed p-6 text-center text-muted-foreground">
-                  No templates yet.
+                  No contracts saved yet.
                 </div>
               )}
             </div>
 
             {selectedTemplate ? (
-              <ContractTemplateEditor template={selectedTemplate} />
+              <ContractTemplateEditor contract={selectedTemplate} />
             ) : (
               <div className="bg-card border rounded-lg p-8 text-center text-muted-foreground">
-                Select or add a template to start editing.
+                Select a contract to review.
               </div>
             )}
           </div>
@@ -201,26 +169,55 @@ export default function ContractTemplates() {
   );
 }
 
-function ContractTemplateEditor({ template }: { template: ContractTemplate }) {
+function ContractTemplateEditor({ contract }: { contract: ContractTemplate }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const updateTemplate = useUpdateContractTemplate();
   const deleteTemplate = useDeleteContractTemplate();
 
   const form = useForm<TemplateFormValues>({
-    resolver: zodResolver(templateFormSchema),
+    resolver: zodResolver(contractFormSchema),
     values: {
-      name: template.name,
-      description: template.description ?? "",
-      body: template.body,
-      active: template.active,
-      isDefault: template.isDefault,
+      name: contract.name,
+      description: contract.description ?? "",
+      body: contract.body,
+      active: contract.active,
+      isDefault: contract.isDefault,
     },
   });
 
+  if (contract.locked) {
+    return (
+      <div className="bg-card border rounded-lg p-6 shadow-sm space-y-5">
+        <div className="flex items-start justify-between gap-4 border-b pb-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-serif">{contract.name}</h2>
+            </div>
+            {contract.description && <p className="text-sm text-muted-foreground mt-1">{contract.description}</p>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {contract.isDefault && <Badge variant="secondary">Default</Badge>}
+            <Badge variant="outline">Locked</Badge>
+          </div>
+        </div>
+
+        <div className="rounded-md border bg-muted/30 p-4">
+          <div className="text-sm font-medium text-foreground">Safe built-in contract</div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This contract version is not editable from the app. Bookings can select it, and the generated contract view controls the approved wording.
+          </p>
+        </div>
+
+        <ContractTemplatePreview body={contract.body} onChange={() => undefined} readOnly />
+      </div>
+    );
+  }
+
   function onSubmit(data: TemplateFormValues) {
     updateTemplate.mutate({
-      id: template.id,
+      id: contract.id,
       data: {
         name: data.name.trim(),
         description: optionalText(data.description),
@@ -231,21 +228,21 @@ function ContractTemplateEditor({ template }: { template: ContractTemplate }) {
     }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListContractTemplatesQueryKey() });
-        toast({ title: "Contract template saved" });
+        toast({ title: "Contract saved" });
       },
-      onError: () => toast({ title: "Failed to save contract template", variant: "destructive" }),
+      onError: () => toast({ title: "Failed to save contract", variant: "destructive" }),
     });
   }
 
   function handleArchive() {
-    if (!confirm("Archive this contract template?")) return;
+    if (!confirm("Archive this contract?")) return;
 
-    deleteTemplate.mutate({ id: template.id }, {
+    deleteTemplate.mutate({ id: contract.id }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListContractTemplatesQueryKey() });
-        toast({ title: "Contract template archived" });
+        toast({ title: "Contract archived" });
       },
-      onError: () => toast({ title: "Failed to archive contract template", variant: "destructive" }),
+      onError: () => toast({ title: "Failed to archive contract", variant: "destructive" }),
     });
   }
 
@@ -257,11 +254,11 @@ function ContractTemplateEditor({ template }: { template: ContractTemplate }) {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-serif">Edit Template</h2>
+                <h2 className="text-xl font-serif">Edit Contract</h2>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Update template copy, status, and default selection.</p>
+              <p className="text-sm text-muted-foreground mt-1">Update contract copy, status, and default selection.</p>
             </div>
-            <Button type="button" variant="outline" onClick={handleArchive} disabled={deleteTemplate.isPending || template.isDefault} data-testid="btn-archive-contract-template">
+            <Button type="button" variant="outline" onClick={handleArchive} disabled={deleteTemplate.isPending || contract.isDefault} data-testid="btn-archive-contract">
               <Archive className="w-4 h-4 mr-2" />
               Archive
             </Button>
@@ -270,15 +267,15 @@ function ContractTemplateEditor({ template }: { template: ContractTemplate }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={form.control} name="name" render={({ field }) => (
               <FormItem>
-                <FormLabel>Template Name</FormLabel>
-                <FormControl><Input {...field} data-testid="input-contract-template-name" /></FormControl>
+                <FormLabel>Contract Name</FormLabel>
+                <FormControl><Input {...field} data-testid="input-contract-name" /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
                 <FormLabel>Description</FormLabel>
-                <FormControl><Input {...field} data-testid="input-contract-template-description" /></FormControl>
+                <FormControl><Input {...field} data-testid="input-contract-description" /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
@@ -289,18 +286,18 @@ function ContractTemplateEditor({ template }: { template: ContractTemplate }) {
               <FormItem className="flex items-center justify-between gap-3 rounded-md bg-background p-3">
                 <div>
                   <FormLabel>Active</FormLabel>
-                  <p className="text-xs text-muted-foreground">Keep this template available.</p>
+                  <p className="text-xs text-muted-foreground">Keep this contract available.</p>
                 </div>
-                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-contract-template-active" /></FormControl>
+                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-contract-active" /></FormControl>
               </FormItem>
             )} />
             <FormField control={form.control} name="isDefault" render={({ field }) => (
               <FormItem className="flex items-center justify-between gap-3 rounded-md bg-background p-3">
                 <div>
                   <FormLabel>Default</FormLabel>
-                  <p className="text-xs text-muted-foreground">Use as the primary agreement template.</p>
+                  <p className="text-xs text-muted-foreground">Use as the primary agreement contract.</p>
                 </div>
-                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-contract-template-default" /></FormControl>
+                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} data-testid="switch-contract-default" /></FormControl>
               </FormItem>
             )} />
           </div>
@@ -311,9 +308,9 @@ function ContractTemplateEditor({ template }: { template: ContractTemplate }) {
           />
 
           <div className="flex justify-end border-t pt-4">
-            <Button type="submit" disabled={updateTemplate.isPending} data-testid="btn-save-contract-template">
+            <Button type="submit" disabled={updateTemplate.isPending} data-testid="btn-save-contract">
               <Save className="w-4 h-4 mr-2" />
-              Save Template
+              Save Contract
             </Button>
           </div>
         </form>
@@ -322,7 +319,7 @@ function ContractTemplateEditor({ template }: { template: ContractTemplate }) {
   );
 }
 
-function ContractTemplatePreview({ body, onChange }: { body: string; onChange: (body: string) => void }) {
+function ContractTemplatePreview({ body, onChange, readOnly = false }: { body: string; onChange: (body: string) => void; readOnly?: boolean }) {
   const clauses = parseTemplateClauses(body);
 
   function updateClause(key: TemplateClauseKey, value: string) {
@@ -346,9 +343,10 @@ function ContractTemplatePreview({ body, onChange }: { body: string; onChange: (
         </div>
 
         <EditableClause
-          label={templateClauseLabels[0].label}
+          label={contractClauseLabels[0].label}
           value={clauses.intro}
           onChange={(value) => updateClause("intro", value)}
+          readOnly={readOnly}
         />
 
         <PreviewSection title="1. Booking Information">
@@ -367,7 +365,7 @@ function ContractTemplatePreview({ body, onChange }: { body: string; onChange: (
         </PreviewSection>
 
         <PreviewSection title="2. Service Schedule and Guaranteed Services">
-          <EditableClause label={templateClauseLabels[1].label} value={clauses.schedule} onChange={(value) => updateClause("schedule", value)} compact />
+          <EditableClause label={contractClauseLabels[1].label} value={clauses.schedule} onChange={(value) => updateClause("schedule", value)} compact readOnly={readOnly} />
           <PreviewTable
             rows={[
               ["Wedding morning", "September 20, 2026 · Services begin 8:00 AM · Completion target 1:00 PM"],
@@ -377,7 +375,7 @@ function ContractTemplatePreview({ body, onChange }: { body: string; onChange: (
         </PreviewSection>
 
         <PreviewSection title="3. Pricing">
-          <EditableClause label={templateClauseLabels[2].label} value={clauses.pricing} onChange={(value) => updateClause("pricing", value)} compact />
+          <EditableClause label={contractClauseLabels[2].label} value={clauses.pricing} onChange={(value) => updateClause("pricing", value)} compact readOnly={readOnly} />
           <PreviewTable
             rows={[
               ["Hair & Makeup", "2 x $285", "$570"],
@@ -396,18 +394,18 @@ function ContractTemplatePreview({ body, onChange }: { body: string; onChange: (
               ["Payment Method", "Zelle (347) 781-8809"],
             ]}
           />
-          <EditableClause label={templateClauseLabels[3].label} value={clauses.payment} onChange={(value) => updateClause("payment", value)} compact />
+          <EditableClause label={contractClauseLabels[3].label} value={clauses.payment} onChange={(value) => updateClause("payment", value)} compact readOnly={readOnly} />
         </PreviewSection>
 
-        {templateClauseLabels.slice(4, 10).map(({ key, label }, index) => (
+        {contractClauseLabels.slice(4, 10).map(({ key, label }, index) => (
           <PreviewSection key={key} title={`${index + 5}. ${sectionTitleForClause(key)}`}>
-            <EditableClause label={label} value={clauses[key]} onChange={(value) => updateClause(key, value)} compact />
+            <EditableClause label={label} value={clauses[key]} onChange={(value) => updateClause(key, value)} compact readOnly={readOnly} />
             <p className="text-xs text-slate-500">Client Initials: ____</p>
           </PreviewSection>
         ))}
 
         <PreviewSection title="11. Agreement and Signatures">
-          <EditableClause label={templateClauseLabels[10].label} value={clauses.signatures} onChange={(value) => updateClause("signatures", value)} compact />
+          <EditableClause label={contractClauseLabels[10].label} value={clauses.signatures} onChange={(value) => updateClause("signatures", value)} compact readOnly={readOnly} />
           <div className="grid grid-cols-1 gap-5 pt-2 md:grid-cols-2">
             <SignaturePreview title="Client" name="Demo Client Name" email="client@example.com" phone="(555) 010-0000" />
             <SignaturePreview title="Artist" name="Demo Artist Name" email="artist@example.com" phone="(347) 781-8809" />
@@ -449,11 +447,13 @@ function EditableClause({
   value,
   onChange,
   compact = false,
+  readOnly = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   compact?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <label className="block">
@@ -462,8 +462,9 @@ function EditableClause({
         rows={compact ? 3 : 4}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="bg-amber-50 text-sm leading-relaxed"
-        data-testid={`textarea-template-clause-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+        readOnly={readOnly}
+        className={`${readOnly ? "bg-slate-50" : "bg-amber-50"} text-sm leading-relaxed`}
+        data-testid={`textarea-contract-clause-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
       />
     </label>
   );

@@ -8,11 +8,13 @@
 import type { BookingDetail } from './bookingDetail';
 import type { BookingEvent } from './bookingEvent';
 import type { Client } from './client';
+import type { ContractTemplate } from './contractTemplate';
 
 export interface ContractData {
   booking: BookingDetail;
   client: Client;
   events: BookingEvent[];
+  contractTemplate?: ContractTemplate;
   artistName?: string;
   /** @nullable */
   artistBusinessName?: string | null;

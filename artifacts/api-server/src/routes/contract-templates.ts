@@ -10,7 +10,7 @@ import {
   UpdateContractTemplateResponse,
 } from "@workspace/api-zod";
 import {
-  ensureDefaultContractTemplate,
+  ensureBuiltInContractTemplates,
   serializeContractTemplate,
 } from "../lib/contract-templates";
 
@@ -23,7 +23,7 @@ function nullableText(value?: string | null) {
 }
 
 router.get("/contract-templates", async (req, res): Promise<void> => {
-  await ensureDefaultContractTemplate();
+  await ensureBuiltInContractTemplates();
   const templates = await db
     .select()
     .from(contractTemplatesTable)

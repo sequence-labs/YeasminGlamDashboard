@@ -14,6 +14,7 @@ export interface ContractTemplate {
   body: string;
   active: boolean;
   isDefault: boolean;
+  locked: boolean;
   createdAt: string;
   updatedAt: string;
 }

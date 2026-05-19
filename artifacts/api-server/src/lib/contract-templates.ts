@@ -1,7 +1,8 @@
 import { desc, eq } from "drizzle-orm";
 import { contractTemplatesTable, db } from "@workspace/db";
 
-export const defaultContractTemplateName = "Makeup & Hair Service Agreement";
+export const defaultContractTemplateName = "Non-Bridal Makeup and Hair Service Agreement";
+export const bridalContractTemplateName = "Bridal Makeup and Hair Service Agreement";
 
 export const defaultTemplateClauses = {
   intro:
@@ -34,6 +35,15 @@ export function defaultContractTemplateBody() {
   return JSON.stringify({ version: 1, clauses: defaultTemplateClauses }, null, 2);
 }
 
+export function bridalContractTemplateBody() {
+  return JSON.stringify({
+    version: 1,
+    contractType: "bridal",
+    baseAgreement: "Current non-bridal agreement duplicated for future bridal edits.",
+    clauses: defaultTemplateClauses,
+  }, null, 2);
+}
+
 export function serializeContractTemplate(template: typeof contractTemplatesTable.$inferSelect) {
   return {
     ...template,
@@ -61,7 +71,7 @@ export async function ensureDefaultContractTemplate() {
     const [template] = await db.update(contractTemplatesTable)
       .set({
         name: defaultContractTemplateName,
-        description: "Built-in client agreement generated from the current contract format.",
+        description: "Locked non-bridal party/event makeup and hair service agreement generated from the current contract view.",
         body: defaultBody,
         active: true,
         isDefault: true,
@@ -77,7 +87,7 @@ export async function ensureDefaultContractTemplate() {
 
   const [template] = await db.insert(contractTemplatesTable).values({
     name: defaultContractTemplateName,
-    description: "Built-in client agreement generated from the current contract format.",
+    description: "Locked non-bridal party/event makeup and hair service agreement generated from the current contract view.",
     body: defaultBody,
     active: true,
     isDefault: true,
@@ -86,6 +96,55 @@ export async function ensureDefaultContractTemplate() {
 
   await clearOtherDefaults(template.id);
   return template;
+}
+
+export async function ensureBuiltInContractTemplates() {
+  const defaultTemplate = await ensureDefaultContractTemplate();
+  const bridalBody = bridalContractTemplateBody();
+  const [existingBridal] = await db
+    .select()
+    .from(contractTemplatesTable)
+    .where(eq(contractTemplatesTable.name, bridalContractTemplateName))
+    .limit(1);
+
+  if (existingBridal) {
+    await db.update(contractTemplatesTable)
+      .set({
+        name: bridalContractTemplateName,
+        description: "Locked bridal agreement version duplicated from the current contract view for future bridal-specific edits.",
+        body: bridalBody,
+        active: true,
+        isDefault: false,
+        locked: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(contractTemplatesTable.id, existingBridal.id));
+    await archiveEditableContractTemplates();
+    return defaultTemplate;
+  }
+
+  await db.insert(contractTemplatesTable).values({
+    name: bridalContractTemplateName,
+    description: "Locked bridal agreement version duplicated from the current contract view for future bridal-specific edits.",
+    body: bridalBody,
+    active: true,
+    isDefault: false,
+    locked: true,
+  });
+
+  await archiveEditableContractTemplates();
+  return defaultTemplate;
+}
+
+async function archiveEditableContractTemplates() {
+  const templates = await db.select().from(contractTemplatesTable);
+  await Promise.all(
+    templates
+      .filter((template) => !template.locked)
+      .map((template) => db.update(contractTemplatesTable)
+        .set({ active: false, isDefault: false, updatedAt: new Date() })
+        .where(eq(contractTemplatesTable.id, template.id))),
+  );
 }
 
 export async function clearOtherDefaults(templateId?: number) {
