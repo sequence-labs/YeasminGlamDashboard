@@ -145,7 +145,7 @@ Validation commands:
 
 ### Work Package 2.6: Booking History and Audit Trail
 
-Status: In progress.
+Status: Complete.
 
 Acceptance criteria:
 - Booking detail exposes a chronological history of meaningful booking, event, payment, and contract-related changes.
@@ -221,6 +221,22 @@ Validation commands:
 - `pnpm --filter @workspace/glam-crm run build`
 - `pnpm run typecheck`
 - Browser validation on `http://localhost:5173/contract-templates`
+
+### Work Package 2.10: UI and UX Polish
+
+Status: In progress.
+
+Acceptance criteria:
+- Core navigation, page headers, cards, lists, and empty states follow one visual language.
+- Dashboard and list screens show stronger visual hierarchy and improved whitespace rhythm.
+- Primary actions and destructive actions are visually distinct with clear affordance.
+- No changes to API contracts, server routes, or data model behavior.
+- The polish pass is documented in `Documentation.md` with validation outputs.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- Browser visual smoke check on `/`, `/bookings`, `/clients`, `/services`, `/artist`, and `/contracts`.
 
 ## Milestone 3: Low-Cost Production Deployment
 

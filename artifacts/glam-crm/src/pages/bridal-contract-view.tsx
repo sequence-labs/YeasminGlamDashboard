@@ -188,12 +188,24 @@ export default function BridalContractView() {
     return (
       <div className="max-w-4xl mx-auto p-8 space-y-8">
         <Skeleton className="h-12 w-64 mx-auto" />
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full crm-section p-4" />
+        <Skeleton className="h-64 w-full crm-section p-4" />
       </div>
     );
   }
-  if (!contract) return <div className="p-8 text-center">Contract not found</div>;
+  if (!contract) {
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <div className="crm-section p-8 text-center text-muted-foreground space-y-3">
+          <h2 className="crm-page-title text-lg">Contract not found</h2>
+          <p className="text-sm">The selected contract route is not available.</p>
+          <Link href="/bookings" className="inline-flex text-sm font-medium text-primary hover:text-primary/80">
+            Return to bookings
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const { booking, client, events } = contract;
   const lineItems = booking.lineItems ?? [];

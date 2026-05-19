@@ -269,13 +269,13 @@ export default function NewBooking() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Bookings
           </Link>
-          <h1 className="text-3xl font-serif text-foreground">New Booking Intake</h1>
-          <p className="text-muted-foreground mt-1">Create a new booking and contract draft.</p>
+          <h1 className="crm-page-title">New Booking Intake</h1>
+          <p className="crm-page-subtitle">Create a new booking and contract draft.</p>
         </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+            <div className="crm-section p-6 space-y-6">
               <h2 className="text-xl font-serif border-b pb-2">Client Contact & Event Details</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -410,7 +410,7 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+            <div className="crm-section p-6 space-y-6">
               <h2 className="text-xl font-serif border-b pb-2">Location</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -444,7 +444,7 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+            <div className="crm-section p-6 space-y-6">
               <div className="border-b pb-3">
                 <h2 className="text-xl font-serif">First Event Schedule</h2>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -511,7 +511,7 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+            <div className="crm-section p-6 space-y-6">
               <div className="border-b pb-3">
                 <h2 className="text-xl font-serif">Services & Fees</h2>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -709,7 +709,7 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+            <div className="crm-section p-6 space-y-6">
               <h2 className="text-xl font-serif border-b pb-2">Payment Details</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -743,7 +743,7 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="bg-card border rounded-lg p-6 shadow-sm">
+            <div className="crm-section p-6">
               <FormField
                 control={form.control}
                 name="notes"

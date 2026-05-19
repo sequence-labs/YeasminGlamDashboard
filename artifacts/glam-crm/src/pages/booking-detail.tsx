@@ -225,7 +225,17 @@ export default function BookingDetail() {
   }
 
   if (!booking) {
-    return <Shell>Booking not found</Shell>;
+    return (
+      <Shell>
+        <div className="crm-section p-8 text-center text-muted-foreground">
+          <h2 className="crm-page-title text-lg">Booking not found</h2>
+          <p className="mt-2 text-sm">The booking record could not be loaded.</p>
+          <Link href="/bookings" className="mt-4 inline-flex text-sm font-medium text-primary hover:text-primary/80">
+            Return to bookings
+          </Link>
+        </div>
+      </Shell>
+    );
   }
 
   const handleAddCatalogLineItem = () => {
@@ -469,7 +479,7 @@ export default function BookingDetail() {
   return (
     <Shell>
       <div className="space-y-8 pb-12">
-        <div className="rounded-lg border bg-card p-5 shadow-sm">
+        <div className="crm-section p-5">
           <div className="mb-4">
             <Link
               href="/bookings"
@@ -482,7 +492,7 @@ export default function BookingDetail() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <h1 className="text-3xl font-serif text-foreground leading-tight" data-testid="text-booking-title">{booking.clientName}</h1>
+                  <h1 className="crm-page-title leading-tight" data-testid="text-booking-title">{booking.clientName}</h1>
                   <Select value={booking.status} onValueChange={(v: any) => handleStatusChange(v)}>
                     <SelectTrigger className={`h-8 w-fit min-w-32 border-none text-xs font-bold uppercase tracking-wider ${
                         booking.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
@@ -559,7 +569,7 @@ export default function BookingDetail() {
                     onDragOver={(dragEvent) => dragEvent.preventDefault()}
                     onDrop={() => handleEventDrop(event.id)}
                     onDragEnd={() => setDraggedEventId(null)}
-                    className={`bg-card border rounded-lg p-5 shadow-sm ${draggedEventId === event.id ? "opacity-60" : ""}`}
+                    className={`crm-section p-5 ${draggedEventId === event.id ? "opacity-60" : ""}`}
                     data-testid={`event-card-${event.id}`}
                   >
                     <div className="flex justify-between items-start mb-4 pb-4 border-b">
@@ -603,14 +613,14 @@ export default function BookingDetail() {
                 ))}
               </div>
             ) : (
-              <div className="bg-card border rounded-lg p-12 text-center text-muted-foreground">
+              <div className="crm-section p-12 text-center text-muted-foreground">
                 <Calendar className="w-12 h-12 mx-auto mb-4 opacity-20" />
                 <p className="mb-4">No events or services added yet.</p>
                 <EventDialog bookingId={id} trigger={<Button data-testid="btn-add-first-event">Add First Event</Button>} />
               </div>
             )}
 
-            <div className="bg-card border rounded-lg p-5 shadow-sm">
+            <div className="crm-section p-5">
               <div className="flex items-center justify-between border-b pb-3 mb-4">
                 <div>
                   <h2 className="text-xl font-serif">Selected Services & Fees</h2>
@@ -792,7 +802,7 @@ export default function BookingDetail() {
           <TabsContent value="financials" className="space-y-6 mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-card border rounded-lg p-6 shadow-sm">
+                <div className="crm-section p-6">
                   <h2 className="text-xl font-serif mb-6">Payment Tracker</h2>
                   
                   <div className="space-y-6">
@@ -828,7 +838,7 @@ export default function BookingDetail() {
                   </div>
                 </div>
 
-                <div className="bg-card border rounded-lg p-6 shadow-sm">
+                <div className="crm-section p-6">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-xl font-serif">Payment Records</h2>
                     <PaymentDialog bookingId={id} />
@@ -861,7 +871,7 @@ export default function BookingDetail() {
               </div>
 
               <div className="lg:col-span-1">
-                <div className="bg-card border rounded-lg p-6 shadow-sm sticky top-6">
+                <div className="crm-section p-6 sticky top-6">
                   <h2 className="text-xl font-serif mb-6">Invoice Summary</h2>
                   
                   <div className="space-y-3 text-sm">
@@ -917,7 +927,7 @@ export default function BookingDetail() {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4 mt-6">
-            <div className="bg-card border rounded-lg p-6 shadow-sm">
+            <div className="crm-section p-6">
               <div className="mb-6">
                 <h2 className="text-xl font-serif">Booking History</h2>
                 <p className="text-sm text-muted-foreground mt-1">Timestamped trail of booking, schedule, payment, and deletion changes.</p>

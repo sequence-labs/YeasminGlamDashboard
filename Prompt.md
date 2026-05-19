@@ -12,9 +12,11 @@ The current product goal is to support reusable makeup/hair services and extra f
 
 The current deployment goal is to keep Render cost low by mounting the Makeup Artist Hub API onto the existing WhisperSpeechServer Render service under an isolated `/glam-api/api` path, use Supabase as the hosted Postgres database, and serve the static Vite frontend from GitHub Pages.
 
+Secondary and visible user goal for this milestone: make the frontend feel intentionally designed and polished (professional spacing, visual hierarchy, and interaction clarity) across all core screens without changing business logic or data contracts.
+
 ## Non-Goals
 
-- Do not redesign the product UI unless explicitly requested.
+- Do not redesign the product UI for new functional behavior unless explicitly requested by the user for a UI/UX polishing pass.
 - Do not replace the data model or generated API contract unless needed to make the local app work.
 - Do not add a second paid Render web service unless the user explicitly changes direction.
 - Do not expose CRM client, booking, contract, payment, or artist data through a public unauthenticated API.

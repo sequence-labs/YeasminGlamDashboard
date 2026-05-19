@@ -98,8 +98,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-sm text-muted-foreground">Checking access...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center px-6">
+        <div className="crm-section p-6 text-sm text-muted-foreground">Checking access...</div>
       </div>
     );
   }
@@ -107,10 +107,10 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (authenticated) return <>{children}</>;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-lg border bg-card p-6 shadow-sm">
+    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-10">
+      <form onSubmit={submit} className="w-full max-w-sm crm-section p-6 shadow-sm space-y-5">
         <div className="mb-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Alyaan Inc.</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Glam CRM</p>
           <h1 className="mt-2 text-2xl font-serif text-foreground">Glam CRM Access</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Enter the private admin password to view clients, bookings, contracts, and payments.

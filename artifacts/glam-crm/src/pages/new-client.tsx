@@ -70,11 +70,11 @@ export default function NewClient() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Back to Clients
           </Link>
-          <h1 className="text-3xl font-serif text-foreground">New Client</h1>
-          <p className="text-muted-foreground mt-1">Add a new client to your roster.</p>
+          <h1 className="crm-page-title">New Client</h1>
+          <p className="crm-page-subtitle">Add a new client to your roster.</p>
         </div>
 
-        <div className="bg-card border rounded-lg p-6 shadow-sm">
+        <div className="crm-section p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

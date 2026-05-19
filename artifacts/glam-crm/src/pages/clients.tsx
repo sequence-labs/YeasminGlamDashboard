@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { Plus, Search, User } from "lucide-react";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function Clients() {
   const { data: clients, isLoading } = useListClients();
@@ -20,20 +21,18 @@ export default function Clients() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-serif text-foreground">Clients</h1>
-            <p className="text-muted-foreground mt-1">Manage your client roster and their details.</p>
+            <h1 className="crm-page-title text-foreground">Clients</h1>
+            <p className="crm-page-subtitle">Manage your client roster and their details.</p>
           </div>
-          <Link
-            href="/clients/new"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-            data-testid="btn-add-client"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Client
-          </Link>
+          <Button asChild data-testid="btn-add-client">
+            <Link href="/clients/new">
+              <Plus className="w-4 h-4 mr-2" />
+              New Client
+            </Link>
+          </Button>
         </div>
 
-        <div className="flex items-center bg-card border rounded-md px-3 py-2 max-w-sm focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent">
+        <div className="crm-section flex items-center px-3 py-2.5 max-w-sm focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent">
           <Search className="w-4 h-4 text-muted-foreground mr-2" />
           <input
             type="text"
@@ -45,7 +44,7 @@ export default function Clients() {
           />
         </div>
 
-        <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
+        <div className="crm-section overflow-hidden">
           {isLoading ? (
             <div className="p-4 space-y-4">
               {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 w-full" />)}
@@ -80,20 +79,18 @@ export default function Clients() {
               ))}
             </div>
           ) : (
-            <div className="p-12 text-center text-muted-foreground flex flex-col items-center">
+                  <div className="p-12 text-center text-muted-foreground flex flex-col items-center">
               <User className="w-12 h-12 mb-4 opacity-20" />
               <h3 className="text-lg font-medium text-foreground mb-1">No clients found</h3>
               <p className="max-w-sm mb-6">
                 {search ? "No clients match your search criteria." : "You haven't added any clients yet."}
               </p>
               {!search && (
-                <Link
-                  href="/clients/new"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3"
-                  data-testid="btn-add-client-empty"
-                >
-                  Add your first client
-                </Link>
+                <Button variant="outline" asChild>
+                  <Link href="/clients/new" data-testid="btn-add-client-empty">
+                    Add your first client
+                  </Link>
+                </Button>
               )}
             </div>
           )}

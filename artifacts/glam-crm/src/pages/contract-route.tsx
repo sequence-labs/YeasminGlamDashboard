@@ -17,10 +17,10 @@ export default function ContractRoute() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-8 space-y-8">
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
         <Skeleton className="h-12 w-64 mx-auto" />
-        <Skeleton className="h-64 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full crm-section p-4" />
+        <Skeleton className="h-64 w-full crm-section p-4" />
       </div>
     );
   }

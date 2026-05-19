@@ -67,8 +67,8 @@ export default function Bookings() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-serif text-foreground">Bookings</h1>
-            <p className="text-muted-foreground mt-1">Manage your events, trials, and upcoming jobs.</p>
+            <h1 className="crm-page-title text-foreground">Bookings</h1>
+            <p className="crm-page-subtitle">Manage your events, trials, and upcoming jobs.</p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button
@@ -80,18 +80,16 @@ export default function Bookings() {
               <Trash2 className="w-4 h-4 mr-2" />
               {showDeleted ? "Viewing Deleted" : "Deleted Bookings"}
             </Button>
-            <Link
-              href="/bookings/new"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-              data-testid="btn-new-booking"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Booking
-            </Link>
+            <Button asChild data-testid="btn-new-booking">
+              <Link href="/bookings/new">
+                <Plus className="w-4 h-4 mr-2" />
+                New Booking
+              </Link>
+            </Button>
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-3 sm:p-4 shadow-sm">
+        <div className="crm-section p-4 sm:p-5">
           <div className="grid gap-4">
             <label className="min-w-0">
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Search</span>
@@ -133,7 +131,7 @@ export default function Bookings() {
           </div>
         </div>
 
-        <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
+        <div className="crm-section overflow-hidden">
           {isLoading ? (
             <div className="p-4 space-y-4">
               {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-20 w-full" />)}
@@ -237,13 +235,11 @@ export default function Bookings() {
                     : "You haven't created any bookings yet."}
               </p>
               {!showDeleted && !search && statusFilter === "all" && (
-                <Link
-                  href="/bookings/new"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4"
-                  data-testid="btn-add-booking-empty"
-                >
-                  Create your first booking
-                </Link>
+                <Button asChild size="sm">
+                  <Link href="/bookings/new" data-testid="btn-add-booking-empty">
+                    Create your first booking
+                  </Link>
+                </Button>
               )}
             </div>
           )}

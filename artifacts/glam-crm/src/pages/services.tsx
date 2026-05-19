@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   getListServiceItemsQueryKey,
@@ -18,7 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Archive, Plus, Save } from "lucide-react";
+import { Archive, CircleDollarSign, Plus, Save } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -33,6 +32,63 @@ const serviceFormSchema = z.object({
 
 type ServiceFormValues = z.infer<typeof serviceFormSchema>;
 type ServiceKind = ServiceFormValues["kind"];
+
+type ServiceCatalogSectionProps = {
+  title: string;
+  description: string;
+  items: ServiceItem[];
+  emptyMessage: string;
+};
+
+function formatMoney(value: number) {
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: value % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function ServiceCatalogSection({
+  title,
+  description,
+  items,
+  emptyMessage,
+}: ServiceCatalogSectionProps) {
+  return (
+    <section className="space-y-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{title}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        </div>
+        <span className="w-fit rounded-full border border-border bg-muted/20 px-2.5 py-1 text-xs text-muted-foreground">
+          {items.length} item{items.length === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      {items.length > 0 ? (
+        <div className="overflow-hidden rounded-lg border border-border bg-background">
+          <div className="hidden border-b border-border bg-muted/30 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground lg:grid lg:grid-cols-[82px_minmax(150px,1.1fr)_minmax(180px,1.5fr)_88px_94px_120px_74px_78px] lg:items-center lg:gap-2">
+            <span>Type</span>
+            <span>Name</span>
+            <span>Description</span>
+            <span>Rate</span>
+            <span>Unit</span>
+            <span>Class</span>
+            <span>Status</span>
+            <span className="text-right">Actions</span>
+          </div>
+          {items.map((item) => (
+            <ServiceItemRow key={item.id} item={item} />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-muted-border bg-muted/20 px-4 py-5 text-center text-sm text-muted-foreground">
+          {emptyMessage}
+        </div>
+      )}
+    </section>
+  );
+}
 
 export default function Services() {
   const { data: serviceItems, isLoading } = useListServiceItems();
@@ -82,22 +138,45 @@ export default function Services() {
 
   const activeItems = serviceItems?.filter((item) => item.active) ?? [];
   const inactiveItems = serviceItems?.filter((item) => !item.active) ?? [];
+  const activeServices = activeItems.filter((item) => item.kind === "service");
+  const activeFees = activeItems.filter((item) => item.kind === "fee");
+  const inactiveServices = inactiveItems.filter((item) => item.kind === "service");
+  const inactiveFees = inactiveItems.filter((item) => item.kind === "fee");
 
   return (
     <Shell>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-serif text-foreground">Services & Fees</h1>
-          <p className="text-muted-foreground mt-1">
-            Maintain reusable service rates and contract fees for booking intake.
-          </p>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="crm-page-title text-foreground">Services & Fees</h1>
+            <p className="crm-page-subtitle">
+              Maintain reusable service rates and contract fees for booking intake.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="px-3 py-1.5 rounded-full border border-border bg-accent/40 text-foreground">
+              Active: {activeItems.length}
+            </span>
+            <span className="px-3 py-1.5 rounded-full border border-border bg-muted/40 text-muted-foreground">
+              Archived: {inactiveItems.length}
+            </span>
+            <span className="px-3 py-1.5 rounded-full border border-border bg-muted/60 text-muted-foreground">
+              Total: {serviceItems?.length ?? 0}
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-6 items-start">
-          <div className="bg-card border rounded-lg p-6 shadow-sm">
-            <h2 className="text-xl font-serif mb-5">Add Service or Fee</h2>
+        <div className="crm-section overflow-hidden">
+          <div className="border-b border-border p-4">
+            <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-lg font-serif">Add Catalog Item</h2>
+                <p className="text-sm text-muted-foreground">Create a reusable service or fee.</p>
+              </div>
+            </div>
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3 lg:grid-cols-[minmax(180px,1.25fr)_116px_110px_110px_minmax(180px,1.2fr)_150px] lg:items-start">
                 <FormField
                   control={form.control}
                   name="name"
@@ -105,7 +184,12 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Hair & Makeup" {...field} data-testid="input-service-name" />
+                        <Input
+                          placeholder="Hair & Makeup"
+                          {...field}
+                          className="crm-input-focus"
+                          data-testid="input-service-name"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -134,35 +218,45 @@ export default function Services() {
                   )}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="defaultUnitPrice"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rate ($)</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" step="0.01" {...field} data-testid="input-service-rate" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="defaultUnitPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rate ($)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="crm-input-focus"
+                          {...field}
+                          data-testid="input-service-rate"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="unitLabel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Unit</FormLabel>
-                        <FormControl>
-                          <Input placeholder="person" {...field} data-testid="input-service-unit" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="unitLabel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="person"
+                          {...field}
+                          className="crm-input-focus"
+                          data-testid="input-service-unit"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
@@ -171,10 +265,10 @@ export default function Services() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea
+                        <Input
                           placeholder="Scope, limits, or contract language"
-                          className="min-h-[90px] resize-none"
                           {...field}
+                          className="crm-input-focus"
                         />
                       </FormControl>
                       <FormMessage />
@@ -182,55 +276,65 @@ export default function Services() {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={createServiceItem.isPending} data-testid="button-add-service">
+                <Button
+                  type="submit"
+                  className="mt-6 w-full lg:mt-[22px]"
+                  disabled={createServiceItem.isPending}
+                  data-testid="button-add-service"
+                >
                   <Plus className="w-4 h-4 mr-2" />
-                  {createServiceItem.isPending ? "Adding..." : "Add to Catalog"}
+                  {createServiceItem.isPending ? "Adding..." : "Add Item"}
                 </Button>
               </form>
             </Form>
           </div>
 
-          <div className="space-y-4">
-            <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-              <div className="p-5 border-b">
-                <h2 className="text-xl font-serif">Catalog</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Active items appear in new booking intake.
-                </p>
-              </div>
+          <div className="border-b border-border p-4">
+            <h2 className="text-lg font-serif">Catalog</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Active items appear in new booking intake.</p>
+          </div>
 
-              {isLoading ? (
-                <div className="p-4 space-y-3">
-                  {[1, 2, 3].map((item) => (
-                    <Skeleton key={item} className="h-24 w-full" />
-                  ))}
-                </div>
-              ) : activeItems.length > 0 ? (
-                <div className="p-4 space-y-4">
-                  {activeItems.map((item) => (
-                    <ServiceItemRow key={item.id} item={item} />
-                  ))}
-                </div>
-              ) : (
-                <div className="p-10 text-center text-muted-foreground">
-                  No active services or fees yet.
+          {isLoading ? (
+            <div className="p-4 space-y-2">
+              {[1, 2, 3].map((item) => (
+                <Skeleton key={item} className="h-14 w-full" />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-5 p-4">
+              <ServiceCatalogSection
+                title="Services"
+                description="Bookable line items with per-unit pricing."
+                items={activeServices}
+                emptyMessage="No active services yet. Add one using the form."
+              />
+
+              <ServiceCatalogSection
+                title="Fees"
+                description="Surcharges, booking fees, and add-on charges."
+                items={activeFees}
+                emptyMessage="No active fees yet. Add one using the form."
+              />
+
+              {(inactiveServices.length > 0 || inactiveFees.length > 0) && (
+                <div className="space-y-5 border-t border-border pt-5">
+                  <ServiceCatalogSection
+                    title="Archived Services"
+                    description="Previously used services kept for reference."
+                    items={inactiveServices}
+                    emptyMessage="No archived services."
+                  />
+
+                  <ServiceCatalogSection
+                    title="Archived Fees"
+                    description="Previously used fees kept for re-activation."
+                    items={inactiveFees}
+                    emptyMessage="No archived fees."
+                  />
                 </div>
               )}
             </div>
-
-            {inactiveItems.length > 0 && (
-              <div className="bg-card border rounded-lg shadow-sm overflow-hidden">
-                <div className="p-5 border-b">
-                  <h2 className="text-xl font-serif">Archived</h2>
-                </div>
-                <div className="p-4 space-y-4">
-                  {inactiveItems.map((item) => (
-                    <ServiceItemRow key={item.id} item={item} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </Shell>
@@ -295,67 +399,88 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
 
   return (
     <div
-      className="rounded-lg border bg-background p-4 shadow-sm space-y-4"
+      className="grid gap-2 border-b border-border p-3 last:border-b-0 lg:grid-cols-[82px_minmax(150px,1.1fr)_minmax(180px,1.5fr)_88px_94px_120px_74px_78px] lg:items-center"
       data-testid={`service-row-${item.id}`}
     >
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <Badge variant={kind === "fee" ? "secondary" : "outline"}>{kind === "fee" ? "Fee" : "Service"}</Badge>
-            {!active && <Badge variant="outline">Inactive</Badge>}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_130px_120px] gap-3">
-            <Input value={name} onChange={(event) => setName(event.target.value)} aria-label="Service name" />
-            <Input
-              value={unitPrice}
-              onChange={(event) => setUnitPrice(event.target.value)}
-              type="number"
-              min="0"
-              step="0.01"
-              aria-label="Default unit price"
-            />
-            <Input value={unitLabel} onChange={(event) => setUnitLabel(event.target.value)} aria-label="Unit label" />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Select value={kind} onValueChange={(value: ServiceKind) => setKind(value)}>
-            <SelectTrigger className="w-[120px]" aria-label="Service type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="service">Service</SelectItem>
-              <SelectItem value="fee">Fee</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            Active
-            <Switch checked={active} onCheckedChange={setActive} aria-label="Active" />
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center gap-2 lg:block">
+        <Badge variant={kind === "fee" ? "secondary" : "outline"}>
+          {kind === "fee" ? "Fee" : "Service"}
+        </Badge>
+        {!active && <Badge variant="outline">Inactive</Badge>}
+        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground lg:hidden">
+          <CircleDollarSign className="w-3.5 h-3.5" />
+          {formatMoney(parseFloat(unitPrice) || 0)} per {unitLabel}
+        </span>
       </div>
 
-      <Textarea
+      <Input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        className="crm-input-focus h-9 text-sm font-medium text-foreground"
+        aria-label="Service name"
+      />
+
+      <Input
         value={description}
         onChange={(event) => setDescription(event.target.value)}
         placeholder="Description or scope"
-        className="min-h-[72px] resize-none"
+        className="crm-input-focus h-9"
         aria-label="Description"
       />
 
-      <div className="flex justify-end gap-2">
+      <Input
+        value={unitPrice}
+        onChange={(event) => setUnitPrice(event.target.value)}
+        type="number"
+        min="0"
+        step="0.01"
+        className="crm-input-focus h-9"
+        aria-label="Default unit price"
+      />
+
+      <Input
+        value={unitLabel}
+        onChange={(event) => setUnitLabel(event.target.value)}
+        className="crm-input-focus h-9"
+        aria-label="Unit label"
+      />
+
+      <Select value={kind} onValueChange={(value: ServiceKind) => setKind(value)}>
+        <SelectTrigger className="h-9" aria-label="Service type">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="service">Service</SelectItem>
+          <SelectItem value="fee">Fee</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground lg:justify-center">
+        <span className="lg:hidden">Active</span>
+        <Switch checked={active} onCheckedChange={setActive} aria-label="Active" />
+      </div>
+
+      <div className="flex justify-end gap-1">
         <Button
           type="button"
           variant="outline"
+          size="icon"
           onClick={archiveItem}
-          disabled={deleteServiceItem.isPending || !item.active}
+          disabled={deleteServiceItem.isPending || !active}
+          aria-label="Archive service item"
+          title="Archive"
         >
-          <Archive className="w-4 h-4 mr-2" />
-          Archive
+          <Archive className="w-4 h-4" />
         </Button>
-        <Button type="button" onClick={saveItem} disabled={updateServiceItem.isPending || !name || !unitLabel}>
-          <Save className="w-4 h-4 mr-2" />
-          Save
+        <Button
+          type="button"
+          size="icon"
+          onClick={saveItem}
+          disabled={updateServiceItem.isPending || !name || !unitLabel}
+          aria-label="Save service item"
+          title="Save"
+        >
+          <Save className="w-4 h-4" />
         </Button>
       </div>
     </div>

@@ -1,6 +1,63 @@
 # Makeup Artist Hub Documentation
 
 
+## 2026-05-19 - UI/UX Polish Pass (Start)
+
+Intent:
+- Raise the visual polish of the exported CRM web app so the UI feels production-grade and professional.
+- Keep behavior unchanged; focus strictly on spacing, hierarchy, typography scale, surface contrast, and interaction affordances.
+
+Scope:
+- Frontend (`artifacts/glam-crm`) including global style tokens, shell layout, and primary navigation component.
+- No API/client contract or schema changes are planned for this pass.
+
+Planned validation:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- Browser smoke on key routes (dashboard, bookings, clients, services, artist, contracts) with a visual pass for polish and hierarchy.
+
+## 2026-05-19 - Services Page Polished Catalog Redesign
+
+Start:
+- Rework `artifacts/glam-crm/src/pages/services.tsx` so the catalog list and add flow feel production-ready while keeping existing add/edit/archive behavior intact.
+- Improve visual hierarchy by grouping active catalog entries into Services and Fees, then separate archived entries while preserving row-level edit controls.
+
+Update:
+- Redesigned the `/services` page UI/UX:
+  - Added compact count chips for Active, Archived, and Total items.
+  - Reworked form layout with stronger hierarchy and updated helper copy.
+  - Split active catalog into Services and Fees sections.
+  - Grouped archived services and fees into separate sections with clearer empty states.
+  - Refined editable row controls with clearer rate preview and consistent focus styling.
+- Fixed row archive toggle behavior to disable Archive based on the current row state, preventing confusing action availability after local edits.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing chunk-size warnings unchanged.
+- `curl -s -o /tmp/services-page.html -w "%{http_code}" http://localhost:5173/services` returned `200`.
+
+## 2026-05-19 - UI/UX Polish Pass (Route-Level Finish)
+
+Start:
+- Continue polishing remaining visible CRM screens for consistent visual language, spacing, and hierarchy.
+
+Update:
+- Updated remaining route-level screens:
+  - `artifacts/glam-crm/src/pages/new-booking.tsx`
+  - `artifacts/glam-crm/src/pages/new-client.tsx`
+  - `artifacts/glam-crm/src/pages/client-detail.tsx`
+  - `artifacts/glam-crm/src/pages/booking-detail.tsx`
+  - `artifacts/glam-crm/src/pages/not-found.tsx`
+  - `artifacts/glam-crm/src/pages/contract-route.tsx`
+  - `artifacts/glam-crm/src/pages/contract-view.tsx`
+  - `artifacts/glam-crm/src/pages/bridal-contract-view.tsx`
+- Applied `crm-page-title`, `crm-page-subtitle`, and `crm-section` patterns to align these screens with dashboard/list services polish.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed.
+- Vite build reported existing large chunk-size warnings, which were unchanged relative to earlier optimized frontend behavior.
+
 ## 2026-05-18 - New Booking Phone Optional
 
 ## 2026-05-18 - New Booking Payment Method Auto-Fill
@@ -1611,3 +1668,77 @@ Validation:
 - `pnpm --filter @workspace/api-server run build` passed.
 - `pnpm --filter @workspace/glam-crm run build` passed with the existing sourcemap/chunk-size warnings.
 - Local API session smoke passed: local secrets loaded, password login succeeded, a session token was returned, and bearer session verification succeeded.
+
+## 2026-05-19 - Services Catalog Name Visibility Fix
+
+Start:
+- Fix the Services & Fees catalog row layout after browser evidence showed service names clipped into tiny empty-looking boxes.
+- Scope is Work Package 2.10 UI and UX Polish; no API, database, or generated contract changes are intended.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the existing sourcemap/chunk-size warnings.
+- Attempted a Playwright DOM/screenshot check through `npx -p playwright@1.49.0 node`, but the temporary CLI package was not available to `require("playwright")` inside the pnpm workspace, so this browser validation path failed before opening the page.
+- Reworked the Services & Fees page from a two-column add-form plus oversized catalog cards into a compact add toolbar and full-width editable catalog lists.
+- Desktop Playwright check at 1430x1137 passed: first five service rows rendered with populated names and compact row heights around 61px; screenshot saved at `/tmp/makeup-services-catalog-compact.png`.
+- Mobile Playwright check at 390x900 had no document horizontal overflow and service names were present, but the existing app shell/sidebar consumes most of the viewport and squeezes the page content; that is a broader responsive shell issue outside this services catalog row fix.
+
+## 2026-05-19 - Dashboard UI and UX Redesign
+
+Start:
+- Redesign the dashboard as an operational CRM workspace rather than a loose set of cards.
+- Scope is Work Package 2.10 UI and UX Polish; use existing dashboard/bookings hooks only and do not change API contracts, server routes, generated clients, or database schema.
+
+Update:
+- Installed `Leonxlnx/taste-skill` from GitHub at local skill path `/Users/iftatbhuiyan/.codex/skills/taste-skill` and reviewed its dashboard/UI guidance before continuing.
+- Reworked the dashboard hierarchy around a command-center header, concise metric strip, next scheduled work, payment attention, booking mix, revenue by event type, and booking ledger.
+- Replaced the weak status donut chart with compact status bars so sparse one-status data still reads cleanly.
+- Added a mobile shell/sidebar layout so narrow viewports no longer squeeze the main dashboard column beside the desktop sidebar.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the existing sourcemap/chunk-size warnings.
+- Desktop Playwright check at 1430x1137 passed with no horizontal overflow; screenshot saved at `/tmp/makeup-dashboard-redesign-shell-desktop.png`.
+- Mobile Playwright check at 390x900 passed with no horizontal overflow and the responsive mobile nav visible; screenshot saved at `/tmp/makeup-dashboard-redesign-shell-mobile.png`.
+
+## 2026-05-19 - Contracts Page UI and Preview Redesign
+
+Start:
+- Redesign the Contracts page using the same senior UI/UX pass as the dashboard and services work.
+- Scope is Work Package 2.10 UI and UX Polish; keep existing contract template hooks and do not change API contracts, server routes, generated clients, or database schema.
+- Main product requirement: contract previews on `/contracts` should look like the generated booking contract view instead of looking like a form embedded inside the document.
+
+Update:
+- Reworked the Contracts page layout into a tighter agreement-library workspace with a compact contract version selector, count summary, and dedicated detail pane.
+- Changed locked contract detail presentation from a form-like card into a status header plus generated-contract preview.
+- Separated editable contract language controls from the visual contract preview so the preview no longer contains textareas or editor chrome.
+- Rebuilt the template preview to use the same document-style `contract-print-page` surface and contract sections used by generated booking contracts, while preserving existing template body parsing and mutation behavior.
+- Scope stayed inside `artifacts/glam-crm/src/pages/contract-templates.tsx`; no API contracts, database schema, generated clients, server routes, or contract data model changes were made.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing sourcemap/chunk-size warnings.
+- Desktop Playwright check at 1430x1137 passed on `http://127.0.0.1:5173/contracts`: page title rendered, generated preview rendered, preview contained 0 textareas, no horizontal overflow, and no page/console errors; screenshot saved at `/tmp/makeup-contracts-redesign.png`.
+- Secondary Playwright click-through checked the contract selector state: 2 contract buttons rendered, generated preview stayed visible, preview contained 0 textareas, no horizontal overflow, and no page/console errors; screenshot saved at `/tmp/makeup-contracts-editable-redesign.png`.
+
+## 2026-05-19 - Mobile Shell Optimization
+
+Start:
+- Fix mobile layout so the CRM does not show a desktop sidebar or desktop table patterns on phone-sized screens.
+- Scope is Work Package 2.10 UI and UX Polish; keep route behavior and API/data contracts unchanged.
+
+Validation note:
+- Initial `pnpm --filter @workspace/glam-crm run typecheck` failed after the first dashboard mobile-table patch with `src/pages/dashboard.tsx(362,13): error TS2657: JSX expressions must have one parent element.` Fixing JSX structure before rerunning validation.
+
+Update:
+- Replaced the mobile horizontal nav strip with a dedicated phone shell: compact sticky identity header plus fixed bottom tab navigation.
+- Added mobile safe-area bottom padding so page content is not hidden behind the bottom nav.
+- Kept the desktop sidebar behavior intact at desktop widths.
+- Tightened dashboard mobile density by using a two-column mobile metric grid, smaller mobile page heading scale, reduced event card scale, and a stacked mobile booking ledger instead of a table.
+- Scope stayed inside frontend layout/dashboard styling files; no API contracts, generated clients, server routes, or data behavior changed.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed after fixing the documented JSX structure failure.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing sourcemap/chunk-size warnings.
+- Mobile Playwright checks at 430x932 passed for `/`, `/services`, and `/contracts`: shell direction was column, bottom nav rendered as grid, document width stayed 430px with no horizontal overflow, and no page/console errors were recorded; screenshots saved at `/tmp/makeup-mobile-dashboard-optimized.png`, `/tmp/makeup-mobile-services-optimized.png`, and `/tmp/makeup-mobile-contracts-optimized.png`.
+- Desktop Playwright check at 1430x1137 passed for `/`: shell direction stayed row, mobile nav was hidden, no horizontal overflow, and no page/console errors were recorded; screenshot saved at `/tmp/makeup-desktop-after-mobile-shell.png`.

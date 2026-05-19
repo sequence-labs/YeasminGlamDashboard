@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -50,7 +50,7 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
 
   --font-sans: var(--app-font-sans);
-  --font-serif: var(--app-font-sans);
+  --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -67,6 +67,7 @@
 
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
+  --elevate-3: rgba(15,23,42, 0.12);
 
   --background: 0 0% 97%;
   --foreground: 220 13% 13%;
@@ -74,6 +75,7 @@
   --card: 0 0% 100%;
   --card-foreground: 220 13% 13%;
   --card-border: 220 13% 90%;
+  --card-surface: 0 0% 100%;
 
   --popover: 0 0% 100%;
   --popover-foreground: 220 13% 13%;
@@ -81,18 +83,24 @@
 
   --primary: 340 50% 40%;
   --primary-foreground: 0 0% 100%;
+  --primary-hover: 340 50% 34%;
+  --primary-border: 340 50% 45%;
 
   --secondary: 220 13% 92%;
   --secondary-foreground: 220 13% 20%;
+  --secondary-border: 220 13% 82%;
 
   --muted: 220 13% 94%;
   --muted-foreground: 220 9% 46%;
+  --muted-border: 220 13% 86%;
 
   --accent: 340 30% 94%;
   --accent-foreground: 340 50% 35%;
+  --accent-border: 340 30% 88%;
 
   --destructive: 0 80% 50%;
   --destructive-foreground: 0 0% 100%;
+  --destructive-border: 0 80% 45%;
 
   --border: 220 13% 90%;
   --input: 220 13% 87%;
@@ -107,6 +115,7 @@
   --sidebar-accent-foreground: 220 13% 20%;
 
   --app-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --app-font-serif: 'Cormorant Garamond', 'Times New Roman', serif;
   --app-font-mono: 'Menlo', monospace;
   --radius: 0.375rem;
 }
@@ -119,6 +128,7 @@
 
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
+  --elevate-3: rgba(255,255,255, 0.14);
 
   --background: 220 13% 10%;
   --foreground: 220 13% 95%;
@@ -133,18 +143,24 @@
 
   --primary: 340 50% 65%;
   --primary-foreground: 220 13% 10%;
+  --primary-hover: 340 50% 60%;
+  --primary-border: 340 50% 73%;
 
   --secondary: 220 13% 20%;
   --secondary-foreground: 220 13% 90%;
+  --secondary-border: 220 13% 30%;
 
   --muted: 220 13% 20%;
   --muted-foreground: 220 9% 60%;
+  --muted-border: 220 13% 28%;
 
   --accent: 340 25% 22%;
   --accent-foreground: 340 50% 80%;
+  --accent-border: 340 25% 35%;
 
   --destructive: 0 60% 45%;
   --destructive-foreground: 0 0% 100%;
+  --destructive-border: 0 60% 55%;
 
   --border: 220 13% 20%;
   --input: 220 13% 23%;
@@ -164,10 +180,69 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
+    background:
+      radial-gradient(1300px circle at 12% -18%, hsl(var(--accent) / 0.25), transparent 40%),
+      radial-gradient(900px circle at 88% 2%, hsl(var(--primary) / 0.15), transparent 45%),
+      hsl(var(--background));
+    min-height: 100vh;
+    letter-spacing: -0.01em;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-sans font-semibold;
+    @apply font-serif;
+    letter-spacing: 0.01em;
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  .hover-elevate {
+    @apply transition-transform duration-200 ease-out;
+  }
+  .hover-elevate:hover {
+    transform: translateY(-1px);
+  }
+  .active-elevate-2:active {
+    transform: translateY(1px);
+  }
+
+  .crm-shell {
+    @apply bg-background;
+  }
+
+  .crm-mobile-main {
+    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .crm-mobile-nav {
+    padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
+  }
+
+  .crm-section {
+    @apply rounded-2xl border border-card-border bg-card text-card-foreground shadow-[0_12px_35px_-20px_var(--elevate-3)] transition-all duration-200;
+  }
+
+  .crm-section-hover:hover {
+    @apply shadow-[0_20px_40px_-22px_var(--elevate-3)] border-primary/25;
+    transform: translateY(-1px);
+  }
+
+  .crm-page-title {
+    @apply text-3xl tracking-tight text-foreground;
+  }
+
+  .crm-page-subtitle {
+    @apply mt-2 text-sm text-muted-foreground;
+  }
+
+  .crm-input-focus {
+    @apply focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:border-primary/60 focus-visible:outline-none;
+  }
+
+  @media (min-width: 768px) {
+    .crm-mobile-main {
+      padding-bottom: 2rem;
+    }
   }
 }
 

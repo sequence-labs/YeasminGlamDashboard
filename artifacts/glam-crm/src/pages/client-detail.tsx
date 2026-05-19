@@ -4,7 +4,7 @@ import { useRoute } from "wouter";
 import { ArrowLeft, Edit2, Check, User, Mail, Phone, CalendarDays, FileText, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useQueryClient } from "@tanstack/react-query";
@@ -90,7 +90,17 @@ export default function ClientDetail() {
   }
 
   if (!client) {
-    return <Shell>Client not found</Shell>;
+    return (
+      <Shell>
+        <div className="crm-section p-8 text-center text-muted-foreground">
+          <h2 className="crm-page-title text-lg">Client not found</h2>
+          <p className="mt-2 text-sm">The client record could not be loaded.</p>
+          <Link href="/clients" className="mt-4 inline-flex text-sm font-medium text-primary hover:text-primary/80">
+            Return to clients
+          </Link>
+        </div>
+      </Shell>
+    );
   }
 
   return (
@@ -120,7 +130,7 @@ export default function ClientDetail() {
                   />
                 </div>
               ) : (
-                <h1 className="text-3xl font-serif text-foreground" data-testid="text-client-name">{client.name}</h1>
+                <h1 className="crm-page-title" data-testid="text-client-name">{client.name}</h1>
               )}
             </div>
             {isEditing ? (
@@ -145,7 +155,7 @@ export default function ClientDetail() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="col-span-1 space-y-6">
-            <div className="bg-card border rounded-lg p-6 shadow-sm space-y-6">
+            <div className="crm-section p-6 space-y-6">
               <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider mb-4">Contact Info</h3>
               
               <div className="space-y-4">
@@ -203,7 +213,7 @@ export default function ClientDetail() {
           </div>
 
           <div className="col-span-1 lg:col-span-2">
-            <div className="bg-card border rounded-lg shadow-sm overflow-hidden flex flex-col h-full">
+            <div className="crm-section overflow-hidden flex flex-col h-full">
               <div className="p-6 border-b border-border flex justify-between items-center">
                 <h2 className="text-xl font-serif flex items-center gap-2">
                   <CalendarDays className="w-5 h-5 text-muted-foreground" />

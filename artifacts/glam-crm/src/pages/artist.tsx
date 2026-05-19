@@ -98,8 +98,8 @@ export default function Artist() {
     <Shell>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-serif text-foreground">Artist</h1>
-          <p className="text-muted-foreground mt-1">Manage the business and contact details used across the app and contracts.</p>
+          <h1 className="crm-page-title text-foreground">Artist</h1>
+          <p className="crm-page-subtitle">Manage the business and contact details used across the app and contracts.</p>
         </div>
 
         {isLoading ? (
@@ -109,7 +109,7 @@ export default function Artist() {
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6 items-start">
-            <div className="bg-card border rounded-lg p-6 shadow-sm">
+            <div className="crm-section p-6">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
                 <UserRound className="h-6 w-6" />
               </div>
@@ -123,7 +123,7 @@ export default function Artist() {
               </div>
             </div>
 
-            <div className="bg-card border rounded-lg p-6 shadow-sm">
+            <div className="crm-section p-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div>
