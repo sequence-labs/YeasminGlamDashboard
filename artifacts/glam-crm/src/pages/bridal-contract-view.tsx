@@ -257,6 +257,18 @@ export default function BridalContractView() {
   const pricingLineItems = groupedLineItems.length > 0
     ? uniqueRateScheduleLineItems(groupedLineItems)
     : [];
+  const selectedServiceTexts = groupedLineItems.map((group) => [
+    group.representativeItem.name,
+    group.representativeItem.description ?? "",
+  ].join(" ").toLowerCase());
+  const hasSelectedServiceText = (matcher: (text: string) => boolean) => selectedServiceTexts.some(matcher);
+  const hasReducedBridalMakeup = hasSelectedServiceText((text) => text.includes("reduced") && text.includes("bridal") && text.includes("makeup"));
+  const hasFullBridalMakeup = !hasReducedBridalMakeup && hasSelectedServiceText((text) => (
+    text.includes("bridal makeup") || (text.includes("bridal") && text.includes("makeup"))
+  ));
+  const hasBridalHair = hasSelectedServiceText((text) => text.includes("bridal hair") && !text.includes("add-on") && !text.includes("setup"));
+  const hasBridalSetup = hasSelectedServiceText((text) => text.includes("bridal setup"));
+  const hasBridalHijabSetup = hasSelectedServiceText((text) => text.includes("bridal hijab"));
 
   return (
     <div className="bg-white min-h-screen text-black text-[14px]">
@@ -508,32 +520,53 @@ export default function BridalContractView() {
 
         {/* Section 5 */}
         <Section number="5" title="Service Scope">
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Bridal makeup:</strong> Bridal makeup is a luxury bridal service. It includes skin preparation/skincare as part of the
-            application, lashes, and a customized bridal makeup look based on the bride's desired style. The final look must be discussed
-            and confirmed with Artist before service.
-          </p>
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Bridal hair:</strong> Bridal hair includes a customized bridal hairstyle such as a bun, waves, updo, half-up style, or
-            another agreed bridal style. Hair padding, bobby pins, and safety pins needed for a secure finish are included. Client must
-            arrive with clean, fully dry hair. <strong>Hair extensions are not included and must be provided by the bride.</strong> If
-            extensions are used, Artist recommends Bellami extensions or comparable quality extensions approved in advance.
-          </p>
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Bridal hair add-on:</strong> Synthetic bun extension may be added when requested or needed.
-          </p>
-          <p className="text-sm text-gray-700 mb-2">
-            <strong>Bridal setup:</strong> Bridal dupatta/veil setting and jewelry placement include placement support for a polished bridal
-            finish.
-          </p>
-          <div className="my-4 border-l-4 border-gray-900 bg-gray-100 p-4 text-sm text-gray-800">
-            <div className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-900">Important Bridal Hijab Preparation</div>
-            <p>
-              <strong>Bridal hijab setup:</strong> Bridal hijab setup includes hijab styling customized to the bridal look, extra
-              pinning/securing, and styling products or hold techniques as needed for stronger hold. Client should bring an undercap and
-              non-slippery hijab material; cotton or jersey hijab is recommended for best results.
+          {hasReducedBridalMakeup && (
+            <div className="mb-3 border-l-4 border-gray-900 bg-gray-100 p-4 text-sm text-gray-800">
+              <div className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-900">Reduced Bridal Makeup Limitation</div>
+              <p>
+                <strong>Reduced bridal makeup:</strong> Client selected a reduced bridal-context makeup service instead of the full bridal
+                makeup package. This service includes soft glam makeup with light skin preparation, but does not include the full luxury
+                bridal pampering, highly detailed eye work, extended customization, or full bridal-level application unless separately agreed
+                in writing.
+              </p>
+            </div>
+          )}
+          {hasFullBridalMakeup && (
+            <p className="text-sm text-gray-700 mb-2">
+              <strong>Bridal makeup:</strong> Bridal makeup is a luxury bridal service. It includes skin preparation/skincare as part of the
+              application, lashes, and a customized bridal makeup look based on the bride's desired style. The final look must be discussed
+              and confirmed with Artist before service.
             </p>
-          </div>
+          )}
+          {hasBridalHair && (
+            <>
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>Bridal hair:</strong> Bridal hair includes a customized bridal hairstyle such as a bun, waves, updo, half-up style, or
+                another agreed bridal style. Hair padding, bobby pins, and safety pins needed for a secure finish are included. Client must
+                arrive with clean, fully dry hair. <strong>Hair extensions are not included and must be provided by the bride.</strong> If
+                extensions are used, Artist recommends Bellami extensions or comparable quality extensions approved in advance.
+              </p>
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>Bridal hair add-on:</strong> Synthetic bun extension may be added when requested or needed.
+              </p>
+            </>
+          )}
+          {hasBridalSetup && (
+            <p className="text-sm text-gray-700 mb-2">
+              <strong>Bridal setup:</strong> Bridal dupatta/veil setting and jewelry placement include placement support for a polished bridal
+              finish.
+            </p>
+          )}
+          {hasBridalHijabSetup && (
+            <div className="my-4 border-l-4 border-gray-900 bg-gray-100 p-4 text-sm text-gray-800">
+              <div className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-900">Important Bridal Hijab Preparation</div>
+              <p>
+                <strong>Bridal hijab setup:</strong> Bridal hijab setup includes hijab styling customized to the bridal look, extra
+                pinning/securing, and styling products or hold techniques as needed for stronger hold. Client should bring an undercap and
+                non-slippery hijab material; cotton or jersey hijab is recommended for best results.
+              </p>
+            </div>
+          )}
           <p className="text-sm text-gray-700 mb-2">
             <strong>Other add-ons:</strong> Extra touch-ups, style changes, upgrades, and additional
             people are subject to Artist availability, may be declined, and must be paid before the additional

@@ -8,7 +8,7 @@ Restore example:
 
 ```sh
 createdb makeup_artist_hub_restore
-psql makeup_artist_hub_restore < data/backups/makeup_artist_hub-20260519-023306.sql
+psql makeup_artist_hub_restore < data/backups/makeup_artist_hub-20260519-030003.sql
 ```
 
 For the standard local development database, make sure PostgreSQL is running and restore intentionally because this can replace local table contents depending on the target database.

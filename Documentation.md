@@ -1501,3 +1501,33 @@ Update:
 
 Validation:
 - `pg_dump` completed successfully against the local `makeup_artist_hub` database.
+
+## 2026-05-19 - Reduced Bridal Makeup Conditional Scope
+
+Start:
+- Update the bridal contract so Section 5 reflects the selected bridal service tier, especially reduced bridal makeup, instead of always showing full bridal makeup language.
+
+Update:
+- Made the bridal contract Service Scope conditional on selected services.
+- Added a Reduced Bridal Makeup Limitation callout when a selected service contains reduced bridal makeup.
+- Full bridal makeup language now appears only for full bridal makeup selections.
+- Bridal hair language now appears only when a bridal hair service is selected.
+- Bridal setup and bridal hijab setup scope language now appears only when those services are selected.
+- Updated the locked bridal contract preview body to document the reduced bridal makeup tier.
+
+Validation:
+- `pnpm --filter /glam-crm run typecheck` passed.
+- `pnpm --filter /api-server run typecheck` passed.
+
+## 2026-05-19 - Local Data Snapshot Push
+
+Start:
+- Save the current local CRM database state after booking and service edits so the new clients, bookings, contracts, services, artist profile, and related app data are preserved in git.
+
+Update:
+- Created a timestamped PostgreSQL dump at `data/backups/makeup_artist_hub-20260519-030003.sql`.
+- Updated the backup restore example to point at the latest snapshot.
+- Included the pending reduced bridal makeup contract logic in the same push so the data and contract behavior stay in sync.
+
+Validation:
+- `pg_dump` completed successfully against the local `makeup_artist_hub` database.
