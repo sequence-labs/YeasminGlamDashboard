@@ -1390,3 +1390,102 @@ Follow-up:
 Validation:
 - `pnpm --filter @workspace/api-server run typecheck` passed after cleanup changes.
 - `pnpm --filter @workspace/glam-crm run typecheck` passed after cleanup changes.
+
+## 2026-05-19 - Bridal Contract Service Scope
+
+Start:
+- Update the locked bridal contract view with the bridal-specific service pricing and scope explained by the business owner while keeping the non-bridal contract unchanged.
+
+Update:
+- Set bridal contract fallback rates to $300 for bridal makeup and $300 for bridal hair.
+- Added bridal makeup scope covering luxury bridal service, skin preparation/skincare, lashes, and customized desired look.
+- Added bridal hair scope covering customized bridal styles, hair padding, bobby pins, safety pins, clean/dry hair requirement, and extension recommendation.
+- Added bridal add-on language for $15 synthetic bun extension, $50 bridal dupatta/veil/jewelry setup, and $50 bridal hijab setup with undercap/material recommendations.
+- Updated the locked bridal contract template body used in Contracts page preview to match the bridal service scope.
+- Left shared fine-print sections such as timing, safety, cancellation, emergency, and general terms unchanged.
+
+Validation:
+- `pnpm --filter /api-server run typecheck` passed.
+- `pnpm --filter /glam-crm run typecheck` passed.
+
+## 2026-05-19 - Non-Bridal Contract Title and Scope Cleanup
+
+Update:
+- Updated the non-bridal contract view title and document title to explicitly say Non-Bridal Makeup and Hair Service Agreement.
+- Removed repeated dollar-amount wording from the non-bridal Service Scope section so pricing stays in the pricing tables and scope stays focused on inclusions/exclusions.
+
+Validation:
+- Not run; copy-only contract view update.
+
+## 2026-05-19 - Bridal Service Scope Price Wording Cleanup
+
+Update:
+- Removed the remaining visible dollar-rate phrasing from the first bridal makeup and bridal hair scope paragraphs.
+- Left pricing values in the pricing tables/rate schedule only.
+
+Validation:
+- Not run; copy-only bridal contract view update.
+
+## 2026-05-19 - Bridal Hijab Preparation Emphasis
+
+Update:
+- Promoted the bridal hijab setup paragraph in the bridal contract Service Scope into an emphasized callout labeled Important Bridal Hijab Preparation.
+- Kept the content unchanged while making the undercap and non-slippery cotton/jersey hijab recommendation harder to miss.
+
+Validation:
+- Not run; presentation-only bridal contract view update.
+
+## 2026-05-19 - Bridal Add-ons Copy Cleanup
+
+Update:
+- Removed touch-up kits from the bridal contract Other add-ons sentence.
+- Mirrored the bridal template preview body so stored contract preview language no longer mentions touch-up kits.
+
+Validation:
+- Not run; copy-only bridal contract update.
+
+## 2026-05-19 - New Booking Phone Formatting
+
+Update:
+- Added live US phone formatting to the New Booking Intake client phone input using the existing phone input formatter.
+- Kept existing 10-digit validation and submission normalization unchanged.
+
+Validation:
+- Not run; small input formatting change.
+
+## 2026-05-19 - Bridal Hair Extensions Responsibility
+
+Update:
+- Updated the bridal contract hair scope to state that hair extensions are not included and must be provided by the bride.
+- Mirrored the same bridal hair extension responsibility in the locked bridal contract preview body.
+
+Validation:
+- Not run; copy-only bridal contract update.
+
+## 2026-05-19 - Non-Bridal Hairstyle Scope
+
+Update:
+- Updated the non-bridal contract hair scope to clarify that non-bridal hair includes basic curls, buns, or half-up styles.
+- Added that bobby pins and hair padding for the selected basic style are included.
+- Explicitly excluded Hollywood waves and extension styling from non-bridal hair unless agreed in writing.
+- Mirrored the same scope in the locked non-bridal contract preview body.
+
+Validation:
+- Not run; copy-only non-bridal contract update.
+
+## 2026-05-19 - Bridal Hair Extension Sentence Emphasis
+
+Update:
+- Bolded the bridal contract sentence stating that hair extensions are not included and must be provided by the bride.
+
+Validation:
+- Not run; copy styling-only bridal contract update.
+
+## 2026-05-19 - Booking Detail Event Type Edit
+
+Update:
+- Added Event Type to the Edit Booking Details dialog on booking detail.
+- Wired Event Type changes into the existing booking update payload so the header label can be edited from the modal.
+
+Validation:
+- Not run; small booking detail form update.

@@ -14,7 +14,7 @@ export const defaultTemplateClauses = {
   payment:
     "The retainer is earned upon receipt because Artist reserves the requested dates and times, may decline other work, and begins planning. No dates or times are reserved until this Agreement is signed and the retainer is received. The retainer is non-refundable and non-transferable. The remaining balance must be paid in cleared funds by the deadline above. Artist is not required to begin or continue services until the balance is paid.",
   scope:
-    "Makeup service rates apply to the selected makeup services shown in this Agreement. Full bridal makeup, highly detailed eye looks, rhinestones, glitter-heavy looks, face/body art, tattoo coverage, or other advanced/custom looks are not included unless agreed in writing. Hair service rates apply to the selected hairstyle categories shown in this Agreement. Washing, blow-drying, drying wet hair, extensions, padding, accessories, veil or dupatta placement, jewelry setting, or elaborate bridal hair are not included unless agreed in writing. Touch-up kits, extra touch-ups, style changes, upgrades, and additional people are subject to Artist availability, may be declined, and must be paid before the additional service begins.",
+    "Makeup service rates apply to the selected makeup services shown in this Agreement. Full bridal makeup, highly detailed eye looks, rhinestones, glitter-heavy looks, face/body art, tattoo coverage, or other advanced/custom looks are not included unless agreed in writing. Non-bridal hair services include basic styling such as curls, buns, or half-up styles. Bobby pins and hair padding needed for the selected basic style are included. Bridal hair planning, bridal hair design, elaborate bridal styling, Hollywood waves, extension styling, washing, blow-drying, drying wet hair, extensions, hair accessories, veil or dupatta placement, jewelry setting, or other advanced/custom hair services are not included unless agreed in writing. Touch-up kits, extra touch-ups, style changes, upgrades, and additional people are subject to Artist availability, may be declined, and must be paid before the additional service begins.",
   responsibilities:
     "Client must provide accurate timing, location, access, parking, room, and service recipient information before the event date. Client is responsible for sharing preparation, timing, allergy-disclosure, conduct, and setup requirements with every person receiving services. Client must provide a clean, safe, smoke-free, well-lit service area with a table or workstation, chair, nearby outlet, and enough space for Artist, assigned assistants, tools, and products.",
   limitations:
@@ -31,6 +31,14 @@ export const defaultTemplateClauses = {
 
 export type DefaultTemplateClauses = typeof defaultTemplateClauses;
 
+export const bridalTemplateClauses: DefaultTemplateClauses = {
+  ...defaultTemplateClauses,
+  scope:
+    "Bridal makeup is a luxury bridal service with skin preparation/skincare included as part of the application, lashes, and a customized bridal makeup look based on the bride's desired style. Bridal hair is a customized bridal style such as a bun, waves, updo, half-up style, or another agreed bridal style. Hair padding, bobby pins, and safety pins needed for a secure finish are included. Synthetic bun extension may be added when requested or needed. Bridal dupatta/veil setting and jewelry placement include placement support for a polished bridal finish. Bridal hijab setup includes customized hijab styling, extra pinning/securing, and styling products or hold techniques as needed for stronger hold. Extra touch-ups, style changes, upgrades, and additional people are subject to Artist availability, may be declined, and must be paid before the additional service begins.",
+  responsibilities:
+    "Client must provide accurate timing, location, access, parking, room, and service recipient information before the event date. Client is responsible for sharing preparation, timing, allergy-disclosure, conduct, and setup requirements with every person receiving services. Client must provide a clean, safe, smoke-free, well-lit service area with a table or workstation, chair, nearby outlet, and enough space for Artist, assigned assistants, tools, and products. Bridal hair clients must arrive with clean, fully dry hair. Hair extensions are not included and must be provided by the bride. If extensions are used, Artist recommends Bellami extensions or comparable quality extensions approved in advance. Hijab clients should bring an undercap and non-slippery hijab material; cotton or jersey hijab is recommended for best results.",
+};
+
 export function defaultContractTemplateBody() {
   return JSON.stringify({ version: 1, clauses: defaultTemplateClauses }, null, 2);
 }
@@ -39,8 +47,8 @@ export function bridalContractTemplateBody() {
   return JSON.stringify({
     version: 1,
     contractType: "bridal",
-    baseAgreement: "Current non-bridal agreement duplicated for future bridal edits.",
-    clauses: defaultTemplateClauses,
+    baseAgreement: "Current agreement duplicated with bridal-specific service scope.",
+    clauses: bridalTemplateClauses,
   }, null, 2);
 }
 

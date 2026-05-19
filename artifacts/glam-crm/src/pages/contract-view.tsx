@@ -7,7 +7,7 @@ import { Link } from "wouter";
 import { formatUSPhone } from "@/lib/phone";
 import { Fragment, useEffect } from "react";
 
-const AGREEMENT_TITLE = "Makeup and Hair Service Agreement";
+const AGREEMENT_TITLE = "Non-Bridal Makeup and Hair Service Agreement";
 
 function contractDocumentTitle(clientName?: string) {
   const safeClientName = clientName
@@ -277,10 +277,10 @@ export default function ContractView() {
 
         {/* Header */}
         <div className="text-center mb-8 pb-6 border-b-2 border-black">
-          <h1 className="text-2xl font-bold tracking-tight uppercase mb-1">Makeup &amp; Hair Service Agreement</h1>
-          <p className="text-sm text-gray-600">Professional Makeup and Hair Services for Wedding Events</p>
+          <h1 className="text-2xl font-bold tracking-tight uppercase mb-1">Non-Bridal Makeup &amp; Hair Service Agreement</h1>
+          <p className="text-sm text-gray-600">Professional Non-Bridal Makeup and Hair Services</p>
           <p className="text-sm mt-3 max-w-2xl mx-auto">
-            This Makeup &amp; Hair Service Agreement ("Agreement") is between{" "}
+            This Non-Bridal Makeup &amp; Hair Service Agreement ("Agreement") is between{" "}
             <strong>{artistName}</strong> ("Artist") and <strong>{client.name}</strong> ("Client") for
             makeup and hair services at <strong>{booking.location}</strong>. This Agreement becomes binding when
             signed by both parties and the non-refundable retainer is received by Artist.
@@ -507,16 +507,16 @@ export default function ContractView() {
         {/* Section 5 */}
         <Section number="5" title="Service Scope">
           <p className="text-sm text-gray-700 mb-2">
-            <strong>Makeup:</strong> The ${standaloneMakeupRate} makeup rate applies to non-bridal event makeup / soft glam. Full bridal
+            <strong>Makeup:</strong> Makeup services apply to non-bridal event makeup / soft glam. Full bridal
             makeup, cut crease, highly detailed eye looks, rhinestones, glitter-heavy looks, face/body art, tattoo
             coverage, or other advanced/custom looks are not included unless agreed in writing.
           </p>
           <p className="text-sm text-gray-700 mb-2">
-            <strong>Hair:</strong> The ${standaloneHairRate} hair rate applies to non-bridal party/event hair services.
-            This rate does not include bridal hair planning, bridal hair design, or elaborate bridal styling unless
-            separately agreed in writing. Washing, blow-drying, drying wet hair, extensions, hair padding, hair
-            accessories, veil/dupatta placement, jewelry setting, or other advanced/custom hair services are not
-            included unless agreed in writing.
+            <strong>Non-bridal hairstyle:</strong> Non-bridal hair services include basic styling such as curls, buns, or half-up styles.
+            Bobby pins and hair padding needed for the selected basic style are included. Bridal hair planning, bridal hair design,
+            elaborate bridal styling, Hollywood waves, extension styling, washing, blow-drying, drying wet hair, extensions, hair
+            accessories, veil/dupatta placement, jewelry setting, or other advanced/custom hair services are not included unless agreed
+            in writing.
           </p>
           <p className="text-sm text-gray-700 mb-2">
             <strong>Add-ons:</strong> Touch-up kits, extra touch-ups, style changes, upgrades, and additional
@@ -769,7 +769,7 @@ export default function ContractView() {
         </Section>
 
         <div className="text-center text-xs text-gray-400 mt-10 pt-6 border-t">
-          Makeup &amp; Hair Service Agreement · {artistName} · Generated {format(today, "MMMM d, yyyy")}
+          Non-Bridal Makeup &amp; Hair Service Agreement · {artistName} · Generated {format(today, "MMMM d, yyyy")}
         </div>
       </div>
     </div>

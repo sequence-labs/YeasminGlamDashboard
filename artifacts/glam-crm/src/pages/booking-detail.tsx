@@ -521,6 +521,7 @@ export default function BookingDetail() {
                   bookingClientId={booking.clientId}
                   contractTemplateId={booking.contractTemplateId ?? null}
                   contractTemplates={contractTemplates ?? []}
+                  eventType={booking.eventType}
                   location={booking.location}
                   firstServiceDate={booking.firstServiceDate ?? null}
                   primaryEventId={booking.events[0]?.id}
@@ -970,6 +971,7 @@ const lineItemFormSchema = z.object({
 const bookingMetaSchema = z.object({
   clientName: z.string().min(1, "Client name is required"),
   contractTemplateId: z.string().min(1, "Contract is required"),
+  eventType: z.string().min(1, "Event type is required"),
   location: z.string().min(1, "Location is required"),
   firstServiceDate: z.string().optional(),
   eventName: z.string().optional(),
@@ -1205,6 +1207,7 @@ function BookingMetaDialog({
   bookingClientId,
   contractTemplateId,
   contractTemplates,
+  eventType,
   location,
   firstServiceDate,
   primaryEventId,
@@ -1215,6 +1218,7 @@ function BookingMetaDialog({
   bookingClientId: number;
   contractTemplateId: number | null;
   contractTemplates: Array<{ id: number; name: string; active: boolean; isDefault: boolean }>;
+  eventType: string;
   location: string;
   firstServiceDate: string | null;
   primaryEventId?: number;
@@ -1240,6 +1244,7 @@ function BookingMetaDialog({
     defaultValues: {
       clientName: bookingClientName,
       contractTemplateId: currentContractTemplateId ? String(currentContractTemplateId) : "",
+      eventType,
       location,
       firstServiceDate: toDateInputValue(firstServiceDate),
       eventName: primaryEventName ?? "",
@@ -1248,6 +1253,7 @@ function BookingMetaDialog({
 
   async function onSubmit(data: BookingMetaFormValues) {
     const trimmedClientName = data.clientName.trim();
+    const trimmedEventType = data.eventType.trim();
     const trimmedLocation = data.location.trim();
     const newContractTemplateId = Number(data.contractTemplateId);
     const newFirstServiceDate = data.firstServiceDate?.trim() || "";
@@ -1261,22 +1267,26 @@ function BookingMetaDialog({
     }
 
     const isClientNameChanged = trimmedClientName !== bookingClientName;
+    const isEventTypeChanged = trimmedEventType !== eventType;
     const isLocationChanged = trimmedLocation !== location;
     const isContractChanged = newContractTemplateId !== currentContractTemplateId;
     const isDateChanged = newFirstServiceDate !== currentFirstServiceDate;
     const isEventNameChanged = hasPrimaryEvent && trimmedEventName !== currentEventName;
 
-    if (!isClientNameChanged && !isLocationChanged && !isContractChanged && !isDateChanged && !isEventNameChanged) {
+    if (!isClientNameChanged && !isEventTypeChanged && !isLocationChanged && !isContractChanged && !isDateChanged && !isEventNameChanged) {
       setOpen(false);
       return;
     }
 
     setIsSaving(true);
 
-    const bookingUpdate: { contractTemplateId?: number; location?: string; firstServiceDate?: string | null } = {};
+    const bookingUpdate: { contractTemplateId?: number; eventType?: string; location?: string; firstServiceDate?: string | null } = {};
 
     if (isContractChanged) {
       bookingUpdate.contractTemplateId = newContractTemplateId;
+    }
+    if (isEventTypeChanged) {
+      bookingUpdate.eventType = trimmedEventType;
     }
     if (isLocationChanged) {
       bookingUpdate.location = trimmedLocation;
@@ -1342,6 +1352,15 @@ function BookingMetaDialog({
                   <FormLabel>Client Name</FormLabel>
                   <FormControl>
                     <Input {...field} data-testid="input-booking-client-name" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="eventType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Event Type</FormLabel>
+                  <FormControl>
+                    <Input {...field} data-testid="input-booking-event-type" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

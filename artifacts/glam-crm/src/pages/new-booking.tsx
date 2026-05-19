@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatUSPhone, isCompleteUSPhone } from "@/lib/phone";
+import { formatUSPhone, formatUSPhoneInput, isCompleteUSPhone } from "@/lib/phone";
 import { useEffect, useState } from "react";
 import { TimePartsInput } from "@/components/TimePartsInput";
 
@@ -314,7 +314,12 @@ export default function NewBooking() {
                     <FormItem>
                       <FormLabel>Client Phone</FormLabel>
                       <FormControl>
-                        <Input placeholder="(555) 123-4567" {...field} data-testid="input-client-phone" />
+                        <Input
+                          placeholder="(555) 123-4567"
+                          {...field}
+                          onChange={(event) => field.onChange(formatUSPhoneInput(event.target.value))}
+                          data-testid="input-client-phone"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -8,6 +8,8 @@ import { formatUSPhone } from "@/lib/phone";
 import { Fragment, useEffect } from "react";
 
 const AGREEMENT_TITLE = "Bridal Makeup and Hair Service Agreement";
+const BRIDAL_MAKEUP_RATE = 300;
+const BRIDAL_HAIR_RATE = 300;
 
 function contractDocumentTitle(clientName?: string) {
   const safeClientName = clientName
@@ -245,13 +247,13 @@ export default function BridalContractView() {
 
   const standaloneMakeupRate = groupedLineItems.find((group) => group.representativeItem.name.toLowerCase() === "makeup only")?.representativeItem.unitPrice
     ?? events[0]?.makeupRate
-    ?? 150;
+    ?? BRIDAL_MAKEUP_RATE;
   const standaloneHairRate = groupedLineItems.find((group) => group.representativeItem.name.toLowerCase() === "hair only")?.representativeItem.unitPrice
     ?? events[0]?.hairRate
-    ?? 150;
+    ?? BRIDAL_HAIR_RATE;
   const combinedHairMakeupRate = groupedLineItems.find((group) => group.representativeItem.name.toLowerCase().includes("hair") && group.representativeItem.name.toLowerCase().includes("makeup"))?.representativeItem.unitPrice
     ?? events[0]?.hairAndMakeupRate
-    ?? 285;
+    ?? BRIDAL_MAKEUP_RATE + BRIDAL_HAIR_RATE;
   const pricingLineItems = groupedLineItems.length > 0
     ? uniqueRateScheduleLineItems(groupedLineItems)
     : [];
@@ -278,7 +280,7 @@ export default function BridalContractView() {
         {/* Header */}
         <div className="text-center mb-8 pb-6 border-b-2 border-black">
           <h1 className="text-2xl font-bold tracking-tight uppercase mb-1">Bridal Makeup &amp; Hair Service Agreement</h1>
-          <p className="text-sm text-gray-600">Professional Makeup and Hair Services for Wedding Events</p>
+          <p className="text-sm text-gray-600">Professional Bridal Makeup and Hair Services</p>
           <p className="text-sm mt-3 max-w-2xl mx-auto">
             This Bridal Makeup &amp; Hair Service Agreement ("Agreement") is between{" "}
             <strong>{artistName}</strong> ("Artist") and <strong>{client.name}</strong> ("Client") for
@@ -507,19 +509,33 @@ export default function BridalContractView() {
         {/* Section 5 */}
         <Section number="5" title="Service Scope">
           <p className="text-sm text-gray-700 mb-2">
-            <strong>Makeup:</strong> The ${standaloneMakeupRate} makeup rate applies to non-bridal event makeup / soft glam. Full bridal
-            makeup, cut crease, highly detailed eye looks, rhinestones, glitter-heavy looks, face/body art, tattoo
-            coverage, or other advanced/custom looks are not included unless agreed in writing.
+            <strong>Bridal makeup:</strong> Bridal makeup is a luxury bridal service. It includes skin preparation/skincare as part of the
+            application, lashes, and a customized bridal makeup look based on the bride's desired style. The final look must be discussed
+            and confirmed with Artist before service.
           </p>
           <p className="text-sm text-gray-700 mb-2">
-            <strong>Hair:</strong> The ${standaloneHairRate} hair rate applies to non-bridal party/event hair services.
-            This rate does not include bridal hair planning, bridal hair design, or elaborate bridal styling unless
-            separately agreed in writing. Washing, blow-drying, drying wet hair, extensions, hair padding, hair
-            accessories, veil/dupatta placement, jewelry setting, or other advanced/custom hair services are not
-            included unless agreed in writing.
+            <strong>Bridal hair:</strong> Bridal hair includes a customized bridal hairstyle such as a bun, waves, updo, half-up style, or
+            another agreed bridal style. Hair padding, bobby pins, and safety pins needed for a secure finish are included. Client must
+            arrive with clean, fully dry hair. <strong>Hair extensions are not included and must be provided by the bride.</strong> If
+            extensions are used, Artist recommends Bellami extensions or comparable quality extensions approved in advance.
           </p>
           <p className="text-sm text-gray-700 mb-2">
-            <strong>Add-ons:</strong> Touch-up kits, extra touch-ups, style changes, upgrades, and additional
+            <strong>Bridal hair add-on:</strong> Synthetic bun extension may be added when requested or needed.
+          </p>
+          <p className="text-sm text-gray-700 mb-2">
+            <strong>Bridal setup:</strong> Bridal dupatta/veil setting and jewelry placement include placement support for a polished bridal
+            finish.
+          </p>
+          <div className="my-4 border-l-4 border-gray-900 bg-gray-100 p-4 text-sm text-gray-800">
+            <div className="mb-1 text-xs font-bold uppercase tracking-wide text-gray-900">Important Bridal Hijab Preparation</div>
+            <p>
+              <strong>Bridal hijab setup:</strong> Bridal hijab setup includes hijab styling customized to the bridal look, extra
+              pinning/securing, and styling products or hold techniques as needed for stronger hold. Client should bring an undercap and
+              non-slippery hijab material; cotton or jersey hijab is recommended for best results.
+            </p>
+          </div>
+          <p className="text-sm text-gray-700 mb-2">
+            <strong>Other add-ons:</strong> Extra touch-ups, style changes, upgrades, and additional
             people are subject to Artist availability, may be declined, and must be paid before the additional
             service begins.
           </p>
