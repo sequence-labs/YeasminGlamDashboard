@@ -5,7 +5,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import publicRouter from "./routes/public";
 import { logger } from "./lib/logger";
+import { startReminderRunner } from "./lib/scheduler";
 
 type CreateAppOptions = {
   apiPrefix?: string;
@@ -189,6 +191,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.use(express.urlencoded({ extended: true }));
 
   registerSessionRoutes(api);
+  api.use(publicRouter);
   api.use(authRequiredMiddleware);
   api.use(router);
   app.use(apiPrefix, api);
@@ -197,4 +200,9 @@ export function createApp(options: CreateAppOptions = {}) {
 }
 
 const app = createApp();
+
+if (process.env.GLAM_DISABLE_RUNNER !== "true") {
+  startReminderRunner();
+}
+
 export default app;

@@ -106,30 +106,22 @@ export default function ContractContracts() {
 
   return (
     <Shell>
-      <div className="space-y-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Agreement library</p>
-            <h1 className="mt-1 font-sans text-3xl font-semibold tracking-normal text-foreground">Contracts</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Review approved agreement language exactly as it appears in generated contracts.
+      <div className="space-y-7">
+        <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-xl">
+            <span className="crm-eyebrow">Studio · Agreements</span>
+            <h1 className="crm-page-title mt-2">Contracts</h1>
+            <p className="crm-page-subtitle">
+              Review approved agreement language exactly as it appears on generated contracts.
             </p>
+            <div className="crm-gold-rule mt-6 w-24" />
           </div>
-          <div className="grid grid-cols-3 overflow-hidden rounded-lg border border-border bg-card text-sm">
-            <div className="border-r border-border px-4 py-2">
-              <div className="font-mono text-lg font-semibold text-foreground">{visibleContracts.length}</div>
-              <div className="text-xs text-muted-foreground">Visible</div>
-            </div>
-            <div className="border-r border-border px-4 py-2">
-              <div className="font-mono text-lg font-semibold text-foreground">{lockedCount}</div>
-              <div className="text-xs text-muted-foreground">Locked</div>
-            </div>
-            <div className="px-4 py-2">
-              <div className="font-mono text-lg font-semibold text-foreground">{editableCount}</div>
-              <div className="text-xs text-muted-foreground">Editable</div>
-            </div>
+          <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-card-border bg-card shadow-[0_1px_0_0_hsl(var(--card-border)/0.4),0_10px_28px_-22px_var(--elevate-3)]">
+            <ContractStat label="Visible" value={visibleContracts.length} />
+            <ContractStat label="Locked" value={lockedCount} />
+            <ContractStat label="Editable" value={editableCount} last />
           </div>
-        </div>
+        </header>
 
         {isLoading ? (
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
@@ -139,42 +131,59 @@ export default function ContractContracts() {
         ) : (
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-[340px_minmax(0,1fr)] xl:items-start">
             <aside className="crm-section overflow-hidden">
-              <div className="border-b border-card-border px-4 py-4">
-                <h2 className="font-sans text-lg font-semibold tracking-normal text-foreground">Contract versions</h2>
+              <div className="border-b border-card-border/70 px-5 py-5">
+                <span className="crm-eyebrow">Library</span>
+                <h2 className="crm-section-title mt-1">Contract versions</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Choose the agreement to inspect.</p>
               </div>
 
               {visibleContracts.length > 0 ? (
-                <div className="divide-y divide-border">
-                  {visibleContracts.map((contract) => (
-                    <button
-                      key={contract.id}
-                      type="button"
-                      onClick={() => setSelectedTemplateId(contract.id)}
-                      className={`w-full p-4 text-left transition-colors ${
-                        selectedTemplate?.id === contract.id ? "bg-primary/10" : "hover:bg-muted/35"
-                      }`}
-                      data-testid={`btn-contract-${contract.id}`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 shrink-0 text-primary" />
-                            <div className="line-clamp-2 font-medium text-foreground">{contract.name}</div>
+                <div className="divide-y divide-card-border/55">
+                  {visibleContracts.map((contract) => {
+                    const active = selectedTemplate?.id === contract.id;
+                    return (
+                      <button
+                        key={contract.id}
+                        type="button"
+                        onClick={() => setSelectedTemplateId(contract.id)}
+                        className={`group relative w-full px-5 py-4 text-left transition-colors ${
+                          active ? "bg-accent/45" : "hover:bg-accent/25"
+                        }`}
+                        data-testid={`btn-contract-${contract.id}`}
+                      >
+                        {active && (
+                          <span aria-hidden className="absolute left-0 top-1/2 h-7 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
+                        )}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <FileText className={`h-4 w-4 shrink-0 ${active ? "text-primary" : "text-muted-foreground"}`} strokeWidth={1.5} />
+                              <div className="line-clamp-2 text-[15px] font-semibold tracking-tight text-foreground">
+                                {contract.name}
+                              </div>
+                            </div>
+                            {contract.description && (
+                              <div className="mt-1.5 line-clamp-3 text-[12.5px] text-muted-foreground">
+                                {contract.description}
+                              </div>
+                            )}
                           </div>
-                          {contract.description && <div className="mt-2 line-clamp-3 text-sm text-muted-foreground">{contract.description}</div>}
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
+                            {contract.isDefault && <Badge variant="gold">Default</Badge>}
+                            {contract.locked && <Badge variant="outline">Locked</Badge>}
+                          </div>
                         </div>
-                        <div className="flex shrink-0 flex-col gap-1">
-                          {contract.isDefault && <Badge variant="secondary">Default</Badge>}
-                          {contract.locked && <Badge variant="outline">Locked</Badge>}
-                        </div>
-                      </div>
-                      {!contract.active && <div className="mt-2 text-xs font-medium text-muted-foreground">Archived</div>}
-                    </button>
-                  ))}
+                        {!contract.active && (
+                          <div className="mt-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                            Archived
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
-                <div className="m-4 rounded-md border border-dashed p-6 text-center text-muted-foreground">
+                <div className="m-5 rounded-xl border border-dashed border-card-border bg-accent/15 p-6 text-center text-sm text-muted-foreground">
                   No contracts saved yet.
                 </div>
               )}
@@ -183,14 +192,36 @@ export default function ContractContracts() {
             {selectedTemplate ? (
               <ContractTemplateEditor contract={selectedTemplate} />
             ) : (
-              <div className="crm-section p-8 text-center text-muted-foreground">
-                Select a contract to review.
+              <div className="crm-section p-12 text-center">
+                <p className="text-sm text-muted-foreground">Select a contract to review.</p>
               </div>
             )}
           </div>
         )}
       </div>
     </Shell>
+  );
+}
+
+function ContractStat({
+  label,
+  value,
+  last = false,
+}: {
+  label: string;
+  value: number;
+  last?: boolean;
+}) {
+  return (
+    <div className={`px-4 py-3 ${last ? "" : "border-r border-card-border/70"}`}>
+      <div className="crm-eyebrow !text-[10px]">{label}</div>
+      <div
+        className="mt-1 font-serif text-xl text-foreground tabular-nums"
+        style={{ fontVariationSettings: "'opsz' 64", letterSpacing: "-0.02em" }}
+      >
+        {value}
+      </div>
+    </div>
   );
 }
 
@@ -213,18 +244,22 @@ function ContractTemplateEditor({ contract }: { contract: ContractTemplate }) {
 
   if (contract.locked) {
     return (
-      <div className="space-y-5">
-        <div className="crm-section p-5">
+      <div className="space-y-6">
+        <div className="crm-section p-6">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <Lock className="h-5 w-5 text-primary" />
-                <h2 className="font-sans text-xl font-semibold tracking-normal text-foreground">{contract.name}</h2>
-              </div>
-              {contract.description && <p className="mt-1 text-sm text-muted-foreground">{contract.description}</p>}
+              <span className="crm-eyebrow inline-flex items-center gap-1.5">
+                <Lock className="h-3 w-3" /> Locked agreement
+              </span>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                {contract.name}
+              </h2>
+              {contract.description && (
+                <p className="mt-1 text-sm text-muted-foreground">{contract.description}</p>
+              )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {contract.isDefault && <Badge variant="secondary">Default</Badge>}
+              {contract.isDefault && <Badge variant="gold">Default</Badge>}
               <Badge variant="outline">Locked</Badge>
             </div>
           </div>
@@ -267,20 +302,28 @@ function ContractTemplateEditor({ contract }: { contract: ContractTemplate }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <div className="crm-section p-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="crm-section p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <h2 className="font-sans text-xl font-semibold tracking-normal text-foreground">Edit Contract</h2>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">Update contract copy, status, and default selection.</p>
+                <span className="crm-eyebrow">Edit · Agreement</span>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+                  Edit contract
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Update contract copy, status, and default selection.
+                </p>
               </div>
-              <Button type="button" variant="outline" onClick={handleArchive} disabled={deleteTemplate.isPending || contract.isDefault} data-testid="btn-archive-contract">
-                <Archive className="mr-2 h-4 w-4" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleArchive}
+                disabled={deleteTemplate.isPending || contract.isDefault}
+                data-testid="btn-archive-contract"
+              >
+                <Archive className="h-4 w-4" />
                 Archive
               </Button>
             </div>
@@ -352,8 +395,9 @@ function ContractLanguageEditor({ body, onChange }: { body: string; onChange: (b
 
   return (
     <div className="crm-section overflow-hidden">
-      <div className="border-b border-card-border px-5 py-4">
-        <h3 className="font-sans text-lg font-semibold tracking-normal text-foreground">Language controls</h3>
+      <div className="border-b border-card-border/70 px-6 py-5">
+        <span className="crm-eyebrow">Language · Controls</span>
+        <h3 className="crm-section-title mt-1">Language controls</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Edit reusable legal copy here. Auto-filled booking details stay out of the editor and render in the preview below.
         </p>
@@ -372,15 +416,16 @@ function ContractTemplatePreview({ body }: { body: string }) {
 
   return (
     <div className="crm-section overflow-hidden">
-      <div className="flex flex-col gap-3 border-b border-card-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-b border-card-border/70 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="font-sans text-lg font-semibold tracking-normal text-foreground">Generated contract preview</h3>
+          <span className="crm-eyebrow">Preview · Generated</span>
+          <h3 className="crm-section-title mt-1">Generated contract preview</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Demo values show the booking fields the app auto-populates when a client opens or downloads a contract.
           </p>
         </div>
-        <Badge variant="secondary" className="w-fit gap-1.5">
-          <Eye className="h-3.5 w-3.5" />
+        <Badge variant="gold" className="w-fit gap-1.5">
+          <Eye className="h-3 w-3" />
           Preview
         </Badge>
       </div>

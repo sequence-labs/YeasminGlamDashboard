@@ -1,4 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap');
+/* ============================================================================
+ * Atelier — design system
+ * Editorial luxe for a high-end makeup artistry studio.
+ * Warm ivory paper · oxblood + champagne accents · Newsreader display + Inter UI
+ * ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -41,6 +47,9 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-destructive-border: var(--destructive-border);
 
+  --color-gold: hsl(var(--gold));
+  --color-gold-soft: hsl(var(--gold-soft));
+
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
@@ -51,161 +60,242 @@
 
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
+  --font-display: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
 
-  --radius-sm: calc(var(--radius) - 4px);
+  --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
 }
 
+/* --------------------------------------------------------------------------
+ * Light — "Bone & Oxblood"
+ *   background: warm ivory paper
+ *   surface:    pure white card on warm wash
+ *   primary:    oxblood (deep wine, sophisticated, not pink)
+ *   gold:       champagne whisper (used sparingly, never garish)
+ *   text:       warm graphite
+ * ------------------------------------------------------------------------ */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(26, 22, 19, 0.08);
+  --badge-outline: rgba(26, 22, 19, 0.06);
 
   --opaque-button-border-intensity: -8;
 
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
-  --elevate-3: rgba(15,23,42, 0.12);
+  --elevate-1: rgba(26, 22, 19, 0.025);
+  --elevate-2: rgba(26, 22, 19, 0.06);
+  --elevate-3: rgba(26, 22, 19, 0.10);
 
-  --background: 0 0% 97%;
-  --foreground: 220 13% 13%;
+  --background: 36 28% 96%;
+  --foreground: 30 12% 12%;
 
   --card: 0 0% 100%;
-  --card-foreground: 220 13% 13%;
-  --card-border: 220 13% 90%;
+  --card-foreground: 30 12% 12%;
+  --card-border: 32 18% 88%;
   --card-surface: 0 0% 100%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 13% 13%;
-  --popover-border: 220 13% 90%;
+  --popover-foreground: 30 12% 12%;
+  --popover-border: 32 18% 86%;
 
-  --primary: 340 50% 40%;
-  --primary-foreground: 0 0% 100%;
-  --primary-hover: 340 50% 34%;
-  --primary-border: 340 50% 45%;
+  --primary: 348 52% 28%;
+  --primary-foreground: 38 40% 97%;
+  --primary-hover: 348 52% 22%;
+  --primary-border: 348 52% 32%;
 
-  --secondary: 220 13% 92%;
-  --secondary-foreground: 220 13% 20%;
-  --secondary-border: 220 13% 82%;
+  --secondary: 36 20% 92%;
+  --secondary-foreground: 30 12% 18%;
+  --secondary-border: 32 18% 84%;
 
-  --muted: 220 13% 94%;
-  --muted-foreground: 220 9% 46%;
-  --muted-border: 220 13% 86%;
+  --muted: 36 22% 94%;
+  --muted-foreground: 28 8% 40%;
+  --muted-border: 32 16% 88%;
 
-  --accent: 340 30% 94%;
-  --accent-foreground: 340 50% 35%;
-  --accent-border: 340 30% 88%;
+  --accent: 38 35% 91%;
+  --accent-foreground: 28 35% 24%;
+  --accent-border: 38 28% 84%;
 
-  --destructive: 0 80% 50%;
-  --destructive-foreground: 0 0% 100%;
-  --destructive-border: 0 80% 45%;
+  --destructive: 0 62% 42%;
+  --destructive-foreground: 38 40% 97%;
+  --destructive-border: 0 62% 38%;
 
-  --border: 220 13% 90%;
-  --input: 220 13% 87%;
-  --ring: 340 50% 40%;
+  --gold: 38 42% 52%;
+  --gold-soft: 40 45% 78%;
 
-  --sidebar: 220 13% 97%;
-  --sidebar-foreground: 220 13% 13%;
-  --sidebar-border: 220 13% 90%;
-  --sidebar-primary: 340 50% 40%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 220 13% 92%;
-  --sidebar-accent-foreground: 220 13% 20%;
+  --border: 32 18% 88%;
+  --input: 32 18% 84%;
+  --ring: 348 52% 28%;
+
+  --sidebar: 36 26% 95%;
+  --sidebar-foreground: 30 12% 12%;
+  --sidebar-border: 32 18% 87%;
+  --sidebar-primary: 348 52% 28%;
+  --sidebar-primary-foreground: 38 40% 97%;
+  --sidebar-accent: 36 20% 90%;
+  --sidebar-accent-foreground: 30 12% 18%;
 
   --app-font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --app-font-serif: 'Cormorant Garamond', 'Times New Roman', serif;
-  --app-font-mono: 'Menlo', monospace;
-  --radius: 0.375rem;
+  --app-font-serif: 'Newsreader', 'Source Serif 4', 'Cormorant Garamond', 'Times New Roman', serif;
+  --app-font-mono: 'JetBrains Mono', 'Menlo', monospace;
+  --radius: 0.875rem;
 }
 
+/* --------------------------------------------------------------------------
+ * Dark — "Atelier at Night"
+ *   background: charcoal with warm undertone (not blue-black)
+ *   primary:    rose-noir for legibility on dark
+ *   gold:       brighter champagne
+ * ------------------------------------------------------------------------ */
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(247, 240, 228, 0.10);
+  --badge-outline: rgba(247, 240, 228, 0.06);
 
   --opaque-button-border-intensity: 9;
 
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
-  --elevate-3: rgba(255,255,255, 0.14);
+  --elevate-1: rgba(247, 240, 228, 0.04);
+  --elevate-2: rgba(247, 240, 228, 0.08);
+  --elevate-3: rgba(247, 240, 228, 0.14);
 
-  --background: 220 13% 10%;
-  --foreground: 220 13% 95%;
+  --background: 28 10% 8%;
+  --foreground: 36 20% 92%;
 
-  --card: 220 13% 13%;
-  --card-foreground: 220 13% 95%;
-  --card-border: 220 13% 20%;
+  --card: 28 10% 11%;
+  --card-foreground: 36 20% 92%;
+  --card-border: 28 8% 18%;
+  --card-surface: 28 10% 11%;
 
-  --popover: 220 13% 13%;
-  --popover-foreground: 220 13% 95%;
-  --popover-border: 220 13% 20%;
+  --popover: 28 10% 11%;
+  --popover-foreground: 36 20% 92%;
+  --popover-border: 28 8% 20%;
 
-  --primary: 340 50% 65%;
-  --primary-foreground: 220 13% 10%;
-  --primary-hover: 340 50% 60%;
-  --primary-border: 340 50% 73%;
+  --primary: 348 60% 64%;
+  --primary-foreground: 28 10% 10%;
+  --primary-hover: 348 60% 70%;
+  --primary-border: 348 60% 70%;
 
-  --secondary: 220 13% 20%;
-  --secondary-foreground: 220 13% 90%;
-  --secondary-border: 220 13% 30%;
+  --secondary: 28 8% 18%;
+  --secondary-foreground: 36 18% 88%;
+  --secondary-border: 28 8% 26%;
 
-  --muted: 220 13% 20%;
-  --muted-foreground: 220 9% 60%;
-  --muted-border: 220 13% 28%;
+  --muted: 28 8% 16%;
+  --muted-foreground: 32 10% 62%;
+  --muted-border: 28 8% 24%;
 
-  --accent: 340 25% 22%;
-  --accent-foreground: 340 50% 80%;
-  --accent-border: 340 25% 35%;
+  --accent: 348 18% 20%;
+  --accent-foreground: 38 45% 82%;
+  --accent-border: 348 18% 32%;
 
-  --destructive: 0 60% 45%;
-  --destructive-foreground: 0 0% 100%;
-  --destructive-border: 0 60% 55%;
+  --destructive: 0 55% 50%;
+  --destructive-foreground: 38 40% 97%;
+  --destructive-border: 0 55% 60%;
 
-  --border: 220 13% 20%;
-  --input: 220 13% 23%;
-  --ring: 340 50% 65%;
+  --gold: 40 55% 68%;
+  --gold-soft: 40 35% 38%;
 
-  --sidebar: 220 13% 8%;
-  --sidebar-foreground: 220 13% 95%;
-  --sidebar-border: 220 13% 18%;
-  --sidebar-primary: 340 50% 65%;
-  --sidebar-primary-foreground: 220 13% 10%;
-  --sidebar-accent: 220 13% 18%;
-  --sidebar-accent-foreground: 220 13% 90%;
+  --border: 28 8% 18%;
+  --input: 28 8% 22%;
+  --ring: 348 60% 64%;
+
+  --sidebar: 28 10% 7%;
+  --sidebar-foreground: 36 20% 92%;
+  --sidebar-border: 28 8% 16%;
+  --sidebar-primary: 348 60% 64%;
+  --sidebar-primary-foreground: 28 10% 10%;
+  --sidebar-accent: 28 8% 16%;
+  --sidebar-accent-foreground: 36 18% 88%;
 }
 
+/* --------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------ */
 @layer base {
   * {
     @apply border-border;
   }
-  body {
-    @apply font-sans antialiased text-foreground;
-    background:
-      radial-gradient(1300px circle at 12% -18%, hsl(var(--accent) / 0.25), transparent 40%),
-      radial-gradient(900px circle at 88% 2%, hsl(var(--primary) / 0.15), transparent 45%),
-      hsl(var(--background));
-    min-height: 100vh;
-    letter-spacing: -0.01em;
+
+  html {
+    font-feature-settings:
+      "ss01" on,
+      "cv11" on,
+      "calt" on,
+      "kern" on;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-serif;
-    letter-spacing: 0.01em;
+
+  body {
+    @apply font-sans text-foreground;
+    background:
+      radial-gradient(1100px circle at 8% -10%, hsl(var(--accent) / 0.55), transparent 45%),
+      radial-gradient(900px circle at 100% 0%, hsl(var(--gold) / 0.08), transparent 50%),
+      radial-gradient(1400px circle at 50% 100%, hsl(var(--primary) / 0.04), transparent 60%),
+      hsl(var(--background));
+    background-attachment: fixed;
+    min-height: 100vh;
+    letter-spacing: -0.005em;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Sub-headings default to Inter for legibility; h1 remains the editorial
+   * serif masthead. Newsreader is designed for screen reading so it stays
+   * crisp even at sub-display sizes — but reserving it for h1 keeps the
+   * hierarchy clear and the rest of the interface easy to scan. */
+  h2, h3, h4, h5, h6 {
+    @apply font-sans text-foreground;
+    letter-spacing: -0.01em;
     font-weight: 600;
+  }
+
+  h1 {
+    @apply font-serif text-foreground;
+    font-variation-settings: "opsz" 72;
+    letter-spacing: -0.02em;
+    font-weight: 500;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
+  }
+
+  /* Tabular numerals everywhere it matters for money/data */
+  table, .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
+/* --------------------------------------------------------------------------
+ * Components: atelier vocabulary
+ * ------------------------------------------------------------------------ */
 @layer utilities {
-  .hover-elevate {
-    @apply transition-transform duration-200 ease-out;
-  }
-  .hover-elevate:hover {
-    transform: translateY(-1px);
-  }
-  .active-elevate-2:active {
-    transform: translateY(1px);
+
+  /* Editorial eyebrow / overline label */
+  .crm-eyebrow {
+    @apply text-[10.5px] font-semibold uppercase tracking-[0.22em] text-muted-foreground;
+    font-feature-settings: "ss01";
   }
 
+  /* Thin gold rule — used as section divider or sidebar accent */
+  .crm-gold-rule {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--gold) / 0.65) 30%,
+      hsl(var(--gold) / 0.65) 70%,
+      transparent 100%
+    );
+    height: 1px;
+  }
+
+  /* Hairline divider */
+  .crm-hairline {
+    border-color: hsl(var(--border) / 0.7);
+  }
+
+  /* Shell + nav surfaces */
   .crm-shell {
     @apply bg-background;
   }
@@ -218,34 +308,147 @@
     padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
   }
 
+  /* The signature card surface
+   * Subtle warm tint, hairline border, almost imperceptible shadow.
+   * Acts as a sheet of fine paper on a slightly off-white desk. */
   .crm-section {
-    @apply rounded-2xl border border-card-border bg-card text-card-foreground shadow-[0_12px_35px_-20px_var(--elevate-3)] transition-all duration-200;
+    @apply relative rounded-2xl border border-card-border bg-card text-card-foreground transition-all duration-300 ease-out;
+    box-shadow:
+      0 1px 0 0 hsl(var(--card-border) / 0.4),
+      0 14px 40px -28px var(--elevate-3),
+      0 2px 6px -4px var(--elevate-2);
   }
 
+  .crm-section-hover {
+    @apply transition-all duration-300 ease-out;
+  }
   .crm-section-hover:hover {
-    @apply shadow-[0_20px_40px_-22px_var(--elevate-3)] border-primary/25;
+    border-color: hsl(var(--primary) / 0.3);
+    box-shadow:
+      0 1px 0 0 hsl(var(--primary) / 0.18),
+      0 22px 48px -28px var(--elevate-3),
+      0 4px 10px -6px var(--elevate-2);
     transform: translateY(-1px);
   }
 
+  /* Page titles — display serif, large optical size */
   .crm-page-title {
-    @apply text-3xl tracking-tight text-foreground;
+    @apply font-serif text-3xl text-foreground sm:text-[2.25rem];
+    font-variation-settings: "opsz" 72;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    font-weight: 500;
   }
 
   .crm-page-subtitle {
-    @apply mt-2 text-sm text-muted-foreground;
+    @apply mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground;
   }
 
+  /* Section heading inside a card — modern editorial sub-heading in Inter
+   * for crisp legibility at smaller sizes. The serif is reserved for the
+   * page masthead and monumental numbers. */
+  .crm-section-title {
+    @apply font-sans text-[15px] text-foreground;
+    letter-spacing: -0.005em;
+    font-weight: 600;
+  }
+
+  /* Numeric display — for stat tiles, totals */
+  .crm-numeric {
+    @apply font-serif tabular-nums;
+    font-variation-settings: "opsz" 72;
+    letter-spacing: -0.02em;
+    font-weight: 500;
+  }
+
+  /* Input focus */
   .crm-input-focus {
-    @apply focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:border-primary/60 focus-visible:outline-none;
+    @apply focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/55 focus-visible:outline-none;
   }
 
+  /* Soft motion utilities */
+  .hover-elevate {
+    @apply transition-transform duration-200 ease-out;
+  }
+  .hover-elevate:hover {
+    transform: translateY(-1px);
+  }
+  .active-elevate-2:active {
+    transform: translateY(1px);
+  }
+
+  /* Atelier entrance animation — paper fading in */
+  @keyframes crm-fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .crm-fade-up {
+    animation: crm-fade-up 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .crm-fade-up-delay-1 { animation-delay: 60ms; }
+  .crm-fade-up-delay-2 { animation-delay: 120ms; }
+  .crm-fade-up-delay-3 { animation-delay: 180ms; }
+  .crm-fade-up-delay-4 { animation-delay: 240ms; }
+
+  /* Shimmer-style skeleton */
+  @keyframes crm-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .crm-shimmer {
+    background-image: linear-gradient(
+      90deg,
+      hsl(var(--muted) / 0.6) 0%,
+      hsl(var(--muted) / 0.9) 50%,
+      hsl(var(--muted) / 0.6) 100%
+    );
+    background-size: 200% 100%;
+    animation: crm-shimmer 1.8s linear infinite;
+  }
+
+  /* Decorative monogram badge */
+  .crm-monogram {
+    @apply inline-flex items-center justify-center rounded-xl;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary) / 0.95) 0%,
+      hsl(var(--primary) / 0.75) 100%
+    );
+    color: hsl(var(--primary-foreground));
+    box-shadow:
+      inset 0 1px 0 0 hsl(0 0% 100% / 0.18),
+      0 6px 18px -8px hsl(var(--primary) / 0.55);
+  }
+
+  /* Mobile main padding override */
   @media (min-width: 768px) {
     .crm-mobile-main {
-      padding-bottom: 2rem;
+      padding-bottom: 2.5rem;
+    }
+  }
+
+  /* Honour reduced motion across the studio. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+    .crm-fade-up,
+    .crm-shimmer,
+    .crm-section-hover {
+      animation: none !important;
+      transform: none !important;
     }
   }
 }
 
+/* --------------------------------------------------------------------------
+ * Print: keep contracts paper-pure regardless of theme
+ * ------------------------------------------------------------------------ */
 .contract-print-page {
   color: #111827;
   font-weight: 400;
@@ -254,17 +457,9 @@
   text-rendering: optimizeLegibility;
 }
 
-.contract-print-page .text-gray-700 {
-  color: #374151;
-}
-
-.contract-print-page .text-gray-600 {
-  color: #4b5563;
-}
-
-.contract-print-page .text-gray-500 {
-  color: #6b7280;
-}
+.contract-print-page .text-gray-700 { color: #374151; }
+.contract-print-page .text-gray-600 { color: #4b5563; }
+.contract-print-page .text-gray-500 { color: #6b7280; }
 
 @media print {
   @page {

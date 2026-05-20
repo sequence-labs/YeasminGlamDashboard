@@ -6,6 +6,14 @@ import dashboardRouter from "./dashboard";
 import servicesRouter from "./services";
 import artistProfileRouter from "./artist-profile";
 import contractTemplatesRouter from "./contract-templates";
+import tagsRouter from "./tags";
+import notificationsRouter from "./notifications";
+import portalRouter from "./portal";
+import emailRouter from "./email";
+import automationsRouter from "./automations";
+import paymentIntentsRouter from "./payment-intents";
+import calendarRouter from "./calendar";
+import leadsRouter from "./leads";
 
 const router: IRouter = Router();
 
@@ -16,5 +24,13 @@ router.use(artistProfileRouter);
 router.use(contractTemplatesRouter);
 router.use(bookingsRouter);
 router.use(dashboardRouter);
+router.use(tagsRouter);
+router.use(notificationsRouter);
+router.use(portalRouter);
+router.use(emailRouter);
+router.use(automationsRouter);
+router.use(paymentIntentsRouter);
+router.use(calendarRouter);
+router.use(leadsRouter);
 
 export default router;

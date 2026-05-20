@@ -23,4 +23,12 @@ export interface ArtistProfileUpdate {
   paymentMethod?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  zelleHandle?: string | null;
+  /** @nullable */
+  venmoHandle?: string | null;
+  /** @nullable */
+  cashAppHandle?: string | null;
+  /** @nullable */
+  paymentInstructions?: string | null;
 }

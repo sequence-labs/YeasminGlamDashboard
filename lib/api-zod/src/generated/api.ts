@@ -187,6 +187,10 @@ export const GetArtistProfileResponse = zod.object({
   "instagram": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "zelleHandle": zod.string().nullish(),
+  "venmoHandle": zod.string().nullish(),
+  "cashAppHandle": zod.string().nullish(),
+  "paymentInstructions": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -207,7 +211,11 @@ export const UpdateArtistProfileBody = zod.object({
   "website": zod.string().nullish(),
   "instagram": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "zelleHandle": zod.string().nullish(),
+  "venmoHandle": zod.string().nullish(),
+  "cashAppHandle": zod.string().nullish(),
+  "paymentInstructions": zod.string().nullish()
 })
 
 export const UpdateArtistProfileResponse = zod.object({
@@ -220,6 +228,10 @@ export const UpdateArtistProfileResponse = zod.object({
   "instagram": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "zelleHandle": zod.string().nullish(),
+  "venmoHandle": zod.string().nullish(),
+  "cashAppHandle": zod.string().nullish(),
+  "paymentInstructions": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string()
 })
@@ -324,6 +336,9 @@ export const ListBookingsResponseItem = zod.object({
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
   "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish().describe('lead | trial_scheduled | trial_complete | contract_sent | signed | active | completed'),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
   "deletedAt": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -353,6 +368,7 @@ export const CreateBookingBody = zod.object({
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
   "notes": zod.string().optional(),
+  "lifecycleStage": zod.string().optional(),
   "lineItems": zod.array(zod.object({
   "serviceItemId": zod.number().optional(),
   "eventId": zod.number().optional(),
@@ -396,6 +412,9 @@ export const GetBookingResponse = zod.object({
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
   "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish(),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
   "deletedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "events": zod.array(zod.object({
@@ -412,7 +431,8 @@ export const GetBookingResponse = zod.object({
   "makeupRate": zod.number().optional(),
   "hairRate": zod.number().optional(),
   "hairAndMakeupRate": zod.number().optional(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
 })),
   "payments": zod.array(zod.object({
   "id": zod.number(),
@@ -470,7 +490,10 @@ export const UpdateBookingBody = zod.object({
   "paymentMethod": zod.string().nullish(),
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().optional(),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish()
 })
 
 export const UpdateBookingResponse = zod.object({
@@ -492,6 +515,9 @@ export const UpdateBookingResponse = zod.object({
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
   "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish().describe('lead | trial_scheduled | trial_complete | contract_sent | signed | active | completed'),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
   "deletedAt": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -531,6 +557,9 @@ export const RestoreBookingResponse = zod.object({
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
   "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish().describe('lead | trial_scheduled | trial_complete | contract_sent | signed | active | completed'),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
   "deletedAt": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -565,7 +594,8 @@ export const CreateEventBody = zod.object({
   "makeupOnlyCount": zod.number().optional(),
   "makeupRate": zod.number().optional(),
   "hairRate": zod.number().optional(),
-  "hairAndMakeupRate": zod.number().optional()
+  "hairAndMakeupRate": zod.number().optional(),
+  "kind": zod.enum(['event', 'trial']).optional()
 })
 
 
@@ -664,7 +694,8 @@ export const UpdateEventBody = zod.object({
   "makeupOnlyCount": zod.number().optional(),
   "makeupRate": zod.number().optional(),
   "hairRate": zod.number().optional(),
-  "hairAndMakeupRate": zod.number().optional()
+  "hairAndMakeupRate": zod.number().optional(),
+  "kind": zod.enum(['event', 'trial']).optional()
 })
 
 export const UpdateEventResponse = zod.object({
@@ -681,7 +712,8 @@ export const UpdateEventResponse = zod.object({
   "makeupRate": zod.number().optional(),
   "hairRate": zod.number().optional(),
   "hairAndMakeupRate": zod.number().optional(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
 })
 
 
@@ -723,6 +755,9 @@ export const GetContractResponse = zod.object({
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
   "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish(),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
   "deletedAt": zod.string().nullish(),
   "createdAt": zod.string(),
   "events": zod.array(zod.object({
@@ -739,7 +774,8 @@ export const GetContractResponse = zod.object({
   "makeupRate": zod.number().optional(),
   "hairRate": zod.number().optional(),
   "hairAndMakeupRate": zod.number().optional(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
 })),
   "payments": zod.array(zod.object({
   "id": zod.number(),
@@ -796,7 +832,8 @@ export const GetContractResponse = zod.object({
   "makeupRate": zod.number().optional(),
   "hairRate": zod.number().optional(),
   "hairAndMakeupRate": zod.number().optional(),
-  "subtotal": zod.number()
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
 })),
   "contractTemplate": zod.object({
   "id": zod.number(),
@@ -893,9 +930,1082 @@ export const GetRecentBookingsResponseItem = zod.object({
   "earlyMorningFee": zod.number().optional(),
   "travelFee": zod.number().optional(),
   "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish().describe('lead | trial_scheduled | trial_complete | contract_sent | signed | active | completed'),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
   "deletedAt": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const GetRecentBookingsResponse = zod.array(GetRecentBookingsResponseItem)
+
+
+/**
+ * @summary Derived next-actions list
+ */
+export const GetNextActionsResponseItem = zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['retainer_due', 'balance_due', 'day_before_confirm', 'unsigned_contract', 'new_lead']),
+  "title": zod.string(),
+  "detail": zod.string().nullish(),
+  "bookingId": zod.number().nullish(),
+  "leadId": zod.number().nullish(),
+  "href": zod.string().nullish(),
+  "severity": zod.enum(['info', 'warn', 'attention']),
+  "dueOn": zod.string().nullish()
+})
+export const GetNextActionsResponse = zod.array(GetNextActionsResponseItem)
+
+
+/**
+ * @summary List notifications
+ */
+export const ListNotificationsResponseItem = zod.object({
+  "id": zod.number(),
+  "category": zod.string(),
+  "title": zod.string(),
+  "body": zod.string().nullish(),
+  "href": zod.string().nullish(),
+  "resourceType": zod.string().nullish(),
+  "resourceId": zod.number().nullish(),
+  "readAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem)
+
+
+/**
+ * @summary Mark a notification as read
+ */
+export const MarkNotificationReadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const MarkNotificationReadResponse = zod.object({
+  "id": zod.number(),
+  "category": zod.string(),
+  "title": zod.string(),
+  "body": zod.string().nullish(),
+  "href": zod.string().nullish(),
+  "resourceType": zod.string().nullish(),
+  "resourceId": zod.number().nullish(),
+  "readAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List all tags
+ */
+export const ListTagsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListTagsResponse = zod.array(ListTagsResponseItem)
+
+
+/**
+ * @summary Create a tag
+ */
+
+
+
+export const CreateTagBody = zod.object({
+  "name": zod.string().min(1),
+  "color": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete a tag
+ */
+export const DeleteTagParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List tags for a client
+ */
+export const ListClientTagsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListClientTagsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListClientTagsResponse = zod.array(ListClientTagsResponseItem)
+
+
+/**
+ * @summary Assign a tag to a client
+ */
+export const AssignClientTagParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AssignClientTagBody = zod.object({
+  "tagId": zod.number()
+})
+
+
+/**
+ * @summary Remove a tag from a client
+ */
+export const RemoveClientTagParams = zod.object({
+  "id": zod.coerce.number(),
+  "tagId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List tags for a booking
+ */
+export const ListBookingTagsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListBookingTagsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "color": zod.string(),
+  "createdAt": zod.string()
+})
+export const ListBookingTagsResponse = zod.array(ListBookingTagsResponseItem)
+
+
+/**
+ * @summary Assign a tag to a booking
+ */
+export const AssignBookingTagParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AssignBookingTagBody = zod.object({
+  "tagId": zod.number()
+})
+
+
+/**
+ * @summary Remove a tag from a booking
+ */
+export const RemoveBookingTagParams = zod.object({
+  "id": zod.coerce.number(),
+  "tagId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List saved segments
+ */
+export const ListSavedSegmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "scope": zod.enum(['clients', 'bookings']),
+  "filterJson": zod.string(),
+  "pinned": zod.number(),
+  "createdAt": zod.string()
+})
+export const ListSavedSegmentsResponse = zod.array(ListSavedSegmentsResponseItem)
+
+
+/**
+ * @summary Create a saved segment
+ */
+
+
+
+export const CreateSavedSegmentBody = zod.object({
+  "name": zod.string().min(1),
+  "scope": zod.enum(['clients', 'bookings']),
+  "filterJson": zod.string(),
+  "pinned": zod.number().optional()
+})
+
+
+/**
+ * @summary Delete a saved segment
+ */
+export const DeleteSavedSegmentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Get the share link for a booking (creates one if absent)
+ */
+export const GetBookingShareLinkParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetBookingShareLinkResponse = zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "token": zod.string(),
+  "url": zod.string(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.string().nullish(),
+  "revokedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Rotate (regenerate) the share link
+ */
+export const RotateBookingShareLinkParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RotateBookingShareLinkResponse = zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "token": zod.string(),
+  "url": zod.string(),
+  "viewCount": zod.number(),
+  "lastViewedAt": zod.string().nullish(),
+  "revokedAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Revoke the share link
+ */
+export const RevokeBookingShareLinkParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List email templates
+ */
+export const ListEmailTemplatesResponseItem = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "builtIn": zod.boolean(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListEmailTemplatesResponse = zod.array(ListEmailTemplatesResponseItem)
+
+
+/**
+ * @summary Create an email template
+ */
+
+
+
+
+
+
+export const CreateEmailTemplateBody = zod.object({
+  "slug": zod.string().min(1),
+  "name": zod.string().min(1),
+  "subject": zod.string().min(1),
+  "body": zod.string().min(1),
+  "active": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update an email template
+ */
+export const UpdateEmailTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateEmailTemplateBody = zod.object({
+  "name": zod.string().optional(),
+  "subject": zod.string().optional(),
+  "body": zod.string().optional(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateEmailTemplateResponse = zod.object({
+  "id": zod.number(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "builtIn": zod.boolean(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an email template
+ */
+export const DeleteEmailTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Render a template with booking/client merge fields
+ */
+export const RenderEmailTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const RenderEmailTemplateBody = zod.object({
+  "bookingId": zod.number().optional(),
+  "clientId": zod.number().optional()
+})
+
+export const RenderEmailTemplateResponse = zod.object({
+  "subject": zod.string(),
+  "body": zod.string(),
+  "toEmail": zod.string(),
+  "clientName": zod.string().nullish()
+})
+
+
+/**
+ * @summary List composed/sent email messages
+ */
+export const ListEmailMessagesQueryParams = zod.object({
+  "clientId": zod.coerce.number().optional(),
+  "bookingId": zod.coerce.number().optional()
+})
+
+export const ListEmailMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "templateId": zod.number().nullish(),
+  "clientId": zod.number().nullish(),
+  "bookingId": zod.number().nullish(),
+  "toEmail": zod.string(),
+  "ccEmails": zod.string().nullish(),
+  "bccEmails": zod.string().nullish(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'copied', 'opened_in_mail_app', 'marked_sent']),
+  "sentAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListEmailMessagesResponse = zod.array(ListEmailMessagesResponseItem)
+
+
+/**
+ * @summary Create an email message (draft or recorded send)
+ */
+
+
+
+
+
+export const CreateEmailMessageBody = zod.object({
+  "templateId": zod.number().optional(),
+  "clientId": zod.number().optional(),
+  "bookingId": zod.number().optional(),
+  "toEmail": zod.string().min(1),
+  "ccEmails": zod.string().optional(),
+  "bccEmails": zod.string().optional(),
+  "subject": zod.string().min(1),
+  "body": zod.string().min(1),
+  "status": zod.enum(['draft', 'copied', 'opened_in_mail_app', 'marked_sent']).optional()
+})
+
+
+/**
+ * @summary Update an email message (status or contents)
+ */
+export const UpdateEmailMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateEmailMessageBody = zod.object({
+  "subject": zod.string().optional(),
+  "body": zod.string().optional(),
+  "status": zod.enum(['draft', 'copied', 'opened_in_mail_app', 'marked_sent']).optional()
+})
+
+export const UpdateEmailMessageResponse = zod.object({
+  "id": zod.number(),
+  "templateId": zod.number().nullish(),
+  "clientId": zod.number().nullish(),
+  "bookingId": zod.number().nullish(),
+  "toEmail": zod.string(),
+  "ccEmails": zod.string().nullish(),
+  "bccEmails": zod.string().nullish(),
+  "subject": zod.string(),
+  "body": zod.string(),
+  "status": zod.enum(['draft', 'copied', 'opened_in_mail_app', 'marked_sent']),
+  "sentAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an email message
+ */
+export const DeleteEmailMessageParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Get automation settings
+ */
+export const GetAutomationSettingsResponse = zod.object({
+  "id": zod.number(),
+  "retainerReminderEnabled": zod.boolean(),
+  "retainerReminderDays": zod.number(),
+  "balanceReminderEnabled": zod.boolean(),
+  "balanceReminderDays": zod.number(),
+  "dayBeforeReminderEnabled": zod.boolean(),
+  "thankYouEnabled": zod.boolean(),
+  "thankYouDays": zod.number(),
+  "inquiryAutoReplyEnabled": zod.boolean(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update automation settings
+ */
+export const UpdateAutomationSettingsBody = zod.object({
+  "retainerReminderEnabled": zod.boolean().optional(),
+  "retainerReminderDays": zod.number().optional(),
+  "balanceReminderEnabled": zod.boolean().optional(),
+  "balanceReminderDays": zod.number().optional(),
+  "dayBeforeReminderEnabled": zod.boolean().optional(),
+  "thankYouEnabled": zod.boolean().optional(),
+  "thankYouDays": zod.number().optional(),
+  "inquiryAutoReplyEnabled": zod.boolean().optional()
+})
+
+export const UpdateAutomationSettingsResponse = zod.object({
+  "id": zod.number(),
+  "retainerReminderEnabled": zod.boolean(),
+  "retainerReminderDays": zod.number(),
+  "balanceReminderEnabled": zod.boolean(),
+  "balanceReminderDays": zod.number(),
+  "dayBeforeReminderEnabled": zod.boolean(),
+  "thankYouEnabled": zod.boolean(),
+  "thankYouDays": zod.number(),
+  "inquiryAutoReplyEnabled": zod.boolean(),
+  "createdAt": zod.string().optional(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Run the reminder pass now (claims due scheduled tasks)
+ */
+export const RunAutomationsResponse = zod.object({
+  "claimed": zod.number(),
+  "completed": zod.number(),
+  "failed": zod.number()
+})
+
+
+/**
+ * @summary List scheduled tasks
+ */
+export const ListScheduledTasksResponseItem = zod.object({
+  "id": zod.number(),
+  "kind": zod.string(),
+  "resourceType": zod.string().nullish(),
+  "resourceId": zod.number().nullish(),
+  "runAt": zod.string(),
+  "status": zod.enum(['pending', 'claimed', 'completed', 'failed', 'skipped']),
+  "attempts": zod.number(),
+  "claimedAt": zod.string().nullish(),
+  "completedAt": zod.string().nullish(),
+  "error": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListScheduledTasksResponse = zod.array(ListScheduledTasksResponseItem)
+
+
+/**
+ * @summary List payment intents for a booking
+ */
+export const ListBookingPaymentIntentsParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListBookingPaymentIntentsResponseItem = zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "amount": zod.number(),
+  "kind": zod.enum(['retainer', 'balance', 'custom']),
+  "method": zod.enum(['zelle', 'venmo', 'cashapp', 'other']),
+  "status": zod.enum(['requested', 'pending', 'paid', 'cancelled']),
+  "note": zod.string().nullish(),
+  "requestedAt": zod.string(),
+  "paidAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListBookingPaymentIntentsResponse = zod.array(ListBookingPaymentIntentsResponseItem)
+
+
+/**
+ * @summary Create a payment intent (link request)
+ */
+export const CreatePaymentIntentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const CreatePaymentIntentBody = zod.object({
+  "amount": zod.number(),
+  "kind": zod.enum(['retainer', 'balance', 'custom']),
+  "method": zod.enum(['zelle', 'venmo', 'cashapp', 'other']),
+  "note": zod.string().optional()
+})
+
+
+/**
+ * @summary Update payment intent (mark paid / cancel)
+ */
+export const UpdatePaymentIntentParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdatePaymentIntentBody = zod.object({
+  "status": zod.enum(['requested', 'pending', 'paid', 'cancelled']).optional(),
+  "note": zod.string().optional()
+})
+
+export const UpdatePaymentIntentResponse = zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "amount": zod.number(),
+  "kind": zod.enum(['retainer', 'balance', 'custom']),
+  "method": zod.enum(['zelle', 'venmo', 'cashapp', 'other']),
+  "status": zod.enum(['requested', 'pending', 'paid', 'cancelled']),
+  "note": zod.string().nullish(),
+  "requestedAt": zod.string(),
+  "paidAt": zod.string().nullish(),
+  "cancelledAt": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List events in a date range for the calendar view
+ */
+export const ListCalendarEventsQueryParams = zod.object({
+  "start": zod.coerce.string().optional().describe('ISO date (inclusive)'),
+  "end": zod.coerce.string().optional().describe('ISO date (inclusive)')
+})
+
+export const ListCalendarEventsResponseItem = zod.object({
+  "eventId": zod.number(),
+  "bookingId": zod.number(),
+  "clientName": zod.string(),
+  "eventType": zod.string().optional(),
+  "eventName": zod.string(),
+  "eventDate": zod.string(),
+  "servicesBegin": zod.string().nullish(),
+  "completionTarget": zod.string().nullish(),
+  "location": zod.string(),
+  "bookingStatus": zod.string(),
+  "lifecycleStage": zod.string().nullish(),
+  "kind": zod.enum(['event', 'trial'])
+})
+export const ListCalendarEventsResponse = zod.array(ListCalendarEventsResponseItem)
+
+
+/**
+ * @summary Get the calendar feed token (creates one if absent)
+ */
+export const GetCalendarFeedTokenResponse = zod.object({
+  "token": zod.string(),
+  "url": zod.string(),
+  "label": zod.string()
+})
+
+
+/**
+ * @summary Rotate the calendar feed token
+ */
+export const RotateCalendarFeedTokenResponse = zod.object({
+  "token": zod.string(),
+  "url": zod.string(),
+  "label": zod.string()
+})
+
+
+/**
+ * @summary List leads
+ */
+export const ListLeadsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "borough": zod.string().nullish(),
+  "headcount": zod.number().nullish(),
+  "source": zod.string().nullish(),
+  "vision": zod.string().nullish(),
+  "status": zod.enum(['new', 'contacted', 'converted', 'archived']),
+  "convertedClientId": zod.number().nullish(),
+  "convertedBookingId": zod.number().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListLeadsResponse = zod.array(ListLeadsResponseItem)
+
+
+/**
+ * @summary Get a lead by id
+ */
+export const GetLeadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetLeadResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "borough": zod.string().nullish(),
+  "headcount": zod.number().nullish(),
+  "source": zod.string().nullish(),
+  "vision": zod.string().nullish(),
+  "status": zod.enum(['new', 'contacted', 'converted', 'archived']),
+  "convertedClientId": zod.number().nullish(),
+  "convertedBookingId": zod.number().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a lead (status, conversion ids)
+ */
+export const UpdateLeadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateLeadBody = zod.object({
+  "status": zod.enum(['new', 'contacted', 'converted', 'archived']).optional(),
+  "convertedClientId": zod.number().nullish(),
+  "convertedBookingId": zod.number().nullish()
+})
+
+export const UpdateLeadResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "borough": zod.string().nullish(),
+  "headcount": zod.number().nullish(),
+  "source": zod.string().nullish(),
+  "vision": zod.string().nullish(),
+  "status": zod.enum(['new', 'contacted', 'converted', 'archived']),
+  "convertedClientId": zod.number().nullish(),
+  "convertedBookingId": zod.number().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Convert a lead to a client (and optionally a booking)
+ */
+export const ConvertLeadParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ConvertLeadResponse = zod.object({
+  "lead": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "eventDate": zod.string().nullish(),
+  "eventType": zod.string().nullish(),
+  "borough": zod.string().nullish(),
+  "headcount": zod.number().nullish(),
+  "source": zod.string().nullish(),
+  "vision": zod.string().nullish(),
+  "status": zod.enum(['new', 'contacted', 'converted', 'archived']),
+  "convertedClientId": zod.number().nullish(),
+  "convertedBookingId": zod.number().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "createdAt": zod.string()
+}),
+  "clientId": zod.number(),
+  "bookingId": zod.number().nullish()
+})
+
+
+/**
+ * @summary Public booking portal (token-gated)
+ */
+export const GetPortalBookingParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const GetPortalBookingResponse = zod.object({
+  "booking": zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "eventType": zod.string(),
+  "location": zod.string(),
+  "locationDetail": zod.string().nullish(),
+  "firstServiceDate": zod.string().nullish(),
+  "status": zod.enum(['draft', 'active', 'completed', 'cancelled']),
+  "grandTotal": zod.number(),
+  "retainerAmount": zod.number(),
+  "retainerPaid": zod.boolean(),
+  "balancePaid": zod.boolean(),
+  "balanceDueDate": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "earlyMorningFee": zod.number().optional(),
+  "travelFee": zod.number().optional(),
+  "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish(),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
+  "deletedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "events": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventName": zod.string().describe('e.g. Sangeet, Wedding Ceremony, Reception'),
+  "eventDate": zod.string(),
+  "servicesBegin": zod.string().nullable(),
+  "completionTarget": zod.string().nullable(),
+  "sortOrder": zod.number(),
+  "hairAndMakeupCount": zod.number().optional(),
+  "hairOnlyCount": zod.number().optional(),
+  "makeupOnlyCount": zod.number().optional(),
+  "makeupRate": zod.number().optional(),
+  "hairRate": zod.number().optional(),
+  "hairAndMakeupRate": zod.number().optional(),
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
+})),
+  "payments": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "amount": zod.number(),
+  "type": zod.enum(['retainer', 'balance', 'partial', 'other']),
+  "note": zod.string().nullish(),
+  "paidAt": zod.string()
+})),
+  "lineItems": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventId": zod.number().nullish(),
+  "serviceItemId": zod.number().nullish(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "kind": zod.enum(['service', 'fee']),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "unitLabel": zod.string(),
+  "calculationNote": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "total": zod.number()
+})),
+  "activity": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "action": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "metadata": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+}),
+  "client": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+}),
+  "events": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventName": zod.string().describe('e.g. Sangeet, Wedding Ceremony, Reception'),
+  "eventDate": zod.string(),
+  "servicesBegin": zod.string().nullable(),
+  "completionTarget": zod.string().nullable(),
+  "sortOrder": zod.number(),
+  "hairAndMakeupCount": zod.number().optional(),
+  "hairOnlyCount": zod.number().optional(),
+  "makeupOnlyCount": zod.number().optional(),
+  "makeupRate": zod.number().optional(),
+  "hairRate": zod.number().optional(),
+  "hairAndMakeupRate": zod.number().optional(),
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
+})),
+  "lineItems": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventId": zod.number().nullish(),
+  "serviceItemId": zod.number().nullish(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "kind": zod.enum(['service', 'fee']),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "unitLabel": zod.string(),
+  "calculationNote": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "total": zod.number()
+})),
+  "payments": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "amount": zod.number(),
+  "type": zod.enum(['retainer', 'balance', 'partial', 'other']),
+  "note": zod.string().nullish(),
+  "paidAt": zod.string()
+})),
+  "signed": zod.boolean(),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
+  "retainerAmount": zod.number(),
+  "balanceDue": zod.number(),
+  "grandTotal": zod.number(),
+  "contractTemplate": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "body": zod.string(),
+  "active": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "locked": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "artistName": zod.string(),
+  "artistBusinessName": zod.string(),
+  "artistEmail": zod.string().nullish(),
+  "artistPhone": zod.string().nullish(),
+  "artistPaymentMethod": zod.string().nullish(),
+  "zelleHandle": zod.string().nullish(),
+  "venmoHandle": zod.string().nullish(),
+  "cashAppHandle": zod.string().nullish(),
+  "paymentInstructions": zod.string().nullish()
+})
+
+
+/**
+ * @summary Capture a typed signature for the contract
+ */
+export const SignPortalContractParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+
+
+
+
+export const SignPortalContractBody = zod.object({
+  "signerName": zod.string().min(1),
+  "signerInitials": zod.string().min(1),
+  "signerEmail": zod.string().optional()
+})
+
+export const SignPortalContractResponse = zod.object({
+  "booking": zod.object({
+  "id": zod.number(),
+  "clientId": zod.number(),
+  "contractTemplateId": zod.number().nullish(),
+  "clientName": zod.string(),
+  "clientEmail": zod.string().nullish(),
+  "clientPhone": zod.string().nullish(),
+  "eventType": zod.string(),
+  "location": zod.string(),
+  "locationDetail": zod.string().nullish(),
+  "firstServiceDate": zod.string().nullish(),
+  "status": zod.enum(['draft', 'active', 'completed', 'cancelled']),
+  "grandTotal": zod.number(),
+  "retainerAmount": zod.number(),
+  "retainerPaid": zod.boolean(),
+  "balancePaid": zod.boolean(),
+  "balanceDueDate": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "earlyMorningFee": zod.number().optional(),
+  "travelFee": zod.number().optional(),
+  "notes": zod.string().nullish(),
+  "lifecycleStage": zod.string().nullish(),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
+  "deletedAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "events": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventName": zod.string().describe('e.g. Sangeet, Wedding Ceremony, Reception'),
+  "eventDate": zod.string(),
+  "servicesBegin": zod.string().nullable(),
+  "completionTarget": zod.string().nullable(),
+  "sortOrder": zod.number(),
+  "hairAndMakeupCount": zod.number().optional(),
+  "hairOnlyCount": zod.number().optional(),
+  "makeupOnlyCount": zod.number().optional(),
+  "makeupRate": zod.number().optional(),
+  "hairRate": zod.number().optional(),
+  "hairAndMakeupRate": zod.number().optional(),
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
+})),
+  "payments": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "amount": zod.number(),
+  "type": zod.enum(['retainer', 'balance', 'partial', 'other']),
+  "note": zod.string().nullish(),
+  "paidAt": zod.string()
+})),
+  "lineItems": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventId": zod.number().nullish(),
+  "serviceItemId": zod.number().nullish(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "kind": zod.enum(['service', 'fee']),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "unitLabel": zod.string(),
+  "calculationNote": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "total": zod.number()
+})),
+  "activity": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "action": zod.string(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "metadata": zod.string().nullish(),
+  "createdAt": zod.string()
+}))
+}),
+  "client": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string()
+}),
+  "events": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventName": zod.string().describe('e.g. Sangeet, Wedding Ceremony, Reception'),
+  "eventDate": zod.string(),
+  "servicesBegin": zod.string().nullable(),
+  "completionTarget": zod.string().nullable(),
+  "sortOrder": zod.number(),
+  "hairAndMakeupCount": zod.number().optional(),
+  "hairOnlyCount": zod.number().optional(),
+  "makeupOnlyCount": zod.number().optional(),
+  "makeupRate": zod.number().optional(),
+  "hairRate": zod.number().optional(),
+  "hairAndMakeupRate": zod.number().optional(),
+  "subtotal": zod.number(),
+  "kind": zod.enum(['event', 'trial']).optional()
+})),
+  "lineItems": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "eventId": zod.number().nullish(),
+  "serviceItemId": zod.number().nullish(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "kind": zod.enum(['service', 'fee']),
+  "quantity": zod.number(),
+  "unitPrice": zod.number(),
+  "unitLabel": zod.string(),
+  "calculationNote": zod.string().nullish(),
+  "sortOrder": zod.number(),
+  "total": zod.number()
+})),
+  "payments": zod.array(zod.object({
+  "id": zod.number(),
+  "bookingId": zod.number(),
+  "amount": zod.number(),
+  "type": zod.enum(['retainer', 'balance', 'partial', 'other']),
+  "note": zod.string().nullish(),
+  "paidAt": zod.string()
+})),
+  "signed": zod.boolean(),
+  "signedAt": zod.string().nullish(),
+  "signedByName": zod.string().nullish(),
+  "retainerAmount": zod.number(),
+  "balanceDue": zod.number(),
+  "grandTotal": zod.number(),
+  "contractTemplate": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "body": zod.string(),
+  "active": zod.boolean(),
+  "isDefault": zod.boolean(),
+  "locked": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}),
+  "artistName": zod.string(),
+  "artistBusinessName": zod.string(),
+  "artistEmail": zod.string().nullish(),
+  "artistPhone": zod.string().nullish(),
+  "artistPaymentMethod": zod.string().nullish(),
+  "zelleHandle": zod.string().nullish(),
+  "venmoHandle": zod.string().nullish(),
+  "cashAppHandle": zod.string().nullish(),
+  "paymentInstructions": zod.string().nullish()
+})
+
+
+/**
+ * @summary Submit a public lead/inquiry
+ */
+
+
+
+
+export const CreatePublicLeadBody = zod.object({
+  "name": zod.string().min(1),
+  "email": zod.string().min(1),
+  "phone": zod.string().optional(),
+  "eventDate": zod.string().optional(),
+  "eventType": zod.string().optional(),
+  "borough": zod.string().optional(),
+  "headcount": zod.number().optional(),
+  "source": zod.string().optional(),
+  "vision": zod.string().optional()
+})
 
 

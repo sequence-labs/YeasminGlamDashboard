@@ -184,20 +184,27 @@ export default function ContractView() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto p-8 space-y-8">
-        <Skeleton className="h-12 w-64 mx-auto" />
-        <Skeleton className="h-64 w-full crm-section p-4" />
-        <Skeleton className="h-64 w-full crm-section p-4" />
+      <div className="mx-auto max-w-4xl space-y-8 p-8">
+        <Skeleton className="mx-auto h-12 w-64" />
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
   if (!contract) {
     return (
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="crm-section p-8 text-center text-muted-foreground space-y-3">
-          <h2 className="crm-page-title text-lg">Contract not found</h2>
-          <p className="text-sm">The selected contract route is not available.</p>
-          <Link href="/bookings" className="inline-flex text-sm font-medium text-primary hover:text-primary/80">
+      <div className="mx-auto max-w-xl p-8">
+        <div className="crm-section p-10 text-center">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Contract not found
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The selected contract route is not available.
+          </p>
+          <Link
+            href="/bookings"
+            className="mt-6 inline-flex text-xs font-medium uppercase tracking-[0.14em] text-primary hover:underline"
+          >
             Return to bookings
           </Link>
         </div>

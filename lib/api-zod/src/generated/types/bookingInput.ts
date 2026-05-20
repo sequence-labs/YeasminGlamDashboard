@@ -24,5 +24,6 @@ export interface BookingInput {
   earlyMorningFee?: number;
   travelFee?: number;
   notes?: string;
+  lifecycleStage?: string;
   lineItems?: BookingLineItemInput[];
 }

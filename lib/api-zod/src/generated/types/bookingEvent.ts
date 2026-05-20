@@ -5,6 +5,7 @@
  * Glam CRM API for makeup artist business management
  * OpenAPI spec version: 0.1.0
  */
+import type { BookingEventKind } from './bookingEventKind';
 
 export interface BookingEvent {
   id: number;
@@ -24,4 +25,5 @@ export interface BookingEvent {
   hairRate?: number;
   hairAndMakeupRate?: number;
   subtotal: number;
+  kind?: BookingEventKind;
 }

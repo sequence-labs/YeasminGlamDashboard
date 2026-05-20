@@ -41,6 +41,12 @@ export interface BookingDetail {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  lifecycleStage?: string | null;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  signedByName?: string | null;
+  /** @nullable */
   deletedAt?: string | null;
   createdAt: string;
   events: BookingEvent[];

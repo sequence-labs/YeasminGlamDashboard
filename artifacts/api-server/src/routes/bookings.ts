@@ -33,6 +33,7 @@ import {
 } from "@workspace/api-zod";
 import { getOrCreateArtistProfile } from "../lib/artist-profile";
 import { ensureDefaultContractTemplate, serializeContractTemplate } from "../lib/contract-templates";
+import { scheduleBookingReminders } from "../lib/scheduler";
 
 const router: IRouter = Router();
 
@@ -48,6 +49,9 @@ function serializeBooking(b: typeof bookingsTable.$inferSelect, clientName: stri
     retainerAmount: parseFloat(b.retainerAmount as unknown as string),
     earlyMorningFee: parseFloat(b.earlyMorningFee as unknown as string),
     travelFee: parseFloat(b.travelFee as unknown as string),
+    lifecycleStage: b.lifecycleStage,
+    signedAt: b.signedAt ? b.signedAt.toISOString() : null,
+    signedByName: b.signedByName,
     deletedAt: b.deletedAt ? b.deletedAt.toISOString() : null,
     createdAt: b.createdAt.toISOString(),
   };
@@ -122,6 +126,7 @@ function serializeEvent(e: typeof eventsTable.$inferSelect) {
     hairRate: parseFloat(e.hairRate as unknown as string),
     hairAndMakeupRate: parseFloat(e.hairAndMakeupRate as unknown as string),
     subtotal: parseFloat(e.subtotal as unknown as string),
+    kind: (e.kind as "event" | "trial") ?? "event",
   };
 }
 
@@ -336,6 +341,7 @@ router.post("/bookings", async (req, res): Promise<void> => {
     earlyMorningFee: earlyMorningFee.toFixed(2),
     travelFee: travelFee.toFixed(2),
     notes: parsed.data.notes ?? null,
+    lifecycleStage: parsed.data.lifecycleStage ?? "lead",
   }).returning();
 
   if (parsed.data.lineItems && parsed.data.lineItems.length > 0) {
@@ -352,6 +358,7 @@ router.post("/bookings", async (req, res): Promise<void> => {
     "Booking created",
     `Booking was created for ${client.name}.`,
   );
+  await scheduleBookingReminders(booking.id).catch(() => undefined);
   res.status(201).json(serializeBooking(updatedBooking, client.name));
 });
 
@@ -435,6 +442,7 @@ router.patch("/bookings/:id", async (req, res): Promise<void> => {
   if (parsed.data.earlyMorningFee !== undefined) updateData.earlyMorningFee = parsed.data.earlyMorningFee.toFixed(2);
   if (parsed.data.travelFee !== undefined) updateData.travelFee = parsed.data.travelFee.toFixed(2);
   if (parsed.data.retainerAmount !== undefined) updateData.retainerAmount = parsed.data.retainerAmount.toFixed(2);
+  if (parsed.data.lifecycleStage !== undefined) updateData.lifecycleStage = parsed.data.lifecycleStage;
 
   const [booking] = await db.update(bookingsTable)
     .set(updateData)
@@ -559,6 +567,7 @@ router.post("/bookings/:id/events", async (req, res): Promise<void> => {
     hairRate: hRate.toFixed(2),
     hairAndMakeupRate: hamRate.toFixed(2),
     subtotal: subtotal.toFixed(2),
+    kind: parsed.data.kind ?? "event",
   }).returning();
   await recomputeGrandTotal(params.data.id);
   await syncFirstServiceDateFromEvents(params.data.id);
@@ -733,6 +742,7 @@ router.patch("/bookings/:id/events/:eventId", async (req, res): Promise<void> =>
   if (parsed.data.servicesBegin !== undefined) updateData.servicesBegin = parsed.data.servicesBegin;
   if (parsed.data.completionTarget !== undefined) updateData.completionTarget = parsed.data.completionTarget;
   if (parsed.data.sortOrder !== undefined) updateData.sortOrder = parsed.data.sortOrder;
+  if (parsed.data.kind !== undefined) updateData.kind = parsed.data.kind;
   const [updated] = await db.update(eventsTable).set(updateData).where(eq(eventsTable.id, params.data.eventId)).returning();
   await recomputeGrandTotal(params.data.id);
   await syncFirstServiceDateFromEvents(params.data.id);
