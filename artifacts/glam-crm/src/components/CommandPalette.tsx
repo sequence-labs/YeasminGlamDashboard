@@ -5,11 +5,10 @@ import {
   CalendarDays,
   CalendarPlus,
   CheckCircle2,
-  Inbox,
   LayoutDashboard,
   ListChecks,
   PenSquare,
-  Plus,
+  ReceiptText,
   Search,
   Sparkles,
   Sun,
@@ -17,7 +16,6 @@ import {
   UserPlus,
   UserRound,
   Users,
-  Wand2,
 } from "lucide-react";
 import {
   getListBookingsQueryKey,
@@ -102,8 +100,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             <PaletteItem onSelect={() => go("/calendar")} icon={CalendarDays} label="Calendar" />
             <PaletteItem onSelect={() => go("/clients")} icon={Users} label="Clients" />
             <PaletteItem onSelect={() => go("/services")} icon={Sparkles} label="Services" />
-            <PaletteItem onSelect={() => go("/leads")} icon={Inbox} label="Leads" />
-            <PaletteItem onSelect={() => go("/automations")} icon={Wand2} label="Automations" />
+            <PaletteItem onSelect={() => go("/expenses")} icon={ReceiptText} label="Expenses" />
             <PaletteItem onSelect={() => go("/artist")} icon={UserRound} label="Artist profile" />
             <PaletteItem onSelect={() => go("/contracts")} icon={PenSquare} label="Contracts" />
           </Command.Group>
@@ -111,7 +108,6 @@ export function CommandPalette({ open, onOpenChange }: Props) {
           <Command.Group heading="Create" className="px-1 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.18em] [&_[cmdk-group-heading]]:text-muted-foreground">
             <PaletteItem onSelect={() => go("/bookings/new")} icon={CalendarPlus} label="New booking" />
             <PaletteItem onSelect={() => go("/clients/new")} icon={UserPlus} label="New client" />
-            <PaletteItem onSelect={() => go("/inquire")} icon={Plus} label="Open public inquiry form" />
           </Command.Group>
 
           <Command.Group heading="Preferences" className="px-1 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.18em] [&_[cmdk-group-heading]]:text-muted-foreground">

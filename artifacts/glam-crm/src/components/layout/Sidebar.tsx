@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import {
   Command as CommandIcon,
   FileText,
-  Inbox,
   LayoutDashboard,
   Users,
   CalendarDays,
@@ -12,13 +11,11 @@ import {
   MoreHorizontal,
   Moon,
   Sun,
-  Wand2,
+  ReceiptText,
   CalendarRange,
 } from "lucide-react";
 import {
-  getListNotificationsQueryKey,
   useGetArtistProfile,
-  useListNotifications,
 } from "@workspace/api-client-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -30,14 +27,13 @@ const primaryLinks = [
   { href: "/bookings", label: "Bookings", icon: CalendarDays },
   { href: "/calendar", label: "Calendar", icon: CalendarRange },
   { href: "/clients", label: "Clients", icon: Users },
-  { href: "/leads", label: "Leads", icon: Inbox },
 ];
 
 const secondaryLinks = [
   { href: "/services", label: "Services", icon: Sparkles },
+  { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/artist", label: "Artist", icon: UserRound },
   { href: "/contracts", label: "Contracts", icon: FileText },
-  { href: "/automations", label: "Automations", icon: Wand2 },
 ];
 
 const allLinks = [...primaryLinks, ...secondaryLinks];
@@ -58,19 +54,11 @@ function monogramFrom(name: string) {
 export function Sidebar() {
   const [location] = useLocation();
   const { data: artistProfile } = useGetArtistProfile();
-  const { data: notifications = [] } = useListNotifications({
-    query: {
-      refetchInterval: 60_000,
-      refetchOnWindowFocus: true,
-      queryKey: getListNotificationsQueryKey(),
-    },
-  });
   const businessName = artistProfile?.businessName?.trim() || "Glam Studio";
   const displayName = artistProfile?.displayName?.trim() || "Artist Profile";
   const monogram = monogramFrom(displayName || businessName);
   const palette = useCommandPalette();
   const { theme, toggle: toggleTheme } = useTheme();
-  const leadCount = notifications.filter((n) => n.category === "lead" && !n.readAt).length;
   const [moreOpen, setMoreOpen] = React.useState(false);
 
   return (
@@ -107,13 +95,12 @@ export function Sidebar() {
       {/* ---------- Mobile bottom nav ---------- */}
       <nav
         aria-label="Primary mobile navigation"
-        className="crm-mobile-nav fixed inset-x-3 bottom-3 z-40 grid grid-cols-6 gap-0.5 rounded-2xl border border-sidebar-border/80 bg-card/95 p-1.5 backdrop-blur-xl
+        className="crm-mobile-nav fixed inset-x-3 bottom-3 z-40 grid grid-cols-5 gap-0.5 rounded-2xl border border-sidebar-border/80 bg-card/95 p-1.5 backdrop-blur-xl
                    shadow-[0_22px_50px_-22px_var(--elevate-3),0_6px_18px_-10px_var(--elevate-2)]
                    md:hidden"
       >
         {primaryLinks.map((link) => {
           const active = isLinkActive(location, link.href);
-          const badge = link.href === "/leads" ? leadCount : 0;
           return (
             <Link
               key={link.href}
@@ -128,11 +115,6 @@ export function Sidebar() {
             >
               <link.icon className="h-4 w-4" strokeWidth={active ? 2 : 1.5} />
               <span className="max-w-full truncate leading-none">{link.label}</span>
-              {badge > 0 && (
-                <span className="absolute right-1 top-1 inline-flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-semibold leading-none text-primary-foreground">
-                  {badge > 9 ? "9+" : badge}
-                </span>
-              )}
             </Link>
           );
         })}
@@ -214,10 +196,9 @@ export function Sidebar() {
           <span className="crm-eyebrow">Studio</span>
         </div>
 
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-4 pb-2">
+        <nav className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-4 pb-2">
           {allLinks.map((link) => {
             const active = isLinkActive(location, link.href);
-            const badge = link.href === "/leads" ? leadCount : 0;
             return (
               <Link
                 key={link.href}
@@ -241,12 +222,7 @@ export function Sidebar() {
                   strokeWidth={active ? 2 : 1.5}
                 />
                 <span className="flex-1">{link.label}</span>
-                {badge > 0 && (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground">
-                    {badge > 9 ? "9+" : badge}
-                  </span>
-                )}
-                {active && badge === 0 && (
+                {active && (
                   <span
                     aria-hidden
                     className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--gold))] shadow-[0_0_0_2px_hsl(var(--gold)/0.18)]"
@@ -258,24 +234,26 @@ export function Sidebar() {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-sidebar-border/60 px-7 py-5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="crm-eyebrow">Internal use only</div>
-              <div className="mt-1 text-xs text-muted-foreground/80">
-                Private studio operations
+        <div className="border-t border-sidebar-border/60 px-5 py-4">
+          <div className="rounded-xl border border-card-border/70 bg-card/70 px-3 py-2.5 shadow-[0_1px_0_0_hsl(var(--card-border)/0.4)]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="crm-eyebrow !text-[10px]">Private studio</div>
+                <div className="mt-0.5 truncate text-[11.5px] text-muted-foreground/80">
+                  Internal tools
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <NotificationBell />
-              <button
-                type="button"
-                aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-                onClick={toggleTheme}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-card-border bg-card text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" strokeWidth={1.5} /> : <Moon className="h-4 w-4" strokeWidth={1.5} />}
-              </button>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <NotificationBell />
+                <button
+                  type="button"
+                  aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+                  onClick={toggleTheme}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-card-border bg-card text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                >
+                  {theme === "dark" ? <Sun className="h-4 w-4" strokeWidth={1.5} /> : <Moon className="h-4 w-4" strokeWidth={1.5} />}
+                </button>
+              </div>
             </div>
           </div>
         </div>

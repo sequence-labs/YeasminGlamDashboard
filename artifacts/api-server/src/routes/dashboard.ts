@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { desc, eq, isNull } from "drizzle-orm";
-import { db, clientsTable, bookingsTable, eventsTable, leadsTable } from "@workspace/db";
+import { db, clientsTable, bookingsTable, eventsTable, expensesTable } from "@workspace/db";
 import {
   GetDashboardStatsResponse,
   GetUpcomingEventsResponse,
@@ -22,12 +22,35 @@ function serializeBooking(b: typeof bookingsTable.$inferSelect, clientName: stri
   };
 }
 
+function monthRange(date = new Date()) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const start = new Date(year, month, 1).toISOString().slice(0, 10);
+  const end = new Date(year, month + 1, 1).toISOString().slice(0, 10);
+  return { start, end };
+}
+
+function yearRange(date = new Date()) {
+  const year = date.getFullYear();
+  const start = new Date(year, 0, 1).toISOString().slice(0, 10);
+  const end = new Date(year + 1, 0, 1).toISOString().slice(0, 10);
+  return { start, end };
+}
+
+function isDateInRange(value: string | null | undefined, start: string, end: string) {
+  return Boolean(value && value >= start && value < end);
+}
+
 router.get("/dashboard/stats", async (req, res): Promise<void> => {
   const allClients = await db.select().from(clientsTable);
   const allBookings = await db
     .select({ booking: bookingsTable })
     .from(bookingsTable)
     .where(isNull(bookingsTable.deletedAt));
+  const expenses = await db.select().from(expensesTable);
+  const activeBusinessExpenses = expenses.filter((expense) => expense.active && expense.businessUse);
+  const currentMonth = monthRange();
+  const currentYear = yearRange();
 
   const totalClients = allClients.length;
   const activeBookings = allBookings.filter(r => r.booking.status === "active").length;
@@ -40,6 +63,21 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
   const pendingRevenue = allBookings
     .filter(r => r.booking.status === "active")
     .reduce((sum, r) => sum + parseFloat(r.booking.grandTotal as unknown as string), 0);
+
+  const currentMonthRevenue = allBookings
+    .filter((r) => r.booking.status === "completed" && isDateInRange(r.booking.firstServiceDate ?? r.booking.createdAt.toISOString().slice(0, 10), currentMonth.start, currentMonth.end))
+    .reduce((sum, r) => sum + parseFloat(r.booking.grandTotal as unknown as string), 0);
+
+  const totalExpenses = activeBusinessExpenses
+    .reduce((sum, expense) => sum + parseFloat(expense.amount as unknown as string), 0);
+
+  const currentMonthExpenses = activeBusinessExpenses
+    .filter((expense) => isDateInRange(expense.expenseDate, currentMonth.start, currentMonth.end))
+    .reduce((sum, expense) => sum + parseFloat(expense.amount as unknown as string), 0);
+
+  const yearToDateExpenses = activeBusinessExpenses
+    .filter((expense) => isDateInRange(expense.expenseDate, currentYear.start, currentYear.end))
+    .reduce((sum, expense) => sum + parseFloat(expense.amount as unknown as string), 0);
 
   const retainersPending = allBookings.filter(r =>
     r.booking.status === "active" && !r.booking.retainerPaid
@@ -57,6 +95,11 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
     pendingRevenue,
     retainersPending,
     balancesPending,
+    totalExpenses,
+    currentMonthExpenses,
+    yearToDateExpenses,
+    netRevenue: totalRevenue - totalExpenses,
+    currentMonthNetRevenue: currentMonthRevenue - currentMonthExpenses,
   }));
 });
 
@@ -119,11 +162,10 @@ router.get("/dashboard/next-actions", async (_req, res): Promise<void> => {
 
   const actions: Array<{
     id: string;
-    kind: "retainer_due" | "balance_due" | "day_before_confirm" | "unsigned_contract" | "new_lead";
+    kind: "retainer_due" | "balance_due" | "day_before_confirm" | "unsigned_contract";
     title: string;
     detail?: string | null;
     bookingId?: number | null;
-    leadId?: number | null;
     href?: string | null;
     severity: "info" | "warn" | "attention";
     dueOn?: string | null;
@@ -183,19 +225,6 @@ router.get("/dashboard/next-actions", async (_req, res): Promise<void> => {
         severity: "info",
       });
     }
-  }
-
-  const newLeads = await db.select().from(leadsTable).where(eq(leadsTable.status, "new")).orderBy(desc(leadsTable.createdAt)).limit(3);
-  for (const lead of newLeads) {
-    actions.push({
-      id: `lead-${lead.id}`,
-      kind: "new_lead",
-      title: `New lead — ${lead.name}`,
-      detail: `${lead.eventType ?? "Inquiry"}${lead.eventDate ? ` · ${lead.eventDate}` : ""}`,
-      leadId: lead.id,
-      href: `/leads`,
-      severity: "info",
-    });
   }
 
   const severityOrder = { attention: 0, warn: 1, info: 2 } as const;

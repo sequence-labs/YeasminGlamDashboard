@@ -238,6 +238,26 @@ Validation commands:
 - `pnpm --filter @workspace/glam-crm run build`
 - Browser visual smoke check on `/`, `/bookings`, `/clients`, `/services`, `/artist`, and `/contracts`.
 
+### Work Package 2.11: Expense Tracking
+
+Status: Complete.
+
+Acceptance criteria:
+- Sidebar navigation includes an Expenses page and no longer includes Automations.
+- Expenses can record item name, category, amount, expense date, optional vendor, optional payment method, optional notes, optional receipt image/scan, business-use flag, and reimbursable flag.
+- Expenses can be reviewed, searched, summarized by category, and archived without deleting history.
+- Dashboard financial trackers include expense totals and net revenue context.
+- The implementation keeps generated API client and Zod files generated from `lib/api-spec/openapi.yaml`.
+
+Validation commands:
+- `pnpm --filter @workspace/api-spec run codegen`
+- `pnpm db:push`
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- Browser validation on `http://localhost:5173/expenses`
+- Browser validation on `http://localhost:5173/`
+
 ## Milestone 3: Low-Cost Production Deployment
 
 ### Work Package 3.1: GitHub Pages Frontend

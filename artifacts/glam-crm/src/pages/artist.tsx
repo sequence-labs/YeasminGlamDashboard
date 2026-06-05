@@ -114,13 +114,17 @@ export default function Artist() {
         ) : (
           <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[320px_1fr]">
             <div className="crm-section p-6">
-              <div className="crm-monogram mb-5 h-12 w-12">
-                <UserRound className="h-5 w-5" strokeWidth={1.5} />
+              <div className="flex items-start gap-4">
+                <div className="crm-monogram h-14 w-14 shrink-0">
+                  <UserRound className="h-5 w-5" strokeWidth={1.5} />
+                </div>
+                <div className="min-w-0 pt-1">
+                  <span className="crm-eyebrow block truncate">{form.watch("businessName") || "Business name"}</span>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+                    {form.watch("displayName") || "Artist Profile"}
+                  </h2>
+                </div>
               </div>
-              <span className="crm-eyebrow">{form.watch("businessName") || "Business name"}</span>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-                {form.watch("displayName") || "Artist Profile"}
-              </h2>
               <div className="crm-gold-rule my-5 w-12" />
               <dl className="space-y-3 text-sm">
                 <div>

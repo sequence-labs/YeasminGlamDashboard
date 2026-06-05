@@ -14,5 +14,4 @@ export const NextActionKind = {
   balance_due: 'balance_due',
   day_before_confirm: 'day_before_confirm',
   unsigned_contract: 'unsigned_contract',
-  new_lead: 'new_lead',
 } as const;

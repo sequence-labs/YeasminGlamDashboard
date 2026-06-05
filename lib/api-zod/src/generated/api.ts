@@ -175,6 +175,112 @@ export const DeleteServiceItemParams = zod.object({
 
 
 /**
+ * @summary List business expenses
+ */
+export const ListExpensesQueryParams = zod.object({
+  "includeArchived": zod.coerce.boolean().optional()
+})
+
+export const ListExpensesResponseItem = zod.object({
+  "id": zod.number(),
+  "itemName": zod.string(),
+  "category": zod.enum(['makeup_products', 'hair_products', 'tools_equipment', 'disposables', 'travel', 'education', 'marketing', 'software', 'studio_supplies', 'other']),
+  "amount": zod.number(),
+  "expenseDate": zod.string().describe('ISO calendar date, YYYY-MM-DD.'),
+  "vendor": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "receiptDataUrl": zod.string().nullish().describe('Data URL for an uploaded receipt image, scan, or PDF.'),
+  "receiptFileName": zod.string().nullish(),
+  "businessUse": zod.boolean(),
+  "reimbursable": zod.boolean(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListExpensesResponse = zod.array(ListExpensesResponseItem)
+
+
+/**
+ * @summary Create a business expense
+ */
+
+export const createExpenseBodyAmountMin = 0;
+
+
+
+
+export const CreateExpenseBody = zod.object({
+  "itemName": zod.string().min(1),
+  "category": zod.enum(['makeup_products', 'hair_products', 'tools_equipment', 'disposables', 'travel', 'education', 'marketing', 'software', 'studio_supplies', 'other']),
+  "amount": zod.number().min(createExpenseBodyAmountMin),
+  "expenseDate": zod.string().min(1),
+  "vendor": zod.string().optional(),
+  "paymentMethod": zod.string().optional(),
+  "notes": zod.string().optional(),
+  "receiptDataUrl": zod.string().optional(),
+  "receiptFileName": zod.string().optional(),
+  "businessUse": zod.boolean().optional(),
+  "reimbursable": zod.boolean().optional(),
+  "active": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update a business expense
+ */
+export const UpdateExpenseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const updateExpenseBodyAmountMin = 0;
+
+
+
+export const UpdateExpenseBody = zod.object({
+  "itemName": zod.string().min(1).optional(),
+  "category": zod.enum(['makeup_products', 'hair_products', 'tools_equipment', 'disposables', 'travel', 'education', 'marketing', 'software', 'studio_supplies', 'other']).optional(),
+  "amount": zod.number().min(updateExpenseBodyAmountMin).optional(),
+  "expenseDate": zod.string().optional(),
+  "vendor": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "receiptDataUrl": zod.string().nullish(),
+  "receiptFileName": zod.string().nullish(),
+  "businessUse": zod.boolean().optional(),
+  "reimbursable": zod.boolean().optional(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateExpenseResponse = zod.object({
+  "id": zod.number(),
+  "itemName": zod.string(),
+  "category": zod.enum(['makeup_products', 'hair_products', 'tools_equipment', 'disposables', 'travel', 'education', 'marketing', 'software', 'studio_supplies', 'other']),
+  "amount": zod.number(),
+  "expenseDate": zod.string().describe('ISO calendar date, YYYY-MM-DD.'),
+  "vendor": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "receiptDataUrl": zod.string().nullish().describe('Data URL for an uploaded receipt image, scan, or PDF.'),
+  "receiptFileName": zod.string().nullish(),
+  "businessUse": zod.boolean(),
+  "reimbursable": zod.boolean(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Archive a business expense
+ */
+export const DeleteExpenseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary Get the artist business profile
  */
 export const GetArtistProfileResponse = zod.object({
@@ -887,7 +993,12 @@ export const GetDashboardStatsResponse = zod.object({
   "totalRevenue": zod.number().describe('Sum of grandTotal for completed bookings'),
   "pendingRevenue": zod.number().describe('Sum of grandTotal for active bookings'),
   "retainersPending": zod.number().describe('Active bookings with retainer not yet paid'),
-  "balancesPending": zod.number().describe('Active bookings with balance not yet paid')
+  "balancesPending": zod.number().describe('Active bookings with balance not yet paid'),
+  "totalExpenses": zod.number().describe('Sum of active business expenses'),
+  "currentMonthExpenses": zod.number().describe('Active business expenses in the current calendar month'),
+  "yearToDateExpenses": zod.number().describe('Active business expenses in the current calendar year'),
+  "netRevenue": zod.number().describe('Completed booking revenue less active business expenses'),
+  "currentMonthNetRevenue": zod.number().describe('Current-month completed booking revenue less current-month active business expenses')
 })
 
 
@@ -944,7 +1055,7 @@ export const GetRecentBookingsResponse = zod.array(GetRecentBookingsResponseItem
  */
 export const GetNextActionsResponseItem = zod.object({
   "id": zod.string(),
-  "kind": zod.enum(['retainer_due', 'balance_due', 'day_before_confirm', 'unsigned_contract', 'new_lead']),
+  "kind": zod.enum(['retainer_due', 'balance_due', 'day_before_confirm', 'unsigned_contract']),
   "title": zod.string(),
   "detail": zod.string().nullish(),
   "bookingId": zod.number().nullish(),

@@ -4,6 +4,7 @@ import {
   useGetNextActions,
   useGetUpcomingEvents,
   useListBookings,
+  useListExpenses,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,6 @@ import {
   CalendarCheck,
   CalendarDays,
   HandCoins,
-  Inbox,
   ListChecks,
   MapPin,
   PenLine,
@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  ReceiptText,
 } from "lucide-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
@@ -86,6 +87,7 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: upcomingEvents, isLoading: upcomingLoading } = useGetUpcomingEvents();
   const { data: bookings, isLoading: bookingsLoading } = useListBookings();
+  const { data: expenses = [] } = useListExpenses();
   const { data: nextActions = [] } = useGetNextActions();
 
   const statusChartData = useMemo(() => {
@@ -119,6 +121,8 @@ export default function Dashboard() {
   const openPipelineValue = activeBookingRows.reduce((sum, booking) => sum + booking.grandTotal, 0);
   const completedBookingCount =
     stats?.completedBookings ?? bookingRows.filter((booking) => booking.status === "completed").length;
+  const activeExpenses = expenses.filter((expense) => expense.active && expense.businessUse);
+  const recentExpenseCount = activeExpenses.slice(0, 3).length;
   const maxStatusCount = Math.max(...statusChartData.map((entry) => entry.value), 1);
 
   return (
@@ -158,7 +162,7 @@ export default function Dashboard() {
                 <span className="crm-eyebrow">Studio · Next moves</span>
                 <h2 className="crm-section-title mt-1">What needs you today</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Calculated from booking lifecycle, payment status, and lead activity.
+                  Calculated from booking lifecycle, payment status, and contract activity.
                 </p>
               </div>
               <Sparkles className="mt-1 hidden h-5 w-5 text-[hsl(var(--gold))] sm:block" strokeWidth={1.5} />
@@ -211,11 +215,11 @@ export default function Dashboard() {
 
         {/* -------- Stat strip -------- */}
         {statsLoading ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1fr]">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 w-full" />)}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-28 w-full" />)}
           </div>
         ) : stats ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1fr]">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
             <MetricTile
               eyebrow="Open pipeline"
               value={formatMoney(openPipelineValue || stats.pendingRevenue)}
@@ -244,6 +248,20 @@ export default function Dashboard() {
               detail={`${completedBookingCount} completed job${completedBookingCount === 1 ? "" : "s"}`}
               icon={Wallet}
               testId="stat-total-revenue"
+            />
+            <MetricTile
+              eyebrow="Costs · month"
+              value={formatMoney(stats.currentMonthExpenses)}
+              detail={`${recentExpenseCount} recent expense${recentExpenseCount === 1 ? "" : "s"}`}
+              icon={ReceiptText}
+              testId="stat-month-expenses"
+            />
+            <MetricTile
+              eyebrow="Net"
+              value={formatMoney(stats.netRevenue)}
+              detail={`${formatMoney(stats.yearToDateExpenses)} costs YTD`}
+              icon={TrendingUp}
+              testId="stat-net-revenue"
             />
           </div>
         ) : null}
@@ -648,8 +666,6 @@ function NextActionIcon({ kind }: { kind: string }) {
       return <CalendarCheck className="h-4 w-4" strokeWidth={1.5} />;
     case "unsigned_contract":
       return <PenLine className="h-4 w-4" strokeWidth={1.5} />;
-    case "new_lead":
-      return <Inbox className="h-4 w-4" strokeWidth={1.5} />;
     default:
       return <Send className="h-4 w-4" strokeWidth={1.5} />;
   }
@@ -665,8 +681,6 @@ function nextActionMeta(kind: string): { eyebrow: string; action: string } {
       return { eyebrow: "Today · Confirm", action: "Send confirm" };
     case "unsigned_contract":
       return { eyebrow: "Contract · Unsigned", action: "Share portal" };
-    case "new_lead":
-      return { eyebrow: "Lead · New", action: "Review" };
     default:
       return { eyebrow: "Action", action: "Open" };
   }

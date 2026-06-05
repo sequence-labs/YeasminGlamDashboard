@@ -141,7 +141,7 @@ export default function AutomationsPage() {
                   Nothing scheduled
                 </h3>
                 <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
-                  Tasks appear here after you create bookings or leads.
+                  Tasks appear here after you create bookings.
                 </p>
               </div>
             ) : (

@@ -14,6 +14,7 @@ import automationsRouter from "./automations";
 import paymentIntentsRouter from "./payment-intents";
 import calendarRouter from "./calendar";
 import leadsRouter from "./leads";
+import expensesRouter from "./expenses";
 
 const router: IRouter = Router();
 
@@ -32,5 +33,6 @@ router.use(automationsRouter);
 router.use(paymentIntentsRouter);
 router.use(calendarRouter);
 router.use(leadsRouter);
+router.use(expensesRouter);
 
 export default router;

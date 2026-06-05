@@ -101,6 +101,89 @@ export interface ServiceItemUpdate {
   sortOrder?: number;
 }
 
+export type ExpenseCategory = typeof ExpenseCategory[keyof typeof ExpenseCategory];
+
+
+export const ExpenseCategory = {
+  makeup_products: 'makeup_products',
+  hair_products: 'hair_products',
+  tools_equipment: 'tools_equipment',
+  disposables: 'disposables',
+  travel: 'travel',
+  education: 'education',
+  marketing: 'marketing',
+  software: 'software',
+  studio_supplies: 'studio_supplies',
+  other: 'other',
+} as const;
+
+export interface Expense {
+  id: number;
+  itemName: string;
+  category: ExpenseCategory;
+  amount: number;
+  /** ISO calendar date, YYYY-MM-DD. */
+  expenseDate: string;
+  /** @nullable */
+  vendor?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /**
+     * Data URL for an uploaded receipt image, scan, or PDF.
+     * @nullable
+     */
+  receiptDataUrl?: string | null;
+  /** @nullable */
+  receiptFileName?: string | null;
+  businessUse: boolean;
+  reimbursable: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExpenseInput {
+  /** @minLength 1 */
+  itemName: string;
+  category: ExpenseCategory;
+  /** @minimum 0 */
+  amount: number;
+  /** @minLength 1 */
+  expenseDate: string;
+  vendor?: string;
+  paymentMethod?: string;
+  notes?: string;
+  receiptDataUrl?: string;
+  receiptFileName?: string;
+  businessUse?: boolean;
+  reimbursable?: boolean;
+  active?: boolean;
+}
+
+export interface ExpenseUpdate {
+  /** @minLength 1 */
+  itemName?: string;
+  category?: ExpenseCategory;
+  /** @minimum 0 */
+  amount?: number;
+  expenseDate?: string;
+  /** @nullable */
+  vendor?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  receiptDataUrl?: string | null;
+  /** @nullable */
+  receiptFileName?: string | null;
+  businessUse?: boolean;
+  reimbursable?: boolean;
+  active?: boolean;
+}
+
 export interface ArtistProfile {
   id: number;
   businessName: string;
@@ -594,6 +677,16 @@ export interface DashboardStats {
   retainersPending: number;
   /** Active bookings with balance not yet paid */
   balancesPending: number;
+  /** Sum of active business expenses */
+  totalExpenses: number;
+  /** Active business expenses in the current calendar month */
+  currentMonthExpenses: number;
+  /** Active business expenses in the current calendar year */
+  yearToDateExpenses: number;
+  /** Completed booking revenue less active business expenses */
+  netRevenue: number;
+  /** Current-month completed booking revenue less current-month active business expenses */
+  currentMonthNetRevenue: number;
 }
 
 export interface UpcomingEvent {
@@ -617,7 +710,6 @@ export const NextActionKind = {
   balance_due: 'balance_due',
   day_before_confirm: 'day_before_confirm',
   unsigned_contract: 'unsigned_contract',
-  new_lead: 'new_lead',
 } as const;
 
 export type NextActionSeverity = typeof NextActionSeverity[keyof typeof NextActionSeverity];
@@ -1147,6 +1239,10 @@ export interface PublicLeadAck {
   received: boolean;
   leadId?: number;
 }
+
+export type ListExpensesParams = {
+includeArchived?: boolean;
+};
 
 export type ListBookingsParams = {
 includeDeleted?: boolean;

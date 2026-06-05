@@ -177,12 +177,12 @@ export default function Services() {
             </div>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3 lg:grid-cols-[minmax(180px,1.25fr)_116px_110px_110px_minmax(180px,1.2fr)_150px] lg:items-start">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_130px_130px_130px] xl:items-start">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="min-w-0">
                       <FormLabel>Name</FormLabel>
                       <FormControl>
                         <Input
@@ -201,7 +201,7 @@ export default function Services() {
                   control={form.control}
                   name="kind"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="min-w-0">
                       <FormLabel>Type</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
@@ -223,7 +223,7 @@ export default function Services() {
                   control={form.control}
                   name="defaultUnitPrice"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="min-w-0">
                       <FormLabel>Rate ($)</FormLabel>
                       <FormControl>
                         <Input
@@ -244,7 +244,7 @@ export default function Services() {
                   control={form.control}
                   name="unitLabel"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="min-w-0">
                       <FormLabel>Unit</FormLabel>
                       <FormControl>
                         <Input
@@ -263,7 +263,7 @@ export default function Services() {
                   control={form.control}
                   name="description"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="min-w-0 md:col-span-2 xl:col-span-3">
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Input
@@ -279,7 +279,7 @@ export default function Services() {
 
                 <Button
                   type="submit"
-                  className="mt-6 w-full lg:mt-[22px]"
+                  className="w-full md:col-span-2 xl:col-span-1 xl:mt-[22px]"
                   disabled={createServiceItem.isPending}
                   data-testid="button-add-service"
                 >

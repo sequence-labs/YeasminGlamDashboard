@@ -13,3 +13,4 @@ export * from "./email";
 export * from "./scheduling";
 export * from "./payment-intents";
 export * from "./leads";
+export * from "./expenses";

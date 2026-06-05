@@ -17,10 +17,8 @@ import Services from "@/pages/services";
 import Artist from "@/pages/artist";
 import ContractTemplates from "@/pages/contract-templates";
 import CalendarPage from "@/pages/calendar";
-import LeadsPage from "@/pages/leads";
-import AutomationsPage from "@/pages/automations";
+import ExpensesPage from "@/pages/expenses";
 import PortalPage from "@/pages/portal";
-import InquirePage from "@/pages/inquire";
 
 const queryClient = new QueryClient();
 
@@ -28,7 +26,6 @@ function PublicSwitch() {
   return (
     <Switch>
       <Route path="/p/:token" component={PortalPage} />
-      <Route path="/inquire" component={InquirePage} />
     </Switch>
   );
 }
@@ -52,8 +49,7 @@ function AppRoutes() {
       <Route path="/contracts" component={ContractTemplates} />
       <Route path="/contract-templates" component={ContractTemplates} />
       <Route path="/calendar" component={CalendarPage} />
-      <Route path="/leads" component={LeadsPage} />
-      <Route path="/automations" component={AutomationsPage} />
+      <Route path="/expenses" component={ExpensesPage} />
 
       <Route component={NotFound} />
     </Switch>
@@ -63,7 +59,7 @@ function AppRoutes() {
 function PublicGate({ children }: { children: React.ReactNode }) {
   if (typeof window === "undefined") return <>{children}</>;
   const path = window.location.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ""), "");
-  if (path.startsWith("/p/") || path === "/inquire") {
+  if (path.startsWith("/p/")) {
     return (
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <PublicSwitch />

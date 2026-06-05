@@ -18,6 +18,8 @@ tags:
     description: Payment tracking
   - name: services
     description: Reusable services and fees
+  - name: expenses
+    description: Business expense tracking
   - name: artist
     description: Artist business profile
   - name: contractTemplates
@@ -213,6 +215,84 @@ paths:
       operationId: deleteServiceItem
       tags: [services]
       summary: Archive a reusable service or fee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Archived
+
+  # ─── Expenses ────────────────────────────────────────────────────────────
+
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List business expenses
+      parameters:
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create a business expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/{id}:
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update a business expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseUpdate"
+      responses:
+        "200":
+          description: Updated expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Archive a business expense
       parameters:
         - name: id
           in: path
@@ -1673,6 +1753,121 @@ components:
         sortOrder:
           type: integer
 
+    # ── Expenses ───────────────────────────────────────────────────────────
+
+    ExpenseCategory:
+      type: string
+      enum:
+        - makeup_products
+        - hair_products
+        - tools_equipment
+        - disposables
+        - travel
+        - education
+        - marketing
+        - software
+        - studio_supplies
+        - other
+
+    Expense:
+      type: object
+      required: [id, itemName, category, amount, expenseDate, businessUse, reimbursable, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        itemName:
+          type: string
+        category:
+          $ref: "#/components/schemas/ExpenseCategory"
+        amount:
+          type: number
+        expenseDate:
+          type: string
+          description: ISO calendar date, YYYY-MM-DD.
+        vendor:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        receiptDataUrl:
+          type: ["string", "null"]
+          description: Data URL for an uploaded receipt image, scan, or PDF.
+        receiptFileName:
+          type: ["string", "null"]
+        businessUse:
+          type: boolean
+        reimbursable:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ExpenseInput:
+      type: object
+      required: [itemName, category, amount, expenseDate]
+      properties:
+        itemName:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/ExpenseCategory"
+        amount:
+          type: number
+          minimum: 0
+        expenseDate:
+          type: string
+          minLength: 1
+        vendor:
+          type: string
+        paymentMethod:
+          type: string
+        notes:
+          type: string
+        receiptDataUrl:
+          type: string
+        receiptFileName:
+          type: string
+        businessUse:
+          type: boolean
+        reimbursable:
+          type: boolean
+        active:
+          type: boolean
+
+    ExpenseUpdate:
+      type: object
+      properties:
+        itemName:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/ExpenseCategory"
+        amount:
+          type: number
+          minimum: 0
+        expenseDate:
+          type: string
+        vendor:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        receiptDataUrl:
+          type: ["string", "null"]
+        receiptFileName:
+          type: ["string", "null"]
+        businessUse:
+          type: boolean
+        reimbursable:
+          type: boolean
+        active:
+          type: boolean
+
     # ── Artist Profile ─────────────────────────────────────────────────────
 
     ArtistProfile:
@@ -2275,7 +2470,19 @@ components:
 
     DashboardStats:
       type: object
-      required: [totalClients, activeBookings, completedBookings, totalRevenue, pendingRevenue, retainersPending, balancesPending]
+      required:
+        - totalClients
+        - activeBookings
+        - completedBookings
+        - totalRevenue
+        - pendingRevenue
+        - retainersPending
+        - balancesPending
+        - totalExpenses
+        - currentMonthExpenses
+        - yearToDateExpenses
+        - netRevenue
+        - currentMonthNetRevenue
       properties:
         totalClients:
           type: integer
@@ -2295,6 +2502,21 @@ components:
         balancesPending:
           type: integer
           description: Active bookings with balance not yet paid
+        totalExpenses:
+          type: number
+          description: Sum of active business expenses
+        currentMonthExpenses:
+          type: number
+          description: Active business expenses in the current calendar month
+        yearToDateExpenses:
+          type: number
+          description: Active business expenses in the current calendar year
+        netRevenue:
+          type: number
+          description: Completed booking revenue less active business expenses
+        currentMonthNetRevenue:
+          type: number
+          description: Current-month completed booking revenue less current-month active business expenses
 
     UpcomingEvent:
       type: object
@@ -2327,7 +2549,7 @@ components:
           type: string
         kind:
           type: string
-          enum: [retainer_due, balance_due, day_before_confirm, unsigned_contract, new_lead]
+          enum: [retainer_due, balance_due, day_before_confirm, unsigned_contract]
         title:
           type: string
         detail:

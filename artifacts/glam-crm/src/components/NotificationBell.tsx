@@ -31,26 +31,30 @@ export function NotificationBell() {
   const queryClient = useQueryClient();
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
-  const unread = notifications.filter((n) => !n.readAt);
+  const visibleNotifications = React.useMemo(
+    () => notifications.filter((n) => n.category !== "lead"),
+    [notifications],
+  );
+  const unread = visibleNotifications.filter((n) => !n.readAt);
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: getListNotificationsQueryKey() });
   }
 
   const grouped = React.useMemo(() => {
-    const groups: { today: typeof notifications; week: typeof notifications; earlier: typeof notifications } = {
+    const groups: { today: typeof visibleNotifications; week: typeof visibleNotifications; earlier: typeof visibleNotifications } = {
       today: [],
       week: [],
       earlier: [],
     };
-    for (const note of notifications) {
+    for (const note of visibleNotifications) {
       const at = parseISO(note.createdAt);
       if (isToday(at)) groups.today.push(note);
       else if (isThisWeek(at, { weekStartsOn: 1 })) groups.week.push(note);
       else groups.earlier.push(note);
     }
     return groups;
-  }, [notifications]);
+  }, [visibleNotifications]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -75,12 +79,12 @@ export function NotificationBell() {
             Notifications
           </SheetTitle>
           <SheetDescription>
-            Reminders, signatures, and new leads — kept calmly until you act.
+            Reminders and signatures — kept calmly until you act.
           </SheetDescription>
           <div className="crm-gold-rule mt-2" />
         </SheetHeader>
 
-        {notifications.length === 0 ? (
+        {visibleNotifications.length === 0 ? (
           <div className="flex flex-col items-center px-8 py-16 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-card-border bg-accent/50 text-muted-foreground">
               <Inbox className="h-5 w-5" strokeWidth={1.5} />
@@ -89,7 +93,7 @@ export function NotificationBell() {
               No notifications yet
             </h3>
             <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
-              Drafted reminders, signed contracts, and new leads will appear here.
+              Drafted reminders and signed contracts will appear here.
             </p>
           </div>
         ) : (
