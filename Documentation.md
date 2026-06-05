@@ -1918,3 +1918,22 @@ Validation:
 - Built-in Browser measurement on `http://localhost:5173/services` at `1239x1138`: add-catalog form had no clipped children, the Add button stayed within the form bounds, and horizontal document overflow was `0`.
 - Built-in Browser measurement on `http://localhost:5173/services` at `900x900`: add-catalog form still had no clipped children and horizontal document overflow was `0`.
 - Built-in Browser measurement on `http://localhost:5173/artist`: the profile monogram and business name had a `16px` horizontal gap, and horizontal document overflow was `0`.
+
+## 2026-06-05 - Production Dashboard Blank Page Hotfix
+
+Start:
+- User reported that after merging the PR, the GitHub Pages deployment showed a blank dark page with console errors.
+- Screenshot and pasted console evidence showed production requests for `/glam-api/api/notifications`, `/dashboard/next-actions`, and `/expenses` returning `404`, followed by `Cannot read properties of undefined (reading 'toLocaleString')` in the built dashboard bundle.
+- Scope is Work Package 3.1 GitHub Pages Frontend and Work Package 3.2 Shared Render API Mount: diagnose the live production API state and prevent dashboard render crashes when the frontend briefly receives stale or incomplete API data during deploy skew.
+
+Update:
+- Confirmed the shared Render mount is live: production `/glam-api/api/healthz` returned `200`.
+- Confirmed the production session endpoint returns `authenticated:false` and `authRequired:true` for unauthenticated GitHub Pages-origin requests.
+- Confirmed protected production `/glam-api/api/expenses` now returns `401 Authentication required` with `access-control-allow-origin: https://sequence-labs.github.io`, which means the route exists and CORS is allowing the deployed frontend origin.
+- Hardened dashboard money formatting so missing numeric fields from a stale or incomplete production API response render as `$0` instead of throwing a `toLocaleString` crash.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `BASE_PATH=/YeasminGlamDashboard/ VITE_API_BASE_URL=https://whisperflowserver.onrender.com/glam-api pnpm --filter @workspace/glam-crm run build` passed with existing Vite sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Production curl checks with `Origin: https://sequence-labs.github.io` showed `/glam-api/api/healthz` returned `200`, `/glam-api/api/session` returned `authenticated:false` / `authRequired:true`, and `/glam-api/api/expenses` returned protected `401` instead of the screenshot's stale `404`.

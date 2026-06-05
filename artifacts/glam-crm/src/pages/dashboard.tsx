@@ -56,8 +56,9 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-function formatMoney(value: number) {
-  return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+function formatMoney(value?: number | null) {
+  const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return `$${amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
 function formatDate(value?: string | null) {
