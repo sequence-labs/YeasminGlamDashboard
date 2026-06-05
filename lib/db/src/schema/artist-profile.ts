@@ -12,6 +12,10 @@ export const artistProfilesTable = pgTable("artist_profiles", {
   instagram: text("instagram"),
   paymentMethod: text("payment_method"),
   notes: text("notes"),
+  zelleHandle: text("zelle_handle"),
+  venmoHandle: text("venmo_handle"),
+  cashAppHandle: text("cash_app_handle"),
+  paymentInstructions: text("payment_instructions"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

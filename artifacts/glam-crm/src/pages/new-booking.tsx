@@ -259,24 +259,33 @@ export default function NewBooking() {
 
   return (
     <Shell>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="mx-auto max-w-3xl space-y-7">
         <div>
           <Link
             href="/bookings"
-            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+            className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
             data-testid="link-back-bookings"
           >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Bookings
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to bookings
           </Link>
-          <h1 className="crm-page-title">New Booking Intake</h1>
-          <p className="crm-page-subtitle">Create a new booking and contract draft.</p>
+          <div className="mt-5">
+            <span className="crm-eyebrow">Schedule · Intake</span>
+            <h1 className="crm-page-title mt-2">New booking</h1>
+            <p className="crm-page-subtitle">
+              Create a new booking and contract draft. Information here flows directly to the generated agreement.
+            </p>
+            <div className="crm-gold-rule mt-6 w-24" />
+          </div>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="crm-section p-6 space-y-6">
-              <h2 className="text-xl font-serif border-b pb-2">Client Contact & Event Details</h2>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
+            <div className="crm-section space-y-6 p-6 sm:p-8">
+              <div>
+                <span className="crm-eyebrow">Step 1 · Client &amp; event</span>
+                <h2 className="crm-section-title mt-1">Client contact &amp; event details</h2>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
@@ -410,8 +419,11 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="crm-section p-6 space-y-6">
-              <h2 className="text-xl font-serif border-b pb-2">Location</h2>
+            <div className="crm-section space-y-6 p-6 sm:p-8">
+              <div>
+                <span className="crm-eyebrow">Step 2 · Location</span>
+                <h2 className="crm-section-title mt-1">Location</h2>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
@@ -444,10 +456,11 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="crm-section p-6 space-y-6">
-              <div className="border-b pb-3">
-                <h2 className="text-xl font-serif">First Event Schedule</h2>
-                <p className="text-sm text-muted-foreground mt-1">
+            <div className="crm-section space-y-6 p-6 sm:p-8">
+              <div>
+                <span className="crm-eyebrow">Step 3 · Schedule</span>
+                <h2 className="crm-section-title mt-1">First event schedule</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Add the first service schedule now if the timing is known. More events can be added later.
                 </p>
               </div>
@@ -511,10 +524,11 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="crm-section p-6 space-y-6">
-              <div className="border-b pb-3">
-                <h2 className="text-xl font-serif">Services & Fees</h2>
-                <p className="text-sm text-muted-foreground mt-1">
+            <div className="crm-section space-y-6 p-6 sm:p-8">
+              <div>
+                <span className="crm-eyebrow">Step 4 · Services</span>
+                <h2 className="crm-section-title mt-1">Services &amp; fees</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Select reusable catalog items and snapshot the quantity, rate, and contract calculation for this booking.
                 </p>
               </div>
@@ -562,7 +576,7 @@ export default function NewBooking() {
                     const rowTotal = (current?.quantity || 0) * (current?.unitPrice || 0);
 
                     return (
-                      <div key={field.id} className="border rounded-md p-4 space-y-4" data-testid={`line-item-${index}`}>
+                      <div key={field.id} className="space-y-4 rounded-xl border border-card-border/70 bg-accent/15 p-4 sm:p-5" data-testid={`line-item-${index}`}>
                         <div className="flex items-center justify-between gap-3">
                           <Badge variant={current?.kind === "fee" ? "secondary" : "outline"}>
                             {current?.kind === "fee" ? "Fee" : "Service"}
@@ -679,38 +693,61 @@ export default function NewBooking() {
                           />
                         </div>
 
-                        <div className="flex justify-end text-sm">
-                          <span className="text-muted-foreground mr-2">Line total</span>
-                          <span className="font-serif text-lg">${rowTotal.toLocaleString()}</span>
+                        <div className="flex items-center justify-end gap-2 border-t border-card-border/40 pt-3 text-sm">
+                          <span className="crm-eyebrow !text-[10px]">Line total</span>
+                          <span
+                            className="font-serif text-lg text-foreground tabular-nums"
+                            style={{ fontVariationSettings: "'opsz' 64", letterSpacing: "-0.02em" }}
+                          >
+                            ${rowTotal.toLocaleString()}
+                          </span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="border rounded-md border-dashed p-8 text-center text-muted-foreground">
+                <div className="rounded-xl border border-dashed border-card-border bg-accent/10 p-8 text-center text-sm text-muted-foreground">
                   Add services and fees before creating the contract draft.
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-5">
-                <div className="rounded-md border p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Services & Fees</div>
-                  <div className="text-2xl font-serif mt-1">${lineItemsTotal.toLocaleString()}</div>
+              <div className="grid grid-cols-1 gap-3 border-t border-card-border/60 pt-5 md:grid-cols-3">
+                <div className="rounded-xl border border-card-border bg-card p-4">
+                  <div className="crm-eyebrow !text-[10px]">Services &amp; fees</div>
+                  <div
+                    className="mt-1.5 font-serif text-2xl text-foreground tabular-nums"
+                    style={{ fontVariationSettings: "'opsz' 96", letterSpacing: "-0.025em" }}
+                  >
+                    ${lineItemsTotal.toLocaleString()}
+                  </div>
                 </div>
-                <div className="rounded-md border p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Estimated Retainer</div>
-                  <div className="text-2xl font-serif mt-1">${estimatedRetainer.toLocaleString()}</div>
+                <div className="rounded-xl border border-card-border bg-card p-4">
+                  <div className="crm-eyebrow !text-[10px]">Estimated retainer</div>
+                  <div
+                    className="mt-1.5 font-serif text-2xl text-foreground tabular-nums"
+                    style={{ fontVariationSettings: "'opsz' 96", letterSpacing: "-0.025em" }}
+                  >
+                    ${estimatedRetainer.toLocaleString()}
+                  </div>
                 </div>
-                <div className="rounded-md border p-4">
-                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Estimated Balance</div>
-                  <div className="text-2xl font-serif mt-1">${Math.max(0, lineItemsTotal - estimatedRetainer).toLocaleString()}</div>
+                <div className="rounded-xl border border-primary/20 bg-[linear-gradient(155deg,hsl(var(--accent)/0.55)_0%,hsl(var(--card))_55%)] p-4">
+                  <div className="crm-eyebrow !text-[10px]">Estimated balance</div>
+                  <div
+                    className="mt-1.5 font-serif text-2xl text-foreground tabular-nums"
+                    style={{ fontVariationSettings: "'opsz' 96", letterSpacing: "-0.025em" }}
+                  >
+                    ${Math.max(0, lineItemsTotal - estimatedRetainer).toLocaleString()}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="crm-section p-6 space-y-6">
-              <h2 className="text-xl font-serif border-b pb-2">Payment Details</h2>
+            <div className="crm-section space-y-6 p-6 sm:p-8">
+              <div>
+                <span className="crm-eyebrow">Step 5 · Payment</span>
+                <h2 className="crm-section-title mt-1">Payment details</h2>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
@@ -743,17 +780,21 @@ export default function NewBooking() {
               </div>
             </div>
 
-            <div className="crm-section p-6">
+            <div className="crm-section space-y-5 p-6 sm:p-8">
+              <div>
+                <span className="crm-eyebrow">Step 6 · Internal</span>
+                <h2 className="crm-section-title mt-1">Internal booking notes</h2>
+              </div>
               <FormField
                 control={form.control}
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Internal Booking Notes</FormLabel>
+                    <FormLabel>Notes</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Logistics, parking info, special requests..."
-                        className="resize-none min-h-[100px]"
+                        placeholder="Logistics, parking info, special requests…"
+                        className="min-h-[120px] resize-y"
                         {...field}
                         data-testid="input-booking-notes"
                       />
@@ -764,7 +805,10 @@ export default function NewBooking() {
               />
             </div>
 
-            <div className="flex justify-end pt-4 pb-12">
+            <div className="sticky bottom-4 z-[1] flex justify-end gap-3 pb-12 pt-4">
+              <Button asChild variant="ghost" type="button">
+                <Link href="/bookings">Cancel</Link>
+              </Button>
               <Button
                 type="submit"
                 size="lg"
@@ -772,8 +816,8 @@ export default function NewBooking() {
                 data-testid="button-submit-booking"
               >
                 {createClient.isPending || createBooking.isPending || createEvent.isPending
-                  ? "Creating Booking..."
-                  : "Create Booking"}
+                  ? "Creating booking…"
+                  : "Create booking"}
               </Button>
             </div>
           </form>

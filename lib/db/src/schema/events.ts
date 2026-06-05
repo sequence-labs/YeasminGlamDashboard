@@ -18,6 +18,7 @@ export const eventsTable = pgTable("booking_events", {
   hairRate: numeric("hair_rate", { precision: 10, scale: 2 }).notNull().default("135"),
   hairAndMakeupRate: numeric("hair_and_makeup_rate", { precision: 10, scale: 2 }).notNull().default("285"),
   subtotal: numeric("subtotal", { precision: 10, scale: 2 }).notNull().default("0"),
+  kind: text("kind").notNull().default("event"),
 });
 
 export const insertEventSchema = createInsertSchema(eventsTable).omit({ id: true });

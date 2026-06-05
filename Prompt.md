@@ -14,6 +14,12 @@ The current deployment goal is to keep Render cost low by mounting the Makeup Ar
 
 Secondary and visible user goal for this milestone: make the frontend feel intentionally designed and polished (professional spacing, visual hierarchy, and interaction clarity) across all core screens without changing business logic or data contracts.
 
+The Leads intake/admin surface is no longer a desired visible CRM workflow. Keep bookings and direct client intake as the primary path unless the user explicitly asks to restore leads.
+
+Expense tracking is now an intended CRM workflow. The app should help the artist track business costs such as makeup, hair products, tools, disposables, travel-related supplies, and other operating expenses, then reflect those costs in dashboard financial trackers.
+
+The Automations surface is no longer a desired visible CRM workflow. Do not show an Automations tab or command-palette entry unless the user explicitly asks to restore automation management.
+
 ## Non-Goals
 
 - Do not redesign the product UI for new functional behavior unless explicitly requested by the user for a UI/UX polishing pass.
@@ -21,6 +27,8 @@ Secondary and visible user goal for this milestone: make the frontend feel inten
 - Do not add a second paid Render web service unless the user explicitly changes direction.
 - Do not expose CRM client, booking, contract, payment, or artist data through a public unauthenticated API.
 - Do not introduce broad rewrites or full-file replacement edits.
+- Do not surface Leads navigation or public-inquiry entry points unless the user explicitly reintroduces that workflow.
+- Do not surface Automations navigation or automation-management entry points unless the user explicitly reintroduces that workflow.
 
 ## Constraints
 

@@ -2,11 +2,11 @@ import { Sidebar } from "./Sidebar";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="crm-shell flex min-h-dvh flex-col overflow-x-hidden md:flex-row">
+    <div className="crm-shell relative flex min-h-dvh flex-col overflow-x-hidden md:h-dvh md:flex-row md:overflow-hidden">
       <Sidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto">
-        <div className="crm-mobile-main mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 md:px-8 md:py-8 lg:px-10">
-          {children}
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto md:h-dvh">
+        <div className="crm-mobile-main mx-auto w-full max-w-[1400px] px-5 py-6 sm:px-8 md:px-10 md:py-10 lg:px-14">
+          <div className="crm-fade-up">{children}</div>
         </div>
       </main>
     </div>

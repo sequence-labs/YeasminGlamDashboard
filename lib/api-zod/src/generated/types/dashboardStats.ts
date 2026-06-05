@@ -18,4 +18,14 @@ export interface DashboardStats {
   retainersPending: number;
   /** Active bookings with balance not yet paid */
   balancesPending: number;
+  /** Sum of active business expenses */
+  totalExpenses: number;
+  /** Active business expenses in the current calendar month */
+  currentMonthExpenses: number;
+  /** Active business expenses in the current calendar year */
+  yearToDateExpenses: number;
+  /** Completed booking revenue less active business expenses */
+  netRevenue: number;
+  /** Current-month completed booking revenue less current-month active business expenses */
+  currentMonthNetRevenue: number;
 }

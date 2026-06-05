@@ -1,8 +1,10 @@
 import { Shell } from "@/components/layout/Shell";
 import {
   useGetDashboardStats,
+  useGetNextActions,
   useGetUpcomingEvents,
   useListBookings,
+  useListExpenses,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -15,10 +17,14 @@ import {
   HandCoins,
   ListChecks,
   MapPin,
+  PenLine,
   Plus,
+  Send,
+  Sparkles,
   TrendingUp,
   Users,
   Wallet,
+  ReceiptText,
 } from "lucide-react";
 import { Link } from "wouter";
 import { format, parseISO } from "date-fns";
@@ -33,11 +39,14 @@ import {
   Tooltip,
 } from "recharts";
 
+/* ------------------------------------------------------------------------ *
+ * Status palette — keeps semantic color but tunes to the warm system.      *
+ * ------------------------------------------------------------------------ */
 const STATUS_COLORS: Record<string, string> = {
-  active: "#3b82f6",
-  completed: "#22c55e",
-  draft: "#94a3b8",
-  cancelled: "#ef4444",
+  active: "hsl(348 52% 38%)",
+  completed: "hsl(150 38% 38%)",
+  draft: "hsl(28 8% 60%)",
+  cancelled: "hsl(0 55% 50%)",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -48,9 +57,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function formatMoney(value: number) {
-  return `$${value.toLocaleString(undefined, {
-    maximumFractionDigits: 0,
-  })}`;
+  return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
 
 function formatDate(value?: string | null) {
@@ -58,14 +65,20 @@ function formatDate(value?: string | null) {
 }
 
 function statusTone(status: string) {
-  if (status === "completed") return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-300";
-  if (status === "active") return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300";
-  if (status === "cancelled") return "border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300";
-  return "border-border bg-muted text-muted-foreground";
+  switch (status) {
+    case "completed":
+      return "border-emerald-700/15 bg-emerald-700/8 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300";
+    case "active":
+      return "border-primary/25 bg-primary/8 text-primary";
+    case "cancelled":
+      return "border-destructive/25 bg-destructive/8 text-destructive";
+    default:
+      return "border-border bg-muted/60 text-muted-foreground";
+  }
 }
 
 function paymentLabel(booking: { retainerPaid: boolean; balancePaid: boolean }) {
-  if (booking.balancePaid) return "Paid";
+  if (booking.balancePaid) return "Paid in full";
   if (booking.retainerPaid) return "Balance due";
   return "Retainer due";
 }
@@ -74,6 +87,8 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: upcomingEvents, isLoading: upcomingLoading } = useGetUpcomingEvents();
   const { data: bookings, isLoading: bookingsLoading } = useListBookings();
+  const { data: expenses = [] } = useListExpenses();
+  const { data: nextActions = [] } = useGetNextActions();
 
   const statusChartData = useMemo(() => {
     if (!bookings) return [];
@@ -104,44 +119,109 @@ export default function Dashboard() {
     .filter((booking) => !booking.retainerPaid || !booking.balancePaid)
     .slice(0, 4);
   const openPipelineValue = activeBookingRows.reduce((sum, booking) => sum + booking.grandTotal, 0);
-  const completedBookingCount = stats?.completedBookings ?? bookingRows.filter((booking) => booking.status === "completed").length;
+  const completedBookingCount =
+    stats?.completedBookings ?? bookingRows.filter((booking) => booking.status === "completed").length;
+  const activeExpenses = expenses.filter((expense) => expense.active && expense.businessUse);
+  const recentExpenseCount = activeExpenses.slice(0, 3).length;
   const maxStatusCount = Math.max(...statusChartData.map((entry) => entry.value), 1);
 
   return (
     <Shell>
-      <div className="space-y-4 sm:space-y-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Studio command center</p>
-            <h1 className="mt-1 font-sans text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">Dashboard</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Money, schedule, and booking health in one working view.
+      <div className="space-y-7 sm:space-y-9">
+        {/* -------- Page header — editorial masthead -------- */}
+        <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <span className="crm-eyebrow">Studio · Command Center</span>
+            <h1 className="crm-page-title mt-2">Dashboard</h1>
+            <p className="crm-page-subtitle">
+              Money, schedule, and booking health — at a single glance.
             </p>
+            <div className="crm-gold-rule mt-6 w-24" />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="default">
               <Link href="/bookings">
-                <ListChecks className="w-4 h-4" />
-                Bookings
+                <ListChecks className="h-4 w-4" />
+                All bookings
               </Link>
             </Button>
-            <Button asChild size="sm">
+            <Button asChild size="default">
               <Link href="/bookings/new">
-                <Plus className="w-4 h-4" />
-                New Booking
+                <Plus className="h-4 w-4" />
+                New booking
               </Link>
             </Button>
           </div>
-        </div>
+        </header>
 
+        {/* -------- Next actions -------- */}
+        {nextActions.length > 0 && (
+          <section className="crm-section overflow-hidden">
+            <div className="flex items-start justify-between gap-4 border-b border-card-border/70 px-6 py-5">
+              <div>
+                <span className="crm-eyebrow">Studio · Next moves</span>
+                <h2 className="crm-section-title mt-1">What needs you today</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Calculated from booking lifecycle, payment status, and contract activity.
+                </p>
+              </div>
+              <Sparkles className="mt-1 hidden h-5 w-5 text-[hsl(var(--gold))] sm:block" strokeWidth={1.5} />
+            </div>
+            <ul className="divide-y divide-card-border/60">
+              {nextActions.slice(0, 5).map((action) => {
+                const meta = nextActionMeta(action.kind);
+                return (
+                  <li key={action.id}>
+                    <Link
+                      href={action.href || "/bookings"}
+                      className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-6 py-4 transition-colors hover:bg-accent/35"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-card-border bg-card text-muted-foreground">
+                        <NextActionIcon kind={action.kind} />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="crm-eyebrow !text-[10px]">{meta.eyebrow}</span>
+                          {action.severity === "attention" && (
+                            <span
+                              className="inline-flex h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_0_2px_hsl(var(--primary)/0.18)]"
+                              aria-label="Needs attention"
+                            />
+                          )}
+                          {action.dueOn && (
+                            <span className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+                              · {format(parseISO(action.dueOn), "MMM d")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-0.5 truncate text-[15px] font-medium text-foreground group-hover:text-primary">
+                          {action.title}
+                        </div>
+                        {action.detail && (
+                          <div className="mt-0.5 truncate text-xs text-muted-foreground">{action.detail}</div>
+                        )}
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-[0.14em] text-primary">
+                        {meta.action}
+                        <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+        {/* -------- Stat strip -------- */}
         {statsLoading ? (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1fr]">
-            {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24 w-full" />)}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+            {[1, 2, 3, 4, 5, 6].map(i => <Skeleton key={i} className="h-28 w-full" />)}
           </div>
         ) : stats ? (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1fr_1fr]">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
             <MetricTile
-              title="Open pipeline"
+              eyebrow="Open pipeline"
               value={formatMoney(openPipelineValue || stats.pendingRevenue)}
               detail={`${stats.activeBookings} active booking${stats.activeBookings === 1 ? "" : "s"}`}
               icon={HandCoins}
@@ -149,80 +229,106 @@ export default function Dashboard() {
               emphasis
             />
             <MetricTile
-              title="Retainers due"
-              value={stats.retainersPending}
+              eyebrow="Retainers due"
+              value={String(stats.retainersPending)}
               detail={`${stats.balancesPending} balance${stats.balancesPending === 1 ? "" : "s"} pending`}
               icon={AlertCircle}
               testId="stat-active-bookings"
             />
             <MetricTile
-              title="Clients"
-              value={stats.totalClients}
+              eyebrow="Clients"
+              value={String(stats.totalClients)}
               detail="Current roster"
               icon={Users}
               testId="stat-total-clients"
             />
             <MetricTile
-              title="Earned"
+              eyebrow="Earned"
               value={formatMoney(stats.totalRevenue)}
               detail={`${completedBookingCount} completed job${completedBookingCount === 1 ? "" : "s"}`}
               icon={Wallet}
               testId="stat-total-revenue"
             />
+            <MetricTile
+              eyebrow="Costs · month"
+              value={formatMoney(stats.currentMonthExpenses)}
+              detail={`${recentExpenseCount} recent expense${recentExpenseCount === 1 ? "" : "s"}`}
+              icon={ReceiptText}
+              testId="stat-month-expenses"
+            />
+            <MetricTile
+              eyebrow="Net"
+              value={formatMoney(stats.netRevenue)}
+              detail={`${formatMoney(stats.yearToDateExpenses)} costs YTD`}
+              icon={TrendingUp}
+              testId="stat-net-revenue"
+            />
           </div>
         ) : null}
 
-        <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <section className="crm-section overflow-hidden">
-            <div className="border-b border-card-border px-5 py-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="font-sans text-lg font-semibold tracking-normal text-foreground">Next scheduled work</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">Closest event in the next 90 days.</p>
-                </div>
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/bookings">
-                    View Calendar
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Link>
-                </Button>
+        {/* -------- Next event + payment attention -------- */}
+        <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+          {/* ---- Next event card ---- */}
+          <section className="crm-section crm-section-hover overflow-hidden">
+            <div className="flex flex-col gap-2 border-b border-card-border/70 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <span className="crm-eyebrow">On the books · next</span>
+                <h2 className="crm-section-title mt-1">Next scheduled work</h2>
               </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/bookings">
+                  Open calendar
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
             </div>
             {upcomingLoading ? (
-              <div className="p-5">
-                <Skeleton className="h-36 w-full" />
+              <div className="p-6">
+                <Skeleton className="h-44 w-full" />
               </div>
             ) : nextUpcomingEvent ? (
-              <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-                <div className="rounded-lg border border-border bg-muted/30 p-4 sm:p-4">
-                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                    <CalendarDays className="w-4 h-4" />
+              <div className="grid gap-6 p-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+                {/* Date plate */}
+                <div className="relative rounded-xl border border-card-border/70 bg-accent/40 p-5">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5" />
                     {format(parseISO(nextUpcomingEvent.eventDate), "EEEE")}
                   </div>
-                  <div className="mt-3 font-mono text-3xl font-semibold tracking-normal text-foreground sm:mt-4 sm:text-4xl">
-                    {formatDate(nextUpcomingEvent.eventDate)}
+                  <div
+                    className="mt-4 font-serif text-[3.25rem] leading-[0.95] text-foreground"
+                    style={{ fontVariationSettings: "'opsz' 144", letterSpacing: "-0.04em" }}
+                  >
+                    {format(parseISO(nextUpcomingEvent.eventDate), "d")}
                   </div>
-                  <div className="mt-2 text-sm text-muted-foreground">
+                  <div className="mt-1 text-sm font-medium tracking-tight text-muted-foreground">
+                    {format(parseISO(nextUpcomingEvent.eventDate), "MMMM yyyy")}
+                  </div>
+                  <div className="crm-gold-rule mt-5 w-full" />
+                  <div className="mt-4 text-xs uppercase tracking-[0.14em] text-muted-foreground">
                     {nextUpcomingEvent.servicesBegin || "Start time TBD"}
                   </div>
                 </div>
+                {/* Event meta */}
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className={statusTone(nextUpcomingEvent.bookingStatus ?? "draft")} variant="outline">
                       {nextUpcomingEvent.bookingStatus ?? "draft"}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">{nextUpcomingEvent.eventType ?? "Event"}</span>
+                    <span className="crm-eyebrow !tracking-[0.18em]">{nextUpcomingEvent.eventType ?? "Event"}</span>
                   </div>
-                  <h3 className="mt-3 truncate font-sans text-xl font-semibold tracking-normal text-foreground sm:text-2xl">
+                  <h3
+                    className="mt-3 truncate font-serif text-[1.875rem] text-foreground"
+                    style={{ fontVariationSettings: "'opsz' 96", letterSpacing: "-0.02em" }}
+                  >
                     {nextUpcomingEvent.clientName}
                   </h3>
                   <p className="mt-1 text-sm text-muted-foreground">{nextUpcomingEvent.eventName}</p>
-                  <div className="mt-5 flex items-start gap-2 text-sm text-muted-foreground">
-                    <MapPin className="mt-0.5 w-4 h-4 shrink-0" />
+                  <div className="mt-5 flex items-start gap-2 text-sm text-foreground/80">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="line-clamp-2">{nextUpcomingEvent.location}</span>
                   </div>
-                  <Button asChild className="mt-5" size="sm">
-                    <Link href={`/bookings/${nextUpcomingEvent.bookingId}`}>Open Booking</Link>
+                  <Button asChild className="mt-6">
+                    <Link href={`/bookings/${nextUpcomingEvent.bookingId}`}>Open booking</Link>
                   </Button>
                 </div>
               </div>
@@ -232,81 +338,99 @@ export default function Dashboard() {
                 title="No upcoming events"
                 detail="Create a booking to populate the schedule."
                 actionHref="/bookings/new"
-                actionLabel="New Booking"
+                actionLabel="New booking"
               />
             )}
           </section>
 
+          {/* ---- Payment attention ---- */}
           <section className="crm-section overflow-hidden">
-            <div className="border-b border-card-border px-5 py-4">
-              <h2 className="font-sans text-lg font-semibold tracking-normal text-foreground">Payment attention</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Active bookings that still need money collected.</p>
+            <div className="border-b border-card-border/70 px-6 py-5">
+              <span className="crm-eyebrow">Money · attention</span>
+              <h2 className="crm-section-title mt-1">Payment attention</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Active bookings awaiting collection.</p>
             </div>
             {bookingsLoading ? (
-              <div className="space-y-3 p-5">
+              <div className="space-y-3 p-6">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full" />)}
               </div>
             ) : paymentRiskRows.length > 0 ? (
-              <div className="divide-y divide-border">
+              <ul className="divide-y divide-card-border/60">
                 {paymentRiskRows.map((booking) => (
-                  <Link
-                    key={booking.id}
-                    href={`/bookings/${booking.id}`}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-5 py-3 transition-colors hover:bg-muted/35"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-foreground">{booking.clientName}</div>
-                      <div className="mt-0.5 text-xs text-muted-foreground">{booking.eventType}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono text-sm font-semibold text-foreground">{formatMoney(booking.grandTotal)}</div>
-                      <div className="mt-0.5 text-xs font-medium text-primary">{paymentLabel(booking)}</div>
-                    </div>
-                  </Link>
+                  <li key={booking.id}>
+                    <Link
+                      href={`/bookings/${booking.id}`}
+                      className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-6 py-3.5 transition-colors hover:bg-accent/35"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate text-[15px] font-medium text-foreground group-hover:text-primary">
+                          {booking.clientName}
+                        </div>
+                        <div className="mt-0.5 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                          {booking.eventType}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-serif text-base text-foreground tabular-nums" style={{ fontVariationSettings: "'opsz' 48" }}>
+                          {formatMoney(booking.grandTotal)}
+                        </div>
+                        <div className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-primary">
+                          {paymentLabel(booking)}
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
               <EmptyPanel
                 icon={HandCoins}
-                title="No payment issues"
-                detail="Active bookings are paid up for the current stage."
+                title="Nothing outstanding"
+                detail="All active bookings are paid up for this stage."
               />
             )}
           </section>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
-          <section className="crm-section p-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
+        {/* -------- Booking mix + revenue mix -------- */}
+        <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+          <section className="crm-section p-6">
+            <div className="mb-5 flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-sans text-lg font-semibold tracking-normal text-foreground">Booking mix</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Status distribution across the full ledger.</p>
+                <span className="crm-eyebrow">Composition</span>
+                <h2 className="crm-section-title mt-1">Booking mix</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Status distribution across the ledger.</p>
               </div>
-              <Badge variant="outline">{bookingRows.length} total</Badge>
+              <Badge variant="outline" className="!normal-case !tracking-tight">
+                <span className="font-serif text-sm tabular-nums" style={{ fontVariationSettings: "'opsz' 48" }}>{bookingRows.length}</span>
+                <span className="text-muted-foreground">total</span>
+              </Badge>
             </div>
             {bookingsLoading ? (
               <Skeleton className="h-56 w-full" />
             ) : statusChartData.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {statusChartData.map((entry) => (
-                  <div key={entry.key} className="grid grid-cols-[92px_minmax(0,1fr)_32px] items-center gap-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div key={entry.key} className="grid grid-cols-[96px_minmax(0,1fr)_38px] items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <span
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: STATUS_COLORS[entry.key] || "#94a3b8" }}
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: STATUS_COLORS[entry.key] || "hsl(28 8% 60%)" }}
                       />
-                      <span>{entry.name}</span>
+                      <span className="text-[13px] text-foreground">{entry.name}</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full rounded-full"
+                        className="h-full rounded-full transition-all duration-500 ease-out"
                         style={{
                           width: `${Math.max(8, (entry.value / maxStatusCount) * 100)}%`,
-                          backgroundColor: STATUS_COLORS[entry.key] || "#94a3b8",
+                          backgroundColor: STATUS_COLORS[entry.key] || "hsl(28 8% 60%)",
                         }}
                       />
                     </div>
-                    <div className="text-right font-mono text-sm font-semibold text-foreground">{entry.value}</div>
+                    <div className="text-right font-serif text-base text-foreground tabular-nums" style={{ fontVariationSettings: "'opsz' 48" }}>
+                      {entry.value}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -315,108 +439,150 @@ export default function Dashboard() {
             )}
           </section>
 
-          <section className="crm-section p-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
+          <section className="crm-section p-6">
+            <div className="mb-5 flex items-start justify-between gap-3">
               <div>
-                <h2 className="font-sans text-lg font-semibold tracking-normal text-foreground">Revenue by event type</h2>
+                <span className="crm-eyebrow">Revenue · by category</span>
+                <h2 className="crm-section-title mt-1">Revenue by event type</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Contract value grouped by category.</p>
               </div>
-              <TrendingUp className="mt-1 w-4 h-4 text-muted-foreground" />
+              <TrendingUp className="mt-1 h-4 w-4 text-muted-foreground" />
             </div>
             {bookingsLoading ? (
               <Skeleton className="h-56 w-full" />
             ) : revenueByTypeData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={revenueByTypeData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v: number) => [formatMoney(v), "Revenue"]} cursor={{ fill: "hsl(var(--muted))" }} />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[5, 5, 0, 0]} />
+                  <CartesianGrid strokeDasharray="2 4" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))", letterSpacing: "0.04em" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={v => `$${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    formatter={(v: number) => [formatMoney(v), "Revenue"]}
+                    cursor={{ fill: "hsl(var(--accent) / 0.35)" }}
+                    contentStyle={{
+                      borderRadius: 12,
+                      border: "1px solid hsl(var(--card-border))",
+                      background: "hsl(var(--card))",
+                      boxShadow: "0 18px 40px -18px var(--elevate-3)",
+                      fontSize: 12,
+                    }}
+                  />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyPanel icon={TrendingUp} title="No revenue data" detail="Revenue appears when bookings have totals." />
+              <EmptyPanel icon={TrendingUp} title="No revenue data" detail="Revenue appears once bookings have totals." />
             )}
           </section>
         </div>
 
+        {/* -------- Full ledger -------- */}
         <section className="crm-section overflow-hidden">
-          <div className="border-b border-card-border px-5 py-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="font-sans text-lg font-semibold tracking-normal text-foreground">Booking ledger</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Complete booking history with money and payment state.</p>
-              </div>
-              <Button asChild variant="outline" size="sm">
-                <Link href="/bookings">
-                  Open Bookings
-                  <ArrowUpRight className="w-4 h-4" />
-                </Link>
-              </Button>
+          <div className="flex flex-col gap-3 border-b border-card-border/70 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <span className="crm-eyebrow">All books · ledger</span>
+              <h2 className="crm-section-title mt-1">Booking ledger</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Complete booking history with money and payment state.</p>
             </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/bookings">
+                Open bookings
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
           {bookingsLoading ? (
-            <div className="p-4 space-y-2">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+            <div className="space-y-2 p-6">{[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
           ) : bookingRows.length > 0 ? (
             <>
+              {/* Desktop table */}
               <div className="hidden overflow-x-auto sm:block">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted/35">
-                      <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Client</th>
-                      <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Type</th>
-                      <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Date</th>
-                      <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Status</th>
-                      <th className="text-right px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Total</th>
-                      <th className="text-left px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Payment</th>
-                      <th className="px-4 py-2.5"></th>
+                    <tr className="border-b border-card-border/70">
+                      <th className="px-6 py-3 text-left crm-eyebrow !tracking-[0.16em]">Client</th>
+                      <th className="px-4 py-3 text-left crm-eyebrow !tracking-[0.16em]">Type</th>
+                      <th className="px-4 py-3 text-left crm-eyebrow !tracking-[0.16em]">Date</th>
+                      <th className="px-4 py-3 text-left crm-eyebrow !tracking-[0.16em]">Status</th>
+                      <th className="px-4 py-3 text-right crm-eyebrow !tracking-[0.16em]">Total</th>
+                      <th className="px-4 py-3 text-left crm-eyebrow !tracking-[0.16em]">Payment</th>
+                      <th className="px-4 py-3" />
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-card-border/50">
                     {bookingRows.map(b => (
-                      <tr key={b.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-medium text-foreground">{b.clientName}</td>
-                        <td className="px-4 py-3 text-muted-foreground">{b.eventType}</td>
-                        <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                          {formatDate(b.firstServiceDate)}
-                        </td>
-                        <td className="px-4 py-3">
+                      <tr key={b.id} className="group transition-colors hover:bg-accent/30">
+                        <td className="px-6 py-4 font-medium text-foreground">{b.clientName}</td>
+                        <td className="px-4 py-4 text-muted-foreground">{b.eventType}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-muted-foreground">{formatDate(b.firstServiceDate)}</td>
+                        <td className="px-4 py-4">
                           <Badge className={statusTone(b.status)} variant="outline">{b.status}</Badge>
                         </td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-foreground">{formatMoney(b.grandTotal)}</td>
-                        <td className="px-4 py-3">
+                        <td
+                          className="px-4 py-4 text-right font-serif text-base text-foreground tabular-nums"
+                          style={{ fontVariationSettings: "'opsz' 48" }}
+                        >
+                          {formatMoney(b.grandTotal)}
+                        </td>
+                        <td className="px-4 py-4">
                           {b.balancePaid ? (
-                            <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Paid</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-400">
+                              Paid
+                            </span>
                           ) : b.retainerPaid ? (
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">Balance due</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
+                              Balance due
+                            </span>
                           ) : (
-                            <span className="flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-                              <AlertCircle className="w-3 h-3" /> Retainer due
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-600 dark:text-amber-400">
+                              <AlertCircle className="h-3 w-3" /> Retainer due
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          <Link href={`/bookings/${b.id}`} className="text-xs font-medium text-primary hover:underline">Open</Link>
+                        <td className="px-4 py-4 text-right">
+                          <Link
+                            href={`/bookings/${b.id}`}
+                            className="text-[12px] font-medium uppercase tracking-[0.14em] text-primary opacity-70 transition-opacity hover:opacity-100"
+                          >
+                            Open →
+                          </Link>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="divide-y divide-border sm:hidden">
+              {/* Mobile list */}
+              <div className="divide-y divide-card-border/50 sm:hidden">
                 {bookingRows.map((b) => (
-                  <Link key={b.id} href={`/bookings/${b.id}`} className="block px-4 py-4 active:bg-muted/40">
+                  <Link key={b.id} href={`/bookings/${b.id}`} className="block px-5 py-4 active:bg-muted/40">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate font-medium text-foreground">{b.clientName}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">{b.eventType} · {formatDate(b.firstServiceDate)}</div>
+                        <div className="mt-1 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+                          {b.eventType} · {formatDate(b.firstServiceDate)}
+                        </div>
                       </div>
-                      <div className="shrink-0 text-right font-mono text-sm font-semibold text-foreground">{formatMoney(b.grandTotal)}</div>
+                      <div
+                        className="shrink-0 text-right font-serif text-base text-foreground tabular-nums"
+                        style={{ fontVariationSettings: "'opsz' 48" }}
+                      >
+                        {formatMoney(b.grandTotal)}
+                      </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3">
                       <Badge className={statusTone(b.status)} variant="outline">{b.status}</Badge>
-                      <span className="text-xs font-medium text-primary">{paymentLabel(b)}</span>
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">{paymentLabel(b)}</span>
                     </div>
                   </Link>
                 ))}
@@ -428,7 +594,7 @@ export default function Dashboard() {
               title="No bookings yet"
               detail="Create the first booking to begin tracking schedule and payments."
               actionHref="/bookings/new"
-              actionLabel="Create Booking"
+              actionLabel="Create booking"
             />
           )}
         </section>
@@ -437,33 +603,92 @@ export default function Dashboard() {
   );
 }
 
+/* ------------------------------------------------------------------------ *
+ * Metric tile — editorial stat card.                                       *
+ * Eyebrow label, large serif number, soft detail line.                      *
+ * ------------------------------------------------------------------------ */
 function MetricTile({
-  title, value, detail, icon: Icon, testId, emphasis = false,
+  eyebrow,
+  value,
+  detail,
+  icon: Icon,
+  testId,
+  emphasis = false,
 }: {
-  title: string;
-  value: string | number;
+  eyebrow: string;
+  value: string;
   detail: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   testId: string;
   emphasis?: boolean;
 }) {
   return (
     <div
       data-testid={testId}
-      className={`rounded-lg border p-3 transition-colors sm:p-4 ${
-        emphasis ? "border-primary/25 bg-primary/10" : "border-border bg-card"
-      }`}
+      className={`relative overflow-hidden rounded-2xl border p-5 transition-all duration-300 ease-out
+        ${emphasis
+          ? "border-primary/20 bg-[linear-gradient(155deg,hsl(var(--accent)/0.6)_0%,hsl(var(--card))_55%)]"
+          : "border-card-border bg-card"
+        }
+        shadow-[0_1px_0_0_hsl(var(--card-border)/0.4),0_14px_36px_-26px_var(--elevate-3)]
+        hover:-translate-y-px hover:shadow-[0_1px_0_0_hsl(var(--primary)/0.15),0_22px_46px_-28px_var(--elevate-3)]`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{title}</div>
-        <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <div className="flex items-start justify-between gap-2">
+        <span className="crm-eyebrow">{eyebrow}</span>
+        <Icon
+          className={`h-4 w-4 shrink-0 ${emphasis ? "text-primary" : "text-muted-foreground"}`}
+          strokeWidth={1.5}
+        />
       </div>
-      <div className="mt-3 font-mono text-xl font-semibold tracking-normal text-foreground sm:text-2xl">{value}</div>
-      <div className="mt-1 text-xs text-muted-foreground">{detail}</div>
+      <div
+        className="mt-4 font-serif text-[2.25rem] leading-none text-foreground tabular-nums"
+        style={{ fontVariationSettings: "'opsz' 144", letterSpacing: "-0.03em" }}
+      >
+        {value}
+      </div>
+      <div className="mt-2 text-[12.5px] text-muted-foreground">{detail}</div>
+      {emphasis && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full bg-[hsl(var(--gold)/0.12)] blur-2xl"
+        />
+      )}
     </div>
   );
 }
 
+function NextActionIcon({ kind }: { kind: string }) {
+  switch (kind) {
+    case "retainer_due":
+    case "balance_due":
+      return <HandCoins className="h-4 w-4" strokeWidth={1.5} />;
+    case "day_before_confirm":
+      return <CalendarCheck className="h-4 w-4" strokeWidth={1.5} />;
+    case "unsigned_contract":
+      return <PenLine className="h-4 w-4" strokeWidth={1.5} />;
+    default:
+      return <Send className="h-4 w-4" strokeWidth={1.5} />;
+  }
+}
+
+function nextActionMeta(kind: string): { eyebrow: string; action: string } {
+  switch (kind) {
+    case "retainer_due":
+      return { eyebrow: "Money · Retainer", action: "Send request" };
+    case "balance_due":
+      return { eyebrow: "Money · Balance", action: "Send request" };
+    case "day_before_confirm":
+      return { eyebrow: "Today · Confirm", action: "Send confirm" };
+    case "unsigned_contract":
+      return { eyebrow: "Contract · Unsigned", action: "Share portal" };
+    default:
+      return { eyebrow: "Action", action: "Open" };
+  }
+}
+
+/* ------------------------------------------------------------------------ *
+ * Empty state panel — calm, editorial.                                     *
+ * ------------------------------------------------------------------------ */
 function EmptyPanel({
   icon: Icon,
   title,
@@ -471,21 +696,23 @@ function EmptyPanel({
   actionHref,
   actionLabel,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;
   detail: string;
   actionHref?: string;
   actionLabel?: string;
 }) {
   return (
-    <div className="flex min-h-[160px] flex-col items-center justify-center px-6 py-10 text-center">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground">
-        <Icon className="w-5 h-5" />
+    <div className="flex min-h-[200px] flex-col items-center justify-center px-8 py-12 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-card-border bg-accent/50 text-foreground/70">
+        <Icon className="h-5 w-5" strokeWidth={1.5} />
       </div>
-      <h3 className="mt-3 font-sans text-sm font-semibold tracking-normal text-foreground">{title}</h3>
-      <p className="mt-1 max-w-sm text-sm text-muted-foreground">{detail}</p>
+      <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">
+        {title}
+      </h3>
+      <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{detail}</p>
       {actionHref && actionLabel && (
-        <Button asChild className="mt-4" size="sm">
+        <Button asChild className="mt-5" size="sm">
           <Link href={actionHref}>{actionLabel}</Link>
         </Button>
       )}

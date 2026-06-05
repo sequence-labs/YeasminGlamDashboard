@@ -28,4 +28,9 @@ export interface BookingUpdate {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  lifecycleStage?: string;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  signedByName?: string | null;
 }

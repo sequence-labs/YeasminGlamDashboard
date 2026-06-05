@@ -42,6 +42,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useLocation } from "wouter";
 import { TimePartsInput } from "@/components/TimePartsInput";
+import { BookingPortalShareDialog } from "@/components/booking/BookingPortalShareDialog";
+import { BookingEmailDialog } from "@/components/booking/BookingEmailDialog";
+import { BookingPaymentLinksCard } from "@/components/booking/BookingPaymentLinksCard";
 
 function lineItemAmount(item: BookingLineItem) {
   return item.total ?? item.quantity * item.unitPrice;
@@ -227,12 +230,14 @@ export default function BookingDetail() {
   if (!booking) {
     return (
       <Shell>
-        <div className="crm-section p-8 text-center text-muted-foreground">
-          <h2 className="crm-page-title text-lg">Booking not found</h2>
-          <p className="mt-2 text-sm">The booking record could not be loaded.</p>
-          <Link href="/bookings" className="mt-4 inline-flex text-sm font-medium text-primary hover:text-primary/80">
-            Return to bookings
-          </Link>
+        <div className="crm-section mx-auto max-w-xl p-10 text-center">
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            Booking not found
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">The booking record could not be loaded.</p>
+          <Button asChild className="mt-6" variant="outline">
+            <Link href="/bookings">Return to bookings</Link>
+          </Button>
         </div>
       </Shell>
     );
@@ -479,72 +484,106 @@ export default function BookingDetail() {
   return (
     <Shell>
       <div className="space-y-8 pb-12">
-        <div className="crm-section p-5">
-          <div className="mb-4">
-            <Link
-              href="/bookings"
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
-              data-testid="link-back-bookings"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              Back to Bookings
-            </Link>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="min-w-0">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <h1 className="crm-page-title leading-tight" data-testid="text-booking-title">{booking.clientName}</h1>
-                  <Select value={booking.status} onValueChange={(v: any) => handleStatusChange(v)}>
-                    <SelectTrigger className={`h-8 w-fit min-w-32 border-none text-xs font-bold uppercase tracking-wider ${
-                        booking.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                        booking.status === 'active' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                        booking.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                      }`} data-testid="select-booking-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{booking.eventType}</span>
-                  <span>{booking.location}</span>
-                  {booking.firstServiceDate && <span>First service: {format(parseISO(booking.firstServiceDate), "MMM d, yyyy")}</span>}
-                </div>
+        {/* Back */}
+        <Link
+          href="/bookings"
+          className="inline-flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+          data-testid="link-back-bookings"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to bookings
+        </Link>
+
+        {/* Hero */}
+        <header className="crm-section p-6 sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <span className="crm-eyebrow">Booking · {booking.eventType}</span>
+              <h1 className="crm-page-title mt-2" data-testid="text-booking-title">
+                {booking.clientName}
+              </h1>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" />
+                  {booking.firstServiceDate
+                    ? format(parseISO(booking.firstServiceDate), "EEEE, MMMM d, yyyy")
+                    : "Date TBD"}
+                </span>
+                <span className="inline-flex items-center gap-1.5 max-w-[360px] truncate">
+                  {booking.location}
+                </span>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
-                <Link
-                  href={`/bookings/${id}/contract`}
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md bg-blue-600 text-white hover:bg-blue-700 h-10 px-4 py-2 text-sm font-medium shadow-sm"
-                  data-testid="btn-view-contract"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Contract PDF
-                </Link>
-                <BookingMetaDialog
-                  bookingId={id}
-                  bookingClientName={booking.clientName}
-                  bookingClientId={booking.clientId}
-                  contractTemplateId={booking.contractTemplateId ?? null}
-                  contractTemplates={contractTemplates ?? []}
-                  eventType={booking.eventType}
-                  location={booking.location}
-                  firstServiceDate={booking.firstServiceDate ?? null}
-                  primaryEventId={booking.events[0]?.id}
-                  primaryEventName={booking.events[0]?.eventName}
-                />
-                <Button variant="destructive" onClick={handleDeleteBooking} disabled={deleteBooking.isPending} data-testid="btn-delete-booking">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete Booking
-                </Button>
+              <div className="mt-5 inline-flex items-center gap-2">
+                <span className="crm-eyebrow !text-[10px]">Status</span>
+                <Select value={booking.status} onValueChange={(v: any) => handleStatusChange(v)}>
+                  <SelectTrigger
+                    className={`h-9 w-fit min-w-36 rounded-full border px-3.5 text-[11px] font-semibold uppercase tracking-[0.14em] shadow-none ${
+                      booking.status === "completed"
+                        ? "border-emerald-700/20 bg-emerald-700/8 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300"
+                        : booking.status === "active"
+                          ? "border-primary/25 bg-primary/8 text-primary"
+                          : booking.status === "cancelled"
+                            ? "border-destructive/25 bg-destructive/8 text-destructive"
+                            : "border-border bg-muted/60 text-muted-foreground"
+                    }`}
+                    data-testid="select-booking-status"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <Button asChild>
+                <Link href={`/bookings/${id}/contract`} data-testid="btn-view-contract">
+                  <Printer className="h-4 w-4" />
+                  Contract PDF
+                </Link>
+              </Button>
+              <BookingPortalShareDialog bookingId={id} />
+              <BookingEmailDialog
+                bookingId={id}
+                clientId={booking.clientId}
+                clientEmail={booking.clientEmail}
+              />
+              {booking.signedAt && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/25 bg-emerald-700/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300"
+                  title={`Signed ${format(parseISO(booking.signedAt), "MMM d, yyyy")}`}
+                >
+                  Signed{booking.signedByName ? ` · ${booking.signedByName}` : ""}
+                </span>
+              )}
+              <BookingMetaDialog
+                bookingId={id}
+                bookingClientName={booking.clientName}
+                bookingClientId={booking.clientId}
+                contractTemplateId={booking.contractTemplateId ?? null}
+                contractTemplates={contractTemplates ?? []}
+                eventType={booking.eventType}
+                location={booking.location}
+                firstServiceDate={booking.firstServiceDate ?? null}
+                primaryEventId={booking.events[0]?.id}
+                primaryEventName={booking.events[0]?.eventName}
+              />
+              <Button
+                variant="destructive"
+                onClick={handleDeleteBooking}
+                disabled={deleteBooking.isPending}
+                data-testid="btn-delete-booking"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </div>
           </div>
-        </div>
+        </header>
 
         <Tabs defaultValue="events" className="w-full">
           <TabsList className="grid w-full grid-cols-3 md:w-[620px]">
@@ -554,8 +593,11 @@ export default function BookingDetail() {
           </TabsList>
           
           <TabsContent value="events" className="space-y-6 mt-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-serif">Service Schedule</h2>
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="crm-eyebrow">Events</span>
+                <h2 className="crm-section-title mt-1">Service schedule</h2>
+              </div>
               <EventDialog bookingId={id} />
             </div>
 
@@ -578,7 +620,7 @@ export default function BookingDetail() {
                           <GripVertical className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-serif text-lg text-primary">{event.eventName}</h3>
+                          <h3 className="text-lg font-semibold tracking-tight text-primary">{event.eventName}</h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                             <Calendar className="w-3.5 h-3.5" />
                             <span>{format(parseISO(event.eventDate), "EEEE, MMMM d, yyyy")}</span>
@@ -620,13 +662,21 @@ export default function BookingDetail() {
               </div>
             )}
 
-            <div className="crm-section p-5">
-              <div className="flex items-center justify-between border-b pb-3 mb-4">
+            <div className="crm-section p-6">
+              <div className="mb-5 flex items-center justify-between border-b border-card-border/60 pb-4">
                 <div>
-                  <h2 className="text-xl font-serif">Selected Services & Fees</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Assign each service or fee to an event, or keep it as a booking-level charge.</p>
+                  <span className="crm-eyebrow">Catalog · Selected</span>
+                  <h2 className="crm-section-title mt-1">Selected services &amp; fees</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Assign each service or fee to an event, or keep it as a booking-level charge.
+                  </p>
                 </div>
-                <div className="font-serif text-lg">${lineItemsTotal.toLocaleString()}</div>
+                <div
+                  className="font-serif text-xl text-foreground tabular-nums"
+                  style={{ fontVariationSettings: "'opsz' 72", letterSpacing: "-0.025em" }}
+                >
+                  ${lineItemsTotal.toLocaleString()}
+                </div>
               </div>
 
               <div className="mb-4 rounded-md border bg-muted/20 p-3">
@@ -800,10 +850,18 @@ export default function BookingDetail() {
           </TabsContent>
 
           <TabsContent value="financials" className="space-y-6 mt-6">
+            <BookingPaymentLinksCard
+              bookingId={id}
+              clientName={booking.clientName}
+              retainerAmount={Number(effectiveRetainerAmount) || 0}
+              balanceDue={Math.max(0, Number(booking.grandTotal) - Number(effectiveRetainerAmount) - (booking.payments?.reduce((s: number, p: any) => s + Number(p.amount), 0) ?? 0))}
+              eventName={booking.events?.[0]?.eventName || booking.eventType}
+            />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <div className="crm-section p-6">
-                  <h2 className="text-xl font-serif mb-6">Payment Tracker</h2>
+                  <span className="crm-eyebrow">Money · Track</span>
+                  <h2 className="crm-section-title mt-1 mb-6">Payment tracker</h2>
                   
                   <div className="space-y-6">
                     <div className="flex items-center justify-between p-4 rounded-md border bg-accent/20">
@@ -839,8 +897,11 @@ export default function BookingDetail() {
                 </div>
 
                 <div className="crm-section p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-serif">Payment Records</h2>
+                  <div className="mb-6 flex items-end justify-between">
+                    <div>
+                      <span className="crm-eyebrow">Money · Records</span>
+                      <h2 className="crm-section-title mt-1">Payment records</h2>
+                    </div>
                     <PaymentDialog bookingId={id} />
                   </div>
 
@@ -871,8 +932,9 @@ export default function BookingDetail() {
               </div>
 
               <div className="lg:col-span-1">
-                <div className="crm-section p-6 sticky top-6">
-                  <h2 className="text-xl font-serif mb-6">Invoice Summary</h2>
+                <div className="crm-section sticky top-6 p-6">
+                  <span className="crm-eyebrow">Invoice</span>
+                  <h2 className="crm-section-title mt-1 mb-6">Invoice summary</h2>
                   
                   <div className="space-y-3 text-sm">
                     {booking.events.filter(event => event.subtotal > 0).map(event => (
@@ -929,8 +991,11 @@ export default function BookingDetail() {
           <TabsContent value="history" className="space-y-4 mt-6">
             <div className="crm-section p-6">
               <div className="mb-6">
-                <h2 className="text-xl font-serif">Booking History</h2>
-                <p className="text-sm text-muted-foreground mt-1">Timestamped trail of booking, schedule, payment, and deletion changes.</p>
+                <span className="crm-eyebrow">Audit · Trail</span>
+                <h2 className="crm-section-title mt-1">Booking history</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Timestamped trail of booking, schedule, payment, and deletion changes.
+                </p>
               </div>
 
               {booking.activity.length > 0 ? (

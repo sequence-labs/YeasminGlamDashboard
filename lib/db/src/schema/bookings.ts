@@ -22,6 +22,9 @@ export const bookingsTable = pgTable("bookings", {
   earlyMorningFee: numeric("early_morning_fee", { precision: 10, scale: 2 }).notNull().default("0"),
   travelFee: numeric("travel_fee", { precision: 10, scale: 2 }).notNull().default("0"),
   notes: text("notes"),
+  lifecycleStage: text("lifecycle_stage").notNull().default("lead"),
+  signedAt: timestamp("signed_at"),
+  signedByName: text("signed_by_name"),
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

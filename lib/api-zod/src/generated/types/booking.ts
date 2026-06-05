@@ -33,6 +33,15 @@ export interface Booking {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  /**
+     * lead | trial_scheduled | trial_complete | contract_sent | signed | active | completed
+     * @nullable
+     */
+  lifecycleStage?: string | null;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  signedByName?: string | null;
   /** @nullable */
   deletedAt?: string | null;
   createdAt: string;

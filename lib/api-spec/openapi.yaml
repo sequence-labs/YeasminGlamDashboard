@@ -18,12 +18,34 @@ tags:
     description: Payment tracking
   - name: services
     description: Reusable services and fees
+  - name: expenses
+    description: Business expense tracking
   - name: artist
     description: Artist business profile
   - name: contractTemplates
     description: Reusable contract template management
   - name: dashboard
     description: Dashboard summary data
+  - name: notifications
+    description: Notification center
+  - name: tags
+    description: Tag management for clients and bookings
+  - name: segments
+    description: Saved segments
+  - name: portal
+    description: Public client portal endpoints
+  - name: signatures
+    description: Contract signatures
+  - name: email
+    description: Email templates and composed messages
+  - name: automations
+    description: Automation settings and scheduled tasks
+  - name: paymentLinks
+    description: Manual payment-intent links (Zelle/Venmo/CashApp)
+  - name: calendar
+    description: Calendar view and ICS export
+  - name: leads
+    description: Lead/inquiry capture and pipeline
 
 paths:
   /healthz:
@@ -193,6 +215,84 @@ paths:
       operationId: deleteServiceItem
       tags: [services]
       summary: Archive a reusable service or fee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Archived
+
+  # ─── Expenses ────────────────────────────────────────────────────────────
+
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List business expenses
+      parameters:
+        - name: includeArchived
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create a business expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/{id}:
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update a business expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseUpdate"
+      responses:
+        "200":
+          description: Updated expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Archive a business expense
       parameters:
         - name: id
           in: path
@@ -688,6 +788,845 @@ paths:
                 items:
                   $ref: "#/components/schemas/Booking"
 
+  /dashboard/next-actions:
+    get:
+      operationId: getNextActions
+      tags: [dashboard]
+      summary: Derived next-actions list
+      responses:
+        "200":
+          description: Next actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NextAction"
+
+  # ─── Notifications ─────────────────────────────────────────────────────────
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "204":
+          description: All marked read
+
+  # ─── Tags ──────────────────────────────────────────────────────────────────
+
+  /tags:
+    get:
+      operationId: listTags
+      tags: [tags]
+      summary: List all tags
+      responses:
+        "200":
+          description: Tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tag"
+    post:
+      operationId: createTag
+      tags: [tags]
+      summary: Create a tag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagInput"
+      responses:
+        "201":
+          description: Created tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+
+  /tags/{id}:
+    delete:
+      operationId: deleteTag
+      tags: [tags]
+      summary: Delete a tag
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /clients/{id}/tags:
+    get:
+      operationId: listClientTags
+      tags: [tags]
+      summary: List tags for a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tag"
+    post:
+      operationId: assignClientTag
+      tags: [tags]
+      summary: Assign a tag to a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagAssignment"
+      responses:
+        "204":
+          description: Assigned
+
+  /clients/{id}/tags/{tagId}:
+    delete:
+      operationId: removeClientTag
+      tags: [tags]
+      summary: Remove a tag from a client
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  /bookings/{id}/tags:
+    get:
+      operationId: listBookingTags
+      tags: [tags]
+      summary: List tags for a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tag"
+    post:
+      operationId: assignBookingTag
+      tags: [tags]
+      summary: Assign a tag to a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagAssignment"
+      responses:
+        "204":
+          description: Assigned
+
+  /bookings/{id}/tags/{tagId}:
+    delete:
+      operationId: removeBookingTag
+      tags: [tags]
+      summary: Remove a tag from a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  # ─── Saved Segments ────────────────────────────────────────────────────────
+
+  /saved-segments:
+    get:
+      operationId: listSavedSegments
+      tags: [segments]
+      summary: List saved segments
+      responses:
+        "200":
+          description: Saved segments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SavedSegment"
+    post:
+      operationId: createSavedSegment
+      tags: [segments]
+      summary: Create a saved segment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedSegmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedSegment"
+
+  /saved-segments/{id}:
+    delete:
+      operationId: deleteSavedSegment
+      tags: [segments]
+      summary: Delete a saved segment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Portal share links ────────────────────────────────────────────────────
+
+  /bookings/{id}/share-link:
+    get:
+      operationId: getBookingShareLink
+      tags: [portal]
+      summary: Get the share link for a booking (creates one if absent)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Share link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingShareLink"
+    post:
+      operationId: rotateBookingShareLink
+      tags: [portal]
+      summary: Rotate (regenerate) the share link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Share link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingShareLink"
+    delete:
+      operationId: revokeBookingShareLink
+      tags: [portal]
+      summary: Revoke the share link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Revoked
+
+  # ─── Email templates ───────────────────────────────────────────────────────
+
+  /email-templates:
+    get:
+      operationId: listEmailTemplates
+      tags: [email]
+      summary: List email templates
+      responses:
+        "200":
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmailTemplate"
+    post:
+      operationId: createEmailTemplate
+      tags: [email]
+      summary: Create an email template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailTemplateInput"
+      responses:
+        "201":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+
+  /email-templates/{id}:
+    patch:
+      operationId: updateEmailTemplate
+      tags: [email]
+      summary: Update an email template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailTemplateUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailTemplate"
+    delete:
+      operationId: deleteEmailTemplate
+      tags: [email]
+      summary: Delete an email template
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /email-templates/{id}/render:
+    post:
+      operationId: renderEmailTemplate
+      tags: [email]
+      summary: Render a template with booking/client merge fields
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailRenderInput"
+      responses:
+        "200":
+          description: Rendered message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailRendered"
+
+  # ─── Email messages ────────────────────────────────────────────────────────
+
+  /email-messages:
+    get:
+      operationId: listEmailMessages
+      tags: [email]
+      summary: List composed/sent email messages
+      parameters:
+        - name: clientId
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: bookingId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmailMessage"
+    post:
+      operationId: createEmailMessage
+      tags: [email]
+      summary: Create an email message (draft or recorded send)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailMessageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailMessage"
+
+  /email-messages/{id}:
+    patch:
+      operationId: updateEmailMessage
+      tags: [email]
+      summary: Update an email message (status or contents)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailMessageUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailMessage"
+    delete:
+      operationId: deleteEmailMessage
+      tags: [email]
+      summary: Delete an email message
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── Automation settings + scheduled tasks ─────────────────────────────────
+
+  /automation-settings:
+    get:
+      operationId: getAutomationSettings
+      tags: [automations]
+      summary: Get automation settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationSettings"
+    patch:
+      operationId: updateAutomationSettings
+      tags: [automations]
+      summary: Update automation settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomationSettingsUpdate"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationSettings"
+
+  /automations/run:
+    post:
+      operationId: runAutomations
+      tags: [automations]
+      summary: Run the reminder pass now (claims due scheduled tasks)
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRunResult"
+
+  /scheduled-tasks:
+    get:
+      operationId: listScheduledTasks
+      tags: [automations]
+      summary: List scheduled tasks
+      responses:
+        "200":
+          description: Tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ScheduledTask"
+
+  # ─── Payment intents ───────────────────────────────────────────────────────
+
+  /bookings/{id}/payment-intents:
+    get:
+      operationId: listBookingPaymentIntents
+      tags: [paymentLinks]
+      summary: List payment intents for a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment intents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentIntent"
+    post:
+      operationId: createPaymentIntent
+      tags: [paymentLinks]
+      summary: Create a payment intent (link request)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentIntentInput"
+      responses:
+        "201":
+          description: Created intent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentIntent"
+
+  /payment-intents/{id}:
+    patch:
+      operationId: updatePaymentIntent
+      tags: [paymentLinks]
+      summary: Update payment intent (mark paid / cancel)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentIntentUpdate"
+      responses:
+        "200":
+          description: Updated payment intent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentIntent"
+
+  # ─── Calendar ─────────────────────────────────────────────────────────────
+
+  /calendar/events:
+    get:
+      operationId: listCalendarEvents
+      tags: [calendar]
+      summary: List events in a date range for the calendar view
+      parameters:
+        - name: start
+          in: query
+          required: false
+          schema:
+            type: string
+          description: ISO date (inclusive)
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+          description: ISO date (inclusive)
+      responses:
+        "200":
+          description: Calendar events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CalendarEvent"
+
+  /calendar/feed-token:
+    get:
+      operationId: getCalendarFeedToken
+      tags: [calendar]
+      summary: Get the calendar feed token (creates one if absent)
+      responses:
+        "200":
+          description: Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarFeedTokenInfo"
+    post:
+      operationId: rotateCalendarFeedToken
+      tags: [calendar]
+      summary: Rotate the calendar feed token
+      responses:
+        "200":
+          description: Token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarFeedTokenInfo"
+
+  # ─── Leads (admin) ────────────────────────────────────────────────────────
+
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List leads
+      responses:
+        "200":
+          description: Leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get a lead by id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      summary: Update a lead (status, conversion ids)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadUpdate"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}/convert:
+    post:
+      operationId: convertLead
+      tags: [leads]
+      summary: Convert a lead to a client (and optionally a booking)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Converted lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadConversionResult"
+
+  # ─── Public portal/inquire ─────────────────────────────────────────────────
+
+  /public/portal/{token}:
+    get:
+      operationId: getPortalBooking
+      tags: [portal]
+      summary: Public booking portal (token-gated)
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Portal payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalPayload"
+        "404":
+          description: Token not found
+
+  /public/portal/{token}/sign:
+    post:
+      operationId: signPortalContract
+      tags: [signatures]
+      summary: Capture a typed signature for the contract
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortalSignatureInput"
+      responses:
+        "200":
+          description: Signed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortalPayload"
+
+  /public/leads:
+    post:
+      operationId: createPublicLead
+      tags: [leads]
+      summary: Submit a public lead/inquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicLeadInput"
+      responses:
+        "201":
+          description: Lead received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicLeadAck"
+
 components:
   schemas:
     HealthStatus:
@@ -814,6 +1753,121 @@ components:
         sortOrder:
           type: integer
 
+    # ── Expenses ───────────────────────────────────────────────────────────
+
+    ExpenseCategory:
+      type: string
+      enum:
+        - makeup_products
+        - hair_products
+        - tools_equipment
+        - disposables
+        - travel
+        - education
+        - marketing
+        - software
+        - studio_supplies
+        - other
+
+    Expense:
+      type: object
+      required: [id, itemName, category, amount, expenseDate, businessUse, reimbursable, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        itemName:
+          type: string
+        category:
+          $ref: "#/components/schemas/ExpenseCategory"
+        amount:
+          type: number
+        expenseDate:
+          type: string
+          description: ISO calendar date, YYYY-MM-DD.
+        vendor:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        receiptDataUrl:
+          type: ["string", "null"]
+          description: Data URL for an uploaded receipt image, scan, or PDF.
+        receiptFileName:
+          type: ["string", "null"]
+        businessUse:
+          type: boolean
+        reimbursable:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ExpenseInput:
+      type: object
+      required: [itemName, category, amount, expenseDate]
+      properties:
+        itemName:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/ExpenseCategory"
+        amount:
+          type: number
+          minimum: 0
+        expenseDate:
+          type: string
+          minLength: 1
+        vendor:
+          type: string
+        paymentMethod:
+          type: string
+        notes:
+          type: string
+        receiptDataUrl:
+          type: string
+        receiptFileName:
+          type: string
+        businessUse:
+          type: boolean
+        reimbursable:
+          type: boolean
+        active:
+          type: boolean
+
+    ExpenseUpdate:
+      type: object
+      properties:
+        itemName:
+          type: string
+          minLength: 1
+        category:
+          $ref: "#/components/schemas/ExpenseCategory"
+        amount:
+          type: number
+          minimum: 0
+        expenseDate:
+          type: string
+        vendor:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        receiptDataUrl:
+          type: ["string", "null"]
+        receiptFileName:
+          type: ["string", "null"]
+        businessUse:
+          type: boolean
+        reimbursable:
+          type: boolean
+        active:
+          type: boolean
+
     # ── Artist Profile ─────────────────────────────────────────────────────
 
     ArtistProfile:
@@ -837,6 +1891,14 @@ components:
         paymentMethod:
           type: ["string", "null"]
         notes:
+          type: ["string", "null"]
+        zelleHandle:
+          type: ["string", "null"]
+        venmoHandle:
+          type: ["string", "null"]
+        cashAppHandle:
+          type: ["string", "null"]
+        paymentInstructions:
           type: ["string", "null"]
         createdAt:
           type: string
@@ -863,6 +1925,14 @@ components:
         paymentMethod:
           type: ["string", "null"]
         notes:
+          type: ["string", "null"]
+        zelleHandle:
+          type: ["string", "null"]
+        venmoHandle:
+          type: ["string", "null"]
+        cashAppHandle:
+          type: ["string", "null"]
+        paymentInstructions:
           type: ["string", "null"]
 
     # ── Contract Templates ─────────────────────────────────────────────────
@@ -967,6 +2037,13 @@ components:
           type: number
         notes:
           type: ["string", "null"]
+        lifecycleStage:
+          type: ["string", "null"]
+          description: lead | trial_scheduled | trial_complete | contract_sent | signed | active | completed
+        signedAt:
+          type: ["string", "null"]
+        signedByName:
+          type: ["string", "null"]
         deletedAt:
           type: ["string", "null"]
         createdAt:
@@ -1005,6 +2082,8 @@ components:
           type: number
         notes:
           type: string
+        lifecycleStage:
+          type: string
         lineItems:
           type: array
           items:
@@ -1041,6 +2120,12 @@ components:
         travelFee:
           type: number
         notes:
+          type: ["string", "null"]
+        lifecycleStage:
+          type: string
+        signedAt:
+          type: ["string", "null"]
+        signedByName:
           type: ["string", "null"]
 
     BookingDetail:
@@ -1087,6 +2172,12 @@ components:
         travelFee:
           type: number
         notes:
+          type: ["string", "null"]
+        lifecycleStage:
+          type: ["string", "null"]
+        signedAt:
+          type: ["string", "null"]
+        signedByName:
           type: ["string", "null"]
         deletedAt:
           type: ["string", "null"]
@@ -1250,6 +2341,9 @@ components:
           type: number
         subtotal:
           type: number
+        kind:
+          type: string
+          enum: [event, trial]
 
     EventInput:
       type: object
@@ -1278,6 +2372,9 @@ components:
           type: number
         hairAndMakeupRate:
           type: number
+        kind:
+          type: string
+          enum: [event, trial]
 
     EventUpdate:
       type: object
@@ -1304,6 +2401,9 @@ components:
           type: number
         hairAndMakeupRate:
           type: number
+        kind:
+          type: string
+          enum: [event, trial]
 
     # ── Payment ─────────────────────────────────────────────────────────────
 
@@ -1370,7 +2470,19 @@ components:
 
     DashboardStats:
       type: object
-      required: [totalClients, activeBookings, completedBookings, totalRevenue, pendingRevenue, retainersPending, balancesPending]
+      required:
+        - totalClients
+        - activeBookings
+        - completedBookings
+        - totalRevenue
+        - pendingRevenue
+        - retainersPending
+        - balancesPending
+        - totalExpenses
+        - currentMonthExpenses
+        - yearToDateExpenses
+        - netRevenue
+        - currentMonthNetRevenue
       properties:
         totalClients:
           type: integer
@@ -1390,6 +2502,21 @@ components:
         balancesPending:
           type: integer
           description: Active bookings with balance not yet paid
+        totalExpenses:
+          type: number
+          description: Sum of active business expenses
+        currentMonthExpenses:
+          type: number
+          description: Active business expenses in the current calendar month
+        yearToDateExpenses:
+          type: number
+          description: Active business expenses in the current calendar year
+        netRevenue:
+          type: number
+          description: Completed booking revenue less active business expenses
+        currentMonthNetRevenue:
+          type: number
+          description: Current-month completed booking revenue less current-month active business expenses
 
     UpcomingEvent:
       type: object
@@ -1413,3 +2540,631 @@ components:
           type: ["string", "null"]
         bookingStatus:
           type: string
+
+    NextAction:
+      type: object
+      required: [id, kind, title, severity]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [retainer_due, balance_due, day_before_confirm, unsigned_contract]
+        title:
+          type: string
+        detail:
+          type: ["string", "null"]
+        bookingId:
+          type: ["integer", "null"]
+        leadId:
+          type: ["integer", "null"]
+        href:
+          type: ["string", "null"]
+        severity:
+          type: string
+          enum: [info, warn, attention]
+        dueOn:
+          type: ["string", "null"]
+
+    Notification:
+      type: object
+      required: [id, category, title, createdAt]
+      properties:
+        id:
+          type: integer
+        category:
+          type: string
+        title:
+          type: string
+        body:
+          type: ["string", "null"]
+        href:
+          type: ["string", "null"]
+        resourceType:
+          type: ["string", "null"]
+        resourceId:
+          type: ["integer", "null"]
+        readAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    Tag:
+      type: object
+      required: [id, name, color, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        createdAt:
+          type: string
+
+    TagInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        color:
+          type: string
+
+    TagAssignment:
+      type: object
+      required: [tagId]
+      properties:
+        tagId:
+          type: integer
+
+    SavedSegment:
+      type: object
+      required: [id, name, scope, filterJson, pinned, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        scope:
+          type: string
+          enum: [clients, bookings]
+        filterJson:
+          type: string
+        pinned:
+          type: integer
+        createdAt:
+          type: string
+
+    SavedSegmentInput:
+      type: object
+      required: [name, scope, filterJson]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        scope:
+          type: string
+          enum: [clients, bookings]
+        filterJson:
+          type: string
+        pinned:
+          type: integer
+
+    BookingShareLink:
+      type: object
+      required: [id, bookingId, token, viewCount, url, createdAt]
+      properties:
+        id:
+          type: integer
+        bookingId:
+          type: integer
+        token:
+          type: string
+        url:
+          type: string
+        viewCount:
+          type: integer
+        lastViewedAt:
+          type: ["string", "null"]
+        revokedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    EmailTemplate:
+      type: object
+      required: [id, slug, name, subject, body, builtIn, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        builtIn:
+          type: boolean
+        active:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    EmailTemplateInput:
+      type: object
+      required: [slug, name, subject, body]
+      properties:
+        slug:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        subject:
+          type: string
+          minLength: 1
+        body:
+          type: string
+          minLength: 1
+        active:
+          type: boolean
+
+    EmailTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        active:
+          type: boolean
+
+    EmailRenderInput:
+      type: object
+      properties:
+        bookingId:
+          type: integer
+        clientId:
+          type: integer
+
+    EmailRendered:
+      type: object
+      required: [subject, body, toEmail]
+      properties:
+        subject:
+          type: string
+        body:
+          type: string
+        toEmail:
+          type: string
+        clientName:
+          type: ["string", "null"]
+
+    EmailMessage:
+      type: object
+      required: [id, toEmail, subject, body, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        templateId:
+          type: ["integer", "null"]
+        clientId:
+          type: ["integer", "null"]
+        bookingId:
+          type: ["integer", "null"]
+        toEmail:
+          type: string
+        ccEmails:
+          type: ["string", "null"]
+        bccEmails:
+          type: ["string", "null"]
+        subject:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [draft, copied, opened_in_mail_app, marked_sent]
+        sentAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    EmailMessageInput:
+      type: object
+      required: [toEmail, subject, body]
+      properties:
+        templateId:
+          type: integer
+        clientId:
+          type: integer
+        bookingId:
+          type: integer
+        toEmail:
+          type: string
+          minLength: 1
+        ccEmails:
+          type: string
+        bccEmails:
+          type: string
+        subject:
+          type: string
+          minLength: 1
+        body:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum: [draft, copied, opened_in_mail_app, marked_sent]
+
+    EmailMessageUpdate:
+      type: object
+      properties:
+        subject:
+          type: string
+        body:
+          type: string
+        status:
+          type: string
+          enum: [draft, copied, opened_in_mail_app, marked_sent]
+
+    AutomationSettings:
+      type: object
+      required:
+        - id
+        - retainerReminderEnabled
+        - retainerReminderDays
+        - balanceReminderEnabled
+        - balanceReminderDays
+        - dayBeforeReminderEnabled
+        - thankYouEnabled
+        - thankYouDays
+        - inquiryAutoReplyEnabled
+        - updatedAt
+      properties:
+        id:
+          type: integer
+        retainerReminderEnabled:
+          type: boolean
+        retainerReminderDays:
+          type: integer
+        balanceReminderEnabled:
+          type: boolean
+        balanceReminderDays:
+          type: integer
+        dayBeforeReminderEnabled:
+          type: boolean
+        thankYouEnabled:
+          type: boolean
+        thankYouDays:
+          type: integer
+        inquiryAutoReplyEnabled:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    AutomationSettingsUpdate:
+      type: object
+      properties:
+        retainerReminderEnabled:
+          type: boolean
+        retainerReminderDays:
+          type: integer
+        balanceReminderEnabled:
+          type: boolean
+        balanceReminderDays:
+          type: integer
+        dayBeforeReminderEnabled:
+          type: boolean
+        thankYouEnabled:
+          type: boolean
+        thankYouDays:
+          type: integer
+        inquiryAutoReplyEnabled:
+          type: boolean
+
+    AutomationRunResult:
+      type: object
+      required: [claimed, completed, failed]
+      properties:
+        claimed:
+          type: integer
+        completed:
+          type: integer
+        failed:
+          type: integer
+
+    ScheduledTask:
+      type: object
+      required: [id, kind, runAt, status, attempts, createdAt]
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+        resourceType:
+          type: ["string", "null"]
+        resourceId:
+          type: ["integer", "null"]
+        runAt:
+          type: string
+        status:
+          type: string
+          enum: [pending, claimed, completed, failed, skipped]
+        attempts:
+          type: integer
+        claimedAt:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        error:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PaymentIntent:
+      type: object
+      required: [id, bookingId, amount, kind, method, status, requestedAt, createdAt]
+      properties:
+        id:
+          type: integer
+        bookingId:
+          type: integer
+        amount:
+          type: number
+        kind:
+          type: string
+          enum: [retainer, balance, custom]
+        method:
+          type: string
+          enum: [zelle, venmo, cashapp, other]
+        status:
+          type: string
+          enum: [requested, pending, paid, cancelled]
+        note:
+          type: ["string", "null"]
+        requestedAt:
+          type: string
+        paidAt:
+          type: ["string", "null"]
+        cancelledAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PaymentIntentInput:
+      type: object
+      required: [amount, kind, method]
+      properties:
+        amount:
+          type: number
+        kind:
+          type: string
+          enum: [retainer, balance, custom]
+        method:
+          type: string
+          enum: [zelle, venmo, cashapp, other]
+        note:
+          type: string
+
+    PaymentIntentUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [requested, pending, paid, cancelled]
+        note:
+          type: string
+
+    CalendarEvent:
+      type: object
+      required: [eventId, bookingId, clientName, eventName, eventDate, location, bookingStatus, kind]
+      properties:
+        eventId:
+          type: integer
+        bookingId:
+          type: integer
+        clientName:
+          type: string
+        eventType:
+          type: string
+        eventName:
+          type: string
+        eventDate:
+          type: string
+        servicesBegin:
+          type: ["string", "null"]
+        completionTarget:
+          type: ["string", "null"]
+        location:
+          type: string
+        bookingStatus:
+          type: string
+        lifecycleStage:
+          type: ["string", "null"]
+        kind:
+          type: string
+          enum: [event, trial]
+
+    CalendarFeedTokenInfo:
+      type: object
+      required: [token, url, label]
+      properties:
+        token:
+          type: string
+        url:
+          type: string
+        label:
+          type: string
+
+    Lead:
+      type: object
+      required: [id, name, email, status, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        eventDate:
+          type: ["string", "null"]
+        eventType:
+          type: ["string", "null"]
+        borough:
+          type: ["string", "null"]
+        headcount:
+          type: ["integer", "null"]
+        source:
+          type: ["string", "null"]
+        vision:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [new, contacted, converted, archived]
+        convertedClientId:
+          type: ["integer", "null"]
+        convertedBookingId:
+          type: ["integer", "null"]
+        ipAddress:
+          type: ["string", "null"]
+        userAgent:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    LeadUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [new, contacted, converted, archived]
+        convertedClientId:
+          type: ["integer", "null"]
+        convertedBookingId:
+          type: ["integer", "null"]
+
+    LeadConversionResult:
+      type: object
+      required: [lead, clientId]
+      properties:
+        lead:
+          $ref: "#/components/schemas/Lead"
+        clientId:
+          type: integer
+        bookingId:
+          type: ["integer", "null"]
+
+    PortalPayload:
+      type: object
+      required: [booking, client, events, lineItems, payments, signed, retainerAmount, balanceDue, grandTotal, contractTemplate, artistName, artistBusinessName]
+      properties:
+        booking:
+          $ref: "#/components/schemas/BookingDetail"
+        client:
+          $ref: "#/components/schemas/Client"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingEvent"
+        lineItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingLineItem"
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+        signed:
+          type: boolean
+        signedAt:
+          type: ["string", "null"]
+        signedByName:
+          type: ["string", "null"]
+        retainerAmount:
+          type: number
+        balanceDue:
+          type: number
+        grandTotal:
+          type: number
+        contractTemplate:
+          $ref: "#/components/schemas/ContractTemplate"
+        artistName:
+          type: string
+        artistBusinessName:
+          type: string
+        artistEmail:
+          type: ["string", "null"]
+        artistPhone:
+          type: ["string", "null"]
+        artistPaymentMethod:
+          type: ["string", "null"]
+        zelleHandle:
+          type: ["string", "null"]
+        venmoHandle:
+          type: ["string", "null"]
+        cashAppHandle:
+          type: ["string", "null"]
+        paymentInstructions:
+          type: ["string", "null"]
+
+    PortalSignatureInput:
+      type: object
+      required: [signerName, signerInitials]
+      properties:
+        signerName:
+          type: string
+          minLength: 1
+        signerInitials:
+          type: string
+          minLength: 1
+        signerEmail:
+          type: string
+
+    PublicLeadInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 1
+        phone:
+          type: string
+        eventDate:
+          type: string
+        eventType:
+          type: string
+        borough:
+          type: string
+        headcount:
+          type: integer
+        source:
+          type: string
+        vision:
+          type: string
+
+    PublicLeadAck:
+      type: object
+      required: [received]
+      properties:
+        received:
+          type: boolean
+        leadId:
+          type: integer

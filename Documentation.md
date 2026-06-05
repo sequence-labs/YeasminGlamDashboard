@@ -1742,3 +1742,179 @@ Validation:
 - `pnpm --filter @workspace/glam-crm run build` passed with existing sourcemap/chunk-size warnings.
 - Mobile Playwright checks at 430x932 passed for `/`, `/services`, and `/contracts`: shell direction was column, bottom nav rendered as grid, document width stayed 430px with no horizontal overflow, and no page/console errors were recorded; screenshots saved at `/tmp/makeup-mobile-dashboard-optimized.png`, `/tmp/makeup-mobile-services-optimized.png`, and `/tmp/makeup-mobile-contracts-optimized.png`.
 - Desktop Playwright check at 1430x1137 passed for `/`: shell direction stayed row, mobile nav was hidden, no horizontal overflow, and no page/console errors were recorded; screenshot saved at `/tmp/makeup-desktop-after-mobile-shell.png`.
+
+## 2026-06-04 - Local Run For User Preview
+
+Start:
+- Start the local API and Vite frontend so the user can preview the CRM in the built-in browser.
+- Scope is environment/runtime only; no product, API, database, or UI source changes are intended.
+- Milestone context: Work Package 1.4 Browser Smoke Test and current Work Package 2.10 preview validation.
+
+Validation:
+- `pnpm dev` started successfully.
+- Vite frontend is serving `http://localhost:5173/`.
+- API server is listening on port `8787`.
+- `curl -s -i http://localhost:8787/api/healthz` returned `HTTP/1.1 200 OK`.
+- Built-in Browser opened `http://localhost:5173/`; page title was `Glam CRM`, the dashboard rendered, and initial browser console inspection reported no errors.
+
+Follow-up:
+- API logs showed the localhost preview shell loading while protected data endpoints returned `401` because local deployment secrets enabled admin-session enforcement.
+- Restarting for preview with `GLAM_ADMIN_PASSWORD=` and `GLAM_SESSION_SECRET=` explicitly blanked so the local API does not require a session token; this avoids reading or transmitting local secrets.
+- After restart, authenticated routes no longer returned `401`, but `/api/notifications` returned `500` because the local Postgres schema was missing the current notifications table shape.
+- Running documented schema sync command `pnpm db:push` before refreshing the preview.
+
+Result:
+- `pnpm db:push` completed successfully with Drizzle reporting `Changes applied`.
+- Refreshed `http://localhost:5173/` in the built-in Browser.
+- Browser validation after refresh: page title `Glam CRM`, dashboard headings rendered, no visible error/unauthorized text, no browser console errors, and no horizontal overflow at the current browser viewport.
+- API log after refresh showed `200` responses for `/api/notifications`, `/api/artist-profile`, `/api/dashboard/stats`, `/api/dashboard/upcoming`, `/api/bookings`, and `/api/dashboard/next-actions`.
+- Current local preview command remains running: `GLAM_ADMIN_PASSWORD= GLAM_SESSION_SECRET= pnpm dev`.
+
+## 2026-06-05 - Remove Leads From Visible CRM Surface
+
+Start:
+- User selected the sidebar `Leads` item in the browser and noted that the app does not need leads.
+- Scope is Work Package 2.10 UI and UX Polish: remove the visible Leads navigation/route affordances while keeping the change scoped and avoiding generated API or database rewrites.
+- Acceptance criteria: Leads no longer appears in desktop sidebar, mobile navigation, command palette, or dashboard next actions; `/leads` no longer renders the Leads page; validation runs for the frontend and affected API route package.
+
+Validation note:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- Initial `pnpm --filter @workspace/api-server run typecheck` failed because the leads-action import cleanup removed `eq`, which is still used elsewhere in `dashboard.ts`; restoring that import and rerunning.
+
+Update:
+- Removed the Leads route import and `/leads` route from `artifacts/glam-crm/src/App.tsx`.
+- Removed the public `/inquire` route exposure and command-palette entry because it only feeds the removed Leads workflow.
+- Removed Leads from desktop sidebar, mobile bottom navigation, and command palette.
+- Removed lead badge logic from the sidebar and stopped the sidebar from fetching notifications only for lead counts.
+- Filtered lead-category notifications out of the notification drawer and updated notification empty-state copy so old lead notifications do not navigate to the removed route.
+- Removed lead-derived next actions from the dashboard API response so dashboard action cards do not link to `/leads`.
+- Updated `Prompt.md` to persist the product decision that Leads is not a visible CRM workflow.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed after restoring the still-needed `eq` import.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing sourcemap/chunk-size warnings.
+- Browser direct check on `http://localhost:5173/leads` showed the app's not-found page, no `Leads` heading, no Leads nav item, and no console errors.
+- Browser dashboard/sidebar check showed no Leads nav item.
+- Browser command-palette check showed no Leads item and no public inquiry/inquire entry, with no console errors.
+- Restarted the local preview with `GLAM_ADMIN_PASSWORD= GLAM_SESSION_SECRET= pnpm dev` so the rebuilt API includes the dashboard next-action change.
+- During restart Vite logged one transient proxy `ECONNREFUSED` while the API was still starting; the API then listened on port `8787` and subsequent requests completed normally.
+- `curl -s -H 'Cache-Control: no-cache' http://localhost:8787/api/dashboard/next-actions` returned booking-only actions with no `/leads` hrefs.
+- Post-restart browser check on `http://localhost:5173/` showed `Dashboard`, no Leads nav/text, no inquire/public-inquiry text, and no browser console errors.
+
+## 2026-06-05 - Add Expense Tracking And Remove Automations Surface
+
+Start:
+- User selected the sidebar `Automations` item and noted the app does not need Automations.
+- User requested a new expense tracker tab for makeup/products and other business expenses with fields for what it is, optional purchase source, amount, date, and dashboard tracker integration.
+- Scope: remove the visible Automations page/navigation/command-palette surface, add database-backed expense tracking, expose expense summaries to the dashboard, and validate frontend/API/database flow.
+- Milestone context: Work Package 2.10 UI and UX Polish plus a new expense-tracking work package for operating-cost visibility.
+- Acceptance criteria: Expenses appears as a primary CRM surface; Automations no longer appears in visible navigation or command palette; expenses support item/vendor/source, category, amount, date, and notes; dashboard shows expense totals and net/revenue context; validation and browser evidence are recorded.
+
+Validation note:
+- `pnpm --filter @workspace/api-spec run codegen` passed and regenerated the React client and Zod API contracts.
+- `pnpm db:push` passed and Drizzle reported `Changes applied` for the new expenses table.
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing sourcemap/chunk-size warnings.
+- The previously running local dev server logged stale-build errors while source files and generated client files changed, including a temporary `/api/expenses` `404` before the API restart. Restarting the dev server to load the rebuilt API.
+- Browser validation opened `http://localhost:5173/expenses`; the page rendered, the expense form was present, Expenses appeared in navigation, Automations was absent from navigation, and no browser console errors were reported.
+- First browser attempt to fill the validation expense form failed because the active element changed during `locator.fill`; retrying from a fresh page state before drawing conclusions about the UI.
+
+Follow-up:
+- User selected `Where bought` in the expense form and said it is not needed. Removing the separate purchase-location field and using Vendor as the store/source field.
+- User selected `Receipt link` and asked for receipt picture/scan support instead of URL entry. Replacing the URL input with a receipt upload control for receipt photos, scans, or PDFs.
+
+Update:
+- Removed the stale purchase-location field from the expenses database schema source so the codebase matches the visible form decision.
+- Regenerated the OpenAPI-derived React client and Zod contracts after the receipt image/scan contract change.
+- Replaced the frontend receipt URL field with a receipt upload control that accepts receipt photos, scans, or PDFs under 5 MB and stores a data URL plus filename for review.
+- Updated expense creation, listing, search, category summaries, and archive flow to use Vendor as the optional purchase source and to show attached receipt filenames in the ledger.
+
+Validation:
+- `pnpm --filter @workspace/api-spec run codegen` passed and regenerated the React client plus Zod contracts.
+- `pnpm db:push` passed and Drizzle reported `Changes applied` after the expense schema cleanup.
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the existing Vite sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Restarted the local preview with `GLAM_ADMIN_PASSWORD= GLAM_SESSION_SECRET= pnpm dev`; Vite logged transient proxy `ECONNREFUSED` messages while the API was still building, then the API listened on port `8787` and subsequent requests returned `200`.
+- `curl -s -i http://localhost:8787/api/healthz` returned `HTTP/1.1 200 OK`.
+- `curl -s http://localhost:8787/api/expenses` returned `[]` before validation-row creation.
+- `curl -s http://localhost:8787/api/dashboard/stats` returned expense and net-revenue fields at zero before validation-row creation.
+- Created a temporary validation expense through `POST /api/expenses` with `receiptDataUrl` and `receiptFileName`; the response returned `201`-equivalent JSON with `active: true`, amount `42.75`, and receipt filename `validation-receipt.txt`.
+- Dashboard stats after the temporary row showed `totalExpenses`, `currentMonthExpenses`, and `yearToDateExpenses` as `42.75`, with `netRevenue` and `currentMonthNetRevenue` as `-42.75`.
+- Built-in Browser validation on `http://localhost:5173/expenses`: page title `Glam CRM`; Expenses rendered; `Receipt scan` and `Upload receipt photo, scan, or PDF` were present; `Receipt link`, `Where bought`, and `Automations` were absent; validation row and receipt filename rendered; no browser console warnings or errors.
+- Built-in Browser interaction proof on Expenses: searching for `Validation receipt scan` kept the validation row visible, showed `validation-receipt.txt`, did not show the no-matches empty state, and the receipt href started with a stored data URL; no browser console warnings or errors.
+- Built-in Browser validation on `http://localhost:5173/`: Dashboard rendered; Expenses appeared in navigation; Automations and Leads were absent; `Costs · month` and `Net` trackers rendered; no browser console warnings or errors. Dashboard cards use existing whole-dollar display formatting, so the temporary `42.75` expense rendered as `$43`.
+- Archived the temporary validation expense with `DELETE /api/expenses/1`, which returned `HTTP/1.1 204 No Content`.
+- Post-archive `curl -s http://localhost:8787/api/expenses` returned `[]`.
+- Post-archive dashboard stats returned expense and net-revenue fields back at zero.
+- Final built-in Browser check left `http://localhost:5173/expenses` open for preview; the page showed the receipt scan upload, no purchase-location or receipt-link fields, no validation row, an empty ledger state, and no browser console warnings or errors.
+
+## 2026-06-05 - Expense Form Polish Follow-Up
+
+Start:
+- User noted the desktop sidebar footer looks visually awkward and requested expense-form refinements: payment method as dropdown options, typed suggestions for the vendor/source field, and formatted amount entry.
+- Scope is Work Package 2.10 UI and UX Polish on `artifacts/glam-crm/src/components/layout/Sidebar.tsx` and `artifacts/glam-crm/src/pages/expenses.tsx`; avoid API, generated client, database, and unrelated route changes.
+- Acceptance criteria: sidebar footer looks calmer at desktop height, payment method uses selectable options, vendor/source supports suggestions while typing, amount entry formats as currency, and rendered browser validation is recorded.
+
+Validation note:
+- Initial `pnpm --filter @workspace/glam-crm run typecheck` failed after the first currency-formatting patch because the Zod resolver output inferred `amount` as transformed `number` while React Hook Form still held the input value as `unknown`. Fixing by keeping form state as a formatted string and parsing to a number at submit time.
+
+Update:
+- Reworked the desktop sidebar footer into a compact card-like utility area labeled `Private studio` with notification and theme controls grouped cleanly.
+- Changed the expense `Payment method` control from a text input to a select with common payment options including business card, personal card, cash, Venmo, Zelle, PayPal, bank transfer, check, store credit, and other.
+- Added type-ahead datalist suggestions to the expense item and vendor/source inputs so common product/restock and supplier names appear while typing without blocking custom entries.
+- Changed the amount entry to a currency-styled input with a visible dollar prefix; typed values are normalized while entering and formatted with commas and two decimals on blur.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed after fixing the documented resolver typing issue.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing Vite sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Built-in Browser validation on `http://localhost:5173/expenses`: page title `Glam CRM`; Expenses rendered; no framework overlay; item and vendor inputs had datalist suggestion sources; payment method rendered as a select placeholder; sidebar footer rendered as `Private studio` / `Internal tools`.
+- Built-in Browser interaction proof: entering `1234.5` in Amount formatted to `1,234.50`; opening Payment method showed dropdown options and selecting `Business card` updated the control; item suggestions included `Foundation restock`, `Concealer restock`, `Setting powder`, and `Lash adhesive`; vendor suggestions included `Sephora`, `Ulta Beauty`, `Amazon`, and `Target`.
+- Fresh browser-log filtering after the final select fix showed no new warnings or errors during the interaction validation.
+
+## 2026-06-05 - Sticky Desktop Sidebar Footer Fix
+
+Start:
+- User clarified that the desktop sidebar footer was still moving upward while scrolling long pages, with Services shown as the example page.
+- Scope is Work Package 2.10 UI and UX Polish on shared shell/sidebar layout only; no API, generated client, database, route, or form behavior changes.
+- Acceptance criteria: desktop sidebar occupies the viewport height, main content scrolls independently, sidebar brand/nav/footer remain fixed in viewport coordinates, and validation covers Expenses plus Services.
+
+Update:
+- Changed the desktop shell to use viewport height with hidden desktop shell overflow, making the `main` element the vertical scroll container.
+- Added `min-h-0` to the desktop main content and sidebar nav flex regions so the footer keeps its bottom position instead of being pushed during overflow.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing Vite sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Built-in Browser measurement on `http://localhost:5173/expenses`: after scrolling main content by 800px, `window.scrollY` stayed `0`, sidebar top delta was `0`, brand top delta was `0`, footer top delta was `0`, footer bottom delta was `0`, and no browser console warnings or errors were reported.
+- Built-in Browser measurement on `http://localhost:5173/services`: after scrolling main content by 471px, `window.scrollY` stayed `0`, sidebar top delta was `0`, brand top delta was `0`, footer top delta was `0`, footer bottom delta was `0`, and no browser console warnings or errors were reported.
+
+## 2026-06-05 - Cross Page Form Polish Follow-Up
+
+Start:
+- User requested visible suggestions while typing in the Expenses vendor/input field, noted the Services add-catalog row clips at different window sizes, and noted the Artist business name is too close to the profile image.
+- Scope is Work Package 2.10 UI and UX Polish on `artifacts/glam-crm/src/pages/expenses.tsx`, `artifacts/glam-crm/src/pages/services.tsx`, and `artifacts/glam-crm/src/pages/artist.tsx`; no API, generated client, database, or route changes.
+- Acceptance criteria: Expense suggestions are visible in-app while typing, Services add row wraps instead of clipping, Artist profile summary spacing is clearer, and rendered browser validation is recorded.
+
+Validation note:
+- Initial Browser verification used an unsupported `networkidle` load-state wait, so the rendered check was rerun with the supported `load` wait mode.
+- The first visible-suggestion browser pass exposed a race where leaving Vendor could close the Item suggestion menu; fixed by only closing the currently active suggestion field.
+
+Update:
+- Replaced the native expense item/vendor datalists with visible in-app suggestion menus that open on focus and while typing, still allowing custom values.
+- Updated suggestion close behavior so switching between Item and Vendor does not let one field close the other field's menu.
+- Changed the Services add-catalog form from a forced one-line grid to a responsive grid that wraps fields and keeps the submit button inside the form bounds.
+- Reworked the Artist profile summary header into a monogram plus identity row with explicit spacing between the profile image and business name.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing Vite sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Built-in Browser validation on `http://localhost:5173/expenses`: typing `pow` in Item showed `Setting powder`; typing `Se` in Vendor showed `Sephora`; the old native datalist elements were absent; no browser console warnings or errors were reported.
+- Built-in Browser measurement on `http://localhost:5173/services` at `1239x1138`: add-catalog form had no clipped children, the Add button stayed within the form bounds, and horizontal document overflow was `0`.
+- Built-in Browser measurement on `http://localhost:5173/services` at `900x900`: add-catalog form still had no clipped children and horizontal document overflow was `0`.
+- Built-in Browser measurement on `http://localhost:5173/artist`: the profile monogram and business name had a `16px` horizontal gap, and horizontal document overflow was `0`.

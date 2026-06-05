@@ -101,6 +101,89 @@ export interface ServiceItemUpdate {
   sortOrder?: number;
 }
 
+export type ExpenseCategory = typeof ExpenseCategory[keyof typeof ExpenseCategory];
+
+
+export const ExpenseCategory = {
+  makeup_products: 'makeup_products',
+  hair_products: 'hair_products',
+  tools_equipment: 'tools_equipment',
+  disposables: 'disposables',
+  travel: 'travel',
+  education: 'education',
+  marketing: 'marketing',
+  software: 'software',
+  studio_supplies: 'studio_supplies',
+  other: 'other',
+} as const;
+
+export interface Expense {
+  id: number;
+  itemName: string;
+  category: ExpenseCategory;
+  amount: number;
+  /** ISO calendar date, YYYY-MM-DD. */
+  expenseDate: string;
+  /** @nullable */
+  vendor?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /**
+     * Data URL for an uploaded receipt image, scan, or PDF.
+     * @nullable
+     */
+  receiptDataUrl?: string | null;
+  /** @nullable */
+  receiptFileName?: string | null;
+  businessUse: boolean;
+  reimbursable: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExpenseInput {
+  /** @minLength 1 */
+  itemName: string;
+  category: ExpenseCategory;
+  /** @minimum 0 */
+  amount: number;
+  /** @minLength 1 */
+  expenseDate: string;
+  vendor?: string;
+  paymentMethod?: string;
+  notes?: string;
+  receiptDataUrl?: string;
+  receiptFileName?: string;
+  businessUse?: boolean;
+  reimbursable?: boolean;
+  active?: boolean;
+}
+
+export interface ExpenseUpdate {
+  /** @minLength 1 */
+  itemName?: string;
+  category?: ExpenseCategory;
+  /** @minimum 0 */
+  amount?: number;
+  expenseDate?: string;
+  /** @nullable */
+  vendor?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  receiptDataUrl?: string | null;
+  /** @nullable */
+  receiptFileName?: string | null;
+  businessUse?: boolean;
+  reimbursable?: boolean;
+  active?: boolean;
+}
+
 export interface ArtistProfile {
   id: number;
   businessName: string;
@@ -117,6 +200,14 @@ export interface ArtistProfile {
   paymentMethod?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  zelleHandle?: string | null;
+  /** @nullable */
+  venmoHandle?: string | null;
+  /** @nullable */
+  cashAppHandle?: string | null;
+  /** @nullable */
+  paymentInstructions?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,6 +229,14 @@ export interface ArtistProfileUpdate {
   paymentMethod?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  zelleHandle?: string | null;
+  /** @nullable */
+  venmoHandle?: string | null;
+  /** @nullable */
+  cashAppHandle?: string | null;
+  /** @nullable */
+  paymentInstructions?: string | null;
 }
 
 export interface ContractTemplate {
@@ -210,6 +309,15 @@ export interface Booking {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  /**
+     * lead | trial_scheduled | trial_complete | contract_sent | signed | active | completed
+     * @nullable
+     */
+  lifecycleStage?: string | null;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  signedByName?: string | null;
   /** @nullable */
   deletedAt?: string | null;
   createdAt: string;
@@ -264,6 +372,7 @@ export interface BookingInput {
   earlyMorningFee?: number;
   travelFee?: number;
   notes?: string;
+  lifecycleStage?: string;
   lineItems?: BookingLineItemInput[];
 }
 
@@ -298,6 +407,11 @@ export interface BookingUpdate {
   travelFee?: number;
   /** @nullable */
   notes?: string | null;
+  lifecycleStage?: string;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  signedByName?: string | null;
 }
 
 export type BookingDetailStatus = typeof BookingDetailStatus[keyof typeof BookingDetailStatus];
@@ -308,6 +422,14 @@ export const BookingDetailStatus = {
   active: 'active',
   completed: 'completed',
   cancelled: 'cancelled',
+} as const;
+
+export type BookingEventKind = typeof BookingEventKind[keyof typeof BookingEventKind];
+
+
+export const BookingEventKind = {
+  event: 'event',
+  trial: 'trial',
 } as const;
 
 export interface BookingEvent {
@@ -328,6 +450,7 @@ export interface BookingEvent {
   hairRate?: number;
   hairAndMakeupRate?: number;
   subtotal: number;
+  kind?: BookingEventKind;
 }
 
 export type PaymentType = typeof PaymentType[keyof typeof PaymentType];
@@ -419,6 +542,12 @@ export interface BookingDetail {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  lifecycleStage?: string | null;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  signedByName?: string | null;
+  /** @nullable */
   deletedAt?: string | null;
   createdAt: string;
   events: BookingEvent[];
@@ -454,6 +583,14 @@ export interface BookingLineItemUpdate {
   sortOrder?: number;
 }
 
+export type EventInputKind = typeof EventInputKind[keyof typeof EventInputKind];
+
+
+export const EventInputKind = {
+  event: 'event',
+  trial: 'trial',
+} as const;
+
 export interface EventInput {
   /** @minLength 1 */
   eventName: string;
@@ -467,7 +604,16 @@ export interface EventInput {
   makeupRate?: number;
   hairRate?: number;
   hairAndMakeupRate?: number;
+  kind?: EventInputKind;
 }
+
+export type EventUpdateKind = typeof EventUpdateKind[keyof typeof EventUpdateKind];
+
+
+export const EventUpdateKind = {
+  event: 'event',
+  trial: 'trial',
+} as const;
 
 export interface EventUpdate {
   eventName?: string;
@@ -483,6 +629,7 @@ export interface EventUpdate {
   makeupRate?: number;
   hairRate?: number;
   hairAndMakeupRate?: number;
+  kind?: EventUpdateKind;
 }
 
 export type PaymentInputType = typeof PaymentInputType[keyof typeof PaymentInputType];
@@ -530,6 +677,16 @@ export interface DashboardStats {
   retainersPending: number;
   /** Active bookings with balance not yet paid */
   balancesPending: number;
+  /** Sum of active business expenses */
+  totalExpenses: number;
+  /** Active business expenses in the current calendar month */
+  currentMonthExpenses: number;
+  /** Active business expenses in the current calendar year */
+  yearToDateExpenses: number;
+  /** Completed booking revenue less active business expenses */
+  netRevenue: number;
+  /** Current-month completed booking revenue less current-month active business expenses */
+  currentMonthNetRevenue: number;
 }
 
 export interface UpcomingEvent {
@@ -545,7 +702,565 @@ export interface UpcomingEvent {
   bookingStatus?: string;
 }
 
+export type NextActionKind = typeof NextActionKind[keyof typeof NextActionKind];
+
+
+export const NextActionKind = {
+  retainer_due: 'retainer_due',
+  balance_due: 'balance_due',
+  day_before_confirm: 'day_before_confirm',
+  unsigned_contract: 'unsigned_contract',
+} as const;
+
+export type NextActionSeverity = typeof NextActionSeverity[keyof typeof NextActionSeverity];
+
+
+export const NextActionSeverity = {
+  info: 'info',
+  warn: 'warn',
+  attention: 'attention',
+} as const;
+
+export interface NextAction {
+  id: string;
+  kind: NextActionKind;
+  title: string;
+  /** @nullable */
+  detail?: string | null;
+  /** @nullable */
+  bookingId?: number | null;
+  /** @nullable */
+  leadId?: number | null;
+  /** @nullable */
+  href?: string | null;
+  severity: NextActionSeverity;
+  /** @nullable */
+  dueOn?: string | null;
+}
+
+export interface Notification {
+  id: number;
+  category: string;
+  title: string;
+  /** @nullable */
+  body?: string | null;
+  /** @nullable */
+  href?: string | null;
+  /** @nullable */
+  resourceType?: string | null;
+  /** @nullable */
+  resourceId?: number | null;
+  /** @nullable */
+  readAt?: string | null;
+  createdAt: string;
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  color: string;
+  createdAt: string;
+}
+
+export interface TagInput {
+  /** @minLength 1 */
+  name: string;
+  color?: string;
+}
+
+export interface TagAssignment {
+  tagId: number;
+}
+
+export type SavedSegmentScope = typeof SavedSegmentScope[keyof typeof SavedSegmentScope];
+
+
+export const SavedSegmentScope = {
+  clients: 'clients',
+  bookings: 'bookings',
+} as const;
+
+export interface SavedSegment {
+  id: number;
+  name: string;
+  scope: SavedSegmentScope;
+  filterJson: string;
+  pinned: number;
+  createdAt: string;
+}
+
+export type SavedSegmentInputScope = typeof SavedSegmentInputScope[keyof typeof SavedSegmentInputScope];
+
+
+export const SavedSegmentInputScope = {
+  clients: 'clients',
+  bookings: 'bookings',
+} as const;
+
+export interface SavedSegmentInput {
+  /** @minLength 1 */
+  name: string;
+  scope: SavedSegmentInputScope;
+  filterJson: string;
+  pinned?: number;
+}
+
+export interface BookingShareLink {
+  id: number;
+  bookingId: number;
+  token: string;
+  url: string;
+  viewCount: number;
+  /** @nullable */
+  lastViewedAt?: string | null;
+  /** @nullable */
+  revokedAt?: string | null;
+  createdAt: string;
+}
+
+export interface EmailTemplate {
+  id: number;
+  slug: string;
+  name: string;
+  subject: string;
+  body: string;
+  builtIn: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailTemplateInput {
+  /** @minLength 1 */
+  slug: string;
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  subject: string;
+  /** @minLength 1 */
+  body: string;
+  active?: boolean;
+}
+
+export interface EmailTemplateUpdate {
+  name?: string;
+  subject?: string;
+  body?: string;
+  active?: boolean;
+}
+
+export interface EmailRenderInput {
+  bookingId?: number;
+  clientId?: number;
+}
+
+export interface EmailRendered {
+  subject: string;
+  body: string;
+  toEmail: string;
+  /** @nullable */
+  clientName?: string | null;
+}
+
+export type EmailMessageStatus = typeof EmailMessageStatus[keyof typeof EmailMessageStatus];
+
+
+export const EmailMessageStatus = {
+  draft: 'draft',
+  copied: 'copied',
+  opened_in_mail_app: 'opened_in_mail_app',
+  marked_sent: 'marked_sent',
+} as const;
+
+export interface EmailMessage {
+  id: number;
+  /** @nullable */
+  templateId?: number | null;
+  /** @nullable */
+  clientId?: number | null;
+  /** @nullable */
+  bookingId?: number | null;
+  toEmail: string;
+  /** @nullable */
+  ccEmails?: string | null;
+  /** @nullable */
+  bccEmails?: string | null;
+  subject: string;
+  body: string;
+  status: EmailMessageStatus;
+  /** @nullable */
+  sentAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EmailMessageInputStatus = typeof EmailMessageInputStatus[keyof typeof EmailMessageInputStatus];
+
+
+export const EmailMessageInputStatus = {
+  draft: 'draft',
+  copied: 'copied',
+  opened_in_mail_app: 'opened_in_mail_app',
+  marked_sent: 'marked_sent',
+} as const;
+
+export interface EmailMessageInput {
+  templateId?: number;
+  clientId?: number;
+  bookingId?: number;
+  /** @minLength 1 */
+  toEmail: string;
+  ccEmails?: string;
+  bccEmails?: string;
+  /** @minLength 1 */
+  subject: string;
+  /** @minLength 1 */
+  body: string;
+  status?: EmailMessageInputStatus;
+}
+
+export type EmailMessageUpdateStatus = typeof EmailMessageUpdateStatus[keyof typeof EmailMessageUpdateStatus];
+
+
+export const EmailMessageUpdateStatus = {
+  draft: 'draft',
+  copied: 'copied',
+  opened_in_mail_app: 'opened_in_mail_app',
+  marked_sent: 'marked_sent',
+} as const;
+
+export interface EmailMessageUpdate {
+  subject?: string;
+  body?: string;
+  status?: EmailMessageUpdateStatus;
+}
+
+export interface AutomationSettings {
+  id: number;
+  retainerReminderEnabled: boolean;
+  retainerReminderDays: number;
+  balanceReminderEnabled: boolean;
+  balanceReminderDays: number;
+  dayBeforeReminderEnabled: boolean;
+  thankYouEnabled: boolean;
+  thankYouDays: number;
+  inquiryAutoReplyEnabled: boolean;
+  createdAt?: string;
+  updatedAt: string;
+}
+
+export interface AutomationSettingsUpdate {
+  retainerReminderEnabled?: boolean;
+  retainerReminderDays?: number;
+  balanceReminderEnabled?: boolean;
+  balanceReminderDays?: number;
+  dayBeforeReminderEnabled?: boolean;
+  thankYouEnabled?: boolean;
+  thankYouDays?: number;
+  inquiryAutoReplyEnabled?: boolean;
+}
+
+export interface AutomationRunResult {
+  claimed: number;
+  completed: number;
+  failed: number;
+}
+
+export type ScheduledTaskStatus = typeof ScheduledTaskStatus[keyof typeof ScheduledTaskStatus];
+
+
+export const ScheduledTaskStatus = {
+  pending: 'pending',
+  claimed: 'claimed',
+  completed: 'completed',
+  failed: 'failed',
+  skipped: 'skipped',
+} as const;
+
+export interface ScheduledTask {
+  id: number;
+  kind: string;
+  /** @nullable */
+  resourceType?: string | null;
+  /** @nullable */
+  resourceId?: number | null;
+  runAt: string;
+  status: ScheduledTaskStatus;
+  attempts: number;
+  /** @nullable */
+  claimedAt?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
+  /** @nullable */
+  error?: string | null;
+  createdAt: string;
+}
+
+export type PaymentIntentKind = typeof PaymentIntentKind[keyof typeof PaymentIntentKind];
+
+
+export const PaymentIntentKind = {
+  retainer: 'retainer',
+  balance: 'balance',
+  custom: 'custom',
+} as const;
+
+export type PaymentIntentMethod = typeof PaymentIntentMethod[keyof typeof PaymentIntentMethod];
+
+
+export const PaymentIntentMethod = {
+  zelle: 'zelle',
+  venmo: 'venmo',
+  cashapp: 'cashapp',
+  other: 'other',
+} as const;
+
+export type PaymentIntentStatus = typeof PaymentIntentStatus[keyof typeof PaymentIntentStatus];
+
+
+export const PaymentIntentStatus = {
+  requested: 'requested',
+  pending: 'pending',
+  paid: 'paid',
+  cancelled: 'cancelled',
+} as const;
+
+export interface PaymentIntent {
+  id: number;
+  bookingId: number;
+  amount: number;
+  kind: PaymentIntentKind;
+  method: PaymentIntentMethod;
+  status: PaymentIntentStatus;
+  /** @nullable */
+  note?: string | null;
+  requestedAt: string;
+  /** @nullable */
+  paidAt?: string | null;
+  /** @nullable */
+  cancelledAt?: string | null;
+  createdAt: string;
+}
+
+export type PaymentIntentInputKind = typeof PaymentIntentInputKind[keyof typeof PaymentIntentInputKind];
+
+
+export const PaymentIntentInputKind = {
+  retainer: 'retainer',
+  balance: 'balance',
+  custom: 'custom',
+} as const;
+
+export type PaymentIntentInputMethod = typeof PaymentIntentInputMethod[keyof typeof PaymentIntentInputMethod];
+
+
+export const PaymentIntentInputMethod = {
+  zelle: 'zelle',
+  venmo: 'venmo',
+  cashapp: 'cashapp',
+  other: 'other',
+} as const;
+
+export interface PaymentIntentInput {
+  amount: number;
+  kind: PaymentIntentInputKind;
+  method: PaymentIntentInputMethod;
+  note?: string;
+}
+
+export type PaymentIntentUpdateStatus = typeof PaymentIntentUpdateStatus[keyof typeof PaymentIntentUpdateStatus];
+
+
+export const PaymentIntentUpdateStatus = {
+  requested: 'requested',
+  pending: 'pending',
+  paid: 'paid',
+  cancelled: 'cancelled',
+} as const;
+
+export interface PaymentIntentUpdate {
+  status?: PaymentIntentUpdateStatus;
+  note?: string;
+}
+
+export type CalendarEventKind = typeof CalendarEventKind[keyof typeof CalendarEventKind];
+
+
+export const CalendarEventKind = {
+  event: 'event',
+  trial: 'trial',
+} as const;
+
+export interface CalendarEvent {
+  eventId: number;
+  bookingId: number;
+  clientName: string;
+  eventType?: string;
+  eventName: string;
+  eventDate: string;
+  /** @nullable */
+  servicesBegin?: string | null;
+  /** @nullable */
+  completionTarget?: string | null;
+  location: string;
+  bookingStatus: string;
+  /** @nullable */
+  lifecycleStage?: string | null;
+  kind: CalendarEventKind;
+}
+
+export interface CalendarFeedTokenInfo {
+  token: string;
+  url: string;
+  label: string;
+}
+
+export type LeadStatus = typeof LeadStatus[keyof typeof LeadStatus];
+
+
+export const LeadStatus = {
+  new: 'new',
+  contacted: 'contacted',
+  converted: 'converted',
+  archived: 'archived',
+} as const;
+
+export interface Lead {
+  id: number;
+  name: string;
+  email: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  eventType?: string | null;
+  /** @nullable */
+  borough?: string | null;
+  /** @nullable */
+  headcount?: number | null;
+  /** @nullable */
+  source?: string | null;
+  /** @nullable */
+  vision?: string | null;
+  status: LeadStatus;
+  /** @nullable */
+  convertedClientId?: number | null;
+  /** @nullable */
+  convertedBookingId?: number | null;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  userAgent?: string | null;
+  createdAt: string;
+}
+
+export type LeadUpdateStatus = typeof LeadUpdateStatus[keyof typeof LeadUpdateStatus];
+
+
+export const LeadUpdateStatus = {
+  new: 'new',
+  contacted: 'contacted',
+  converted: 'converted',
+  archived: 'archived',
+} as const;
+
+export interface LeadUpdate {
+  status?: LeadUpdateStatus;
+  /** @nullable */
+  convertedClientId?: number | null;
+  /** @nullable */
+  convertedBookingId?: number | null;
+}
+
+export interface LeadConversionResult {
+  lead: Lead;
+  clientId: number;
+  /** @nullable */
+  bookingId?: number | null;
+}
+
+export interface PortalPayload {
+  booking: BookingDetail;
+  client: Client;
+  events: BookingEvent[];
+  lineItems: BookingLineItem[];
+  payments: Payment[];
+  signed: boolean;
+  /** @nullable */
+  signedAt?: string | null;
+  /** @nullable */
+  signedByName?: string | null;
+  retainerAmount: number;
+  balanceDue: number;
+  grandTotal: number;
+  contractTemplate: ContractTemplate;
+  artistName: string;
+  artistBusinessName: string;
+  /** @nullable */
+  artistEmail?: string | null;
+  /** @nullable */
+  artistPhone?: string | null;
+  /** @nullable */
+  artistPaymentMethod?: string | null;
+  /** @nullable */
+  zelleHandle?: string | null;
+  /** @nullable */
+  venmoHandle?: string | null;
+  /** @nullable */
+  cashAppHandle?: string | null;
+  /** @nullable */
+  paymentInstructions?: string | null;
+}
+
+export interface PortalSignatureInput {
+  /** @minLength 1 */
+  signerName: string;
+  /** @minLength 1 */
+  signerInitials: string;
+  signerEmail?: string;
+}
+
+export interface PublicLeadInput {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  email: string;
+  phone?: string;
+  eventDate?: string;
+  eventType?: string;
+  borough?: string;
+  headcount?: number;
+  source?: string;
+  vision?: string;
+}
+
+export interface PublicLeadAck {
+  received: boolean;
+  leadId?: number;
+}
+
+export type ListExpensesParams = {
+includeArchived?: boolean;
+};
+
 export type ListBookingsParams = {
 includeDeleted?: boolean;
+};
+
+export type ListEmailMessagesParams = {
+clientId?: number;
+bookingId?: number;
+};
+
+export type ListCalendarEventsParams = {
+/**
+ * ISO date (inclusive)
+ */
+start?: string;
+/**
+ * ISO date (inclusive)
+ */
+end?: string;
 };
 

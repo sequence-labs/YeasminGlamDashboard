@@ -39,6 +39,10 @@ router.patch("/artist-profile", async (req, res): Promise<void> => {
   if (parsed.data.instagram !== undefined) updateData.instagram = nullableText(parsed.data.instagram);
   if (parsed.data.paymentMethod !== undefined) updateData.paymentMethod = nullableText(parsed.data.paymentMethod);
   if (parsed.data.notes !== undefined) updateData.notes = nullableText(parsed.data.notes);
+  if (parsed.data.zelleHandle !== undefined) updateData.zelleHandle = nullableText(parsed.data.zelleHandle);
+  if (parsed.data.venmoHandle !== undefined) updateData.venmoHandle = nullableText(parsed.data.venmoHandle);
+  if (parsed.data.cashAppHandle !== undefined) updateData.cashAppHandle = nullableText(parsed.data.cashAppHandle);
+  if (parsed.data.paymentInstructions !== undefined) updateData.paymentInstructions = nullableText(parsed.data.paymentInstructions);
 
   const profile = await updateArtistProfile(updateData);
   res.json(UpdateArtistProfileResponse.parse(serializeArtistProfile(profile)));

@@ -5,6 +5,7 @@
  * Glam CRM API for makeup artist business management
  * OpenAPI spec version: 0.1.0
  */
+import type { EventInputKind } from './eventInputKind';
 
 export interface EventInput {
   /** @minLength 1 */
@@ -19,4 +20,5 @@ export interface EventInput {
   makeupRate?: number;
   hairRate?: number;
   hairAndMakeupRate?: number;
+  kind?: EventInputKind;
 }

@@ -96,11 +96,15 @@ export default function Artist() {
 
   return (
     <Shell>
-      <div className="space-y-6">
-        <div>
-          <h1 className="crm-page-title text-foreground">Artist</h1>
-          <p className="crm-page-subtitle">Manage the business and contact details used across the app and contracts.</p>
-        </div>
+      <div className="space-y-7">
+        <header className="max-w-2xl">
+          <span className="crm-eyebrow">Studio · Identity</span>
+          <h1 className="crm-page-title mt-2">Artist profile</h1>
+          <p className="crm-page-subtitle">
+            Manage the business and contact details used across the app, generated contracts, and client-facing surfaces.
+          </p>
+          <div className="crm-gold-rule mt-6 w-24" />
+        </header>
 
         {isLoading ? (
           <div className="space-y-4">
@@ -108,27 +112,47 @@ export default function Artist() {
             <Skeleton className="h-96 w-full" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6 items-start">
+          <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[320px_1fr]">
             <div className="crm-section p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                <UserRound className="h-6 w-6" />
+              <div className="flex items-start gap-4">
+                <div className="crm-monogram h-14 w-14 shrink-0">
+                  <UserRound className="h-5 w-5" strokeWidth={1.5} />
+                </div>
+                <div className="min-w-0 pt-1">
+                  <span className="crm-eyebrow block truncate">{form.watch("businessName") || "Business name"}</span>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+                    {form.watch("displayName") || "Artist Profile"}
+                  </h2>
+                </div>
               </div>
-              <h2 className="font-serif text-xl">{form.watch("displayName") || "Artist Profile"}</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{form.watch("businessName") || "Business name"}</p>
-              <div className="mt-5 space-y-2 text-sm">
-                <div className="text-muted-foreground">Email</div>
-                <div className="break-words text-foreground">{form.watch("email") || "Not set"}</div>
-                <div className="pt-2 text-muted-foreground">Phone</div>
-                <div className="text-foreground">{form.watch("phone") || "Not set"}</div>
-              </div>
+              <div className="crm-gold-rule my-5 w-12" />
+              <dl className="space-y-3 text-sm">
+                <div>
+                  <dt className="crm-eyebrow !text-[10px]">Email</dt>
+                  <dd className="mt-1 break-words text-foreground">{form.watch("email") || <span className="italic text-muted-foreground">Not set</span>}</dd>
+                </div>
+                <div>
+                  <dt className="crm-eyebrow !text-[10px]">Phone</dt>
+                  <dd className="mt-1 text-foreground">{form.watch("phone") || <span className="italic text-muted-foreground">Not set</span>}</dd>
+                </div>
+                {form.watch("instagram") && (
+                  <div>
+                    <dt className="crm-eyebrow !text-[10px]">Instagram</dt>
+                    <dd className="mt-1 text-foreground">{form.watch("instagram")}</dd>
+                  </div>
+                )}
+              </dl>
             </div>
 
-            <div className="crm-section p-6">
+            <div className="crm-section p-6 sm:p-8">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-7">
                   <div>
-                    <h2 className="text-xl font-serif">Profile Details</h2>
-                    <p className="text-sm text-muted-foreground mt-1">These details appear in the sidebar and generated service agreements.</p>
+                    <span className="crm-eyebrow">Edit · Details</span>
+                    <h2 className="crm-section-title mt-1">Profile details</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      These details appear in the sidebar and on generated service agreements.
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,10 +223,10 @@ export default function Artist() {
                     </FormItem>
                   )} />
 
-                  <div className="flex justify-end border-t pt-4">
+                  <div className="flex justify-end border-t border-card-border/60 pt-5">
                     <Button type="submit" disabled={updateArtistProfile.isPending} data-testid="btn-save-artist-profile">
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Artist Profile
+                      <Save className="h-4 w-4" />
+                      Save artist profile
                     </Button>
                   </div>
                 </form>
