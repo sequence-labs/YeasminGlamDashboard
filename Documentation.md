@@ -1964,3 +1964,24 @@ Validation:
 - `pnpm --filter @workspace/api-server run typecheck` passed after the fee/service adjustment.
 - `pnpm --filter @workspace/glam-crm run typecheck` passed after the schedule-field cleanup.
 - Playwright verification on `http://localhost:5173/bookings/new` showed `Make up Trial - $100 / booking` in the service picker.
+
+## 2026-06-17 - Makeup Trial Workflow Correction
+
+Start:
+- User clarified that makeup trial should not be a regular service dropdown seed and should return to an optional trial section in booking intake with date, start time, completion target, and amount.
+- Scope is Work Package 2.3 Booking Intake UI and Work Package 2.4 Contract Output: capture the trial workflow as booking intake data, persist the amount as a booking charge, remove the default catalog seed, and show trial details in contract preview.
+- Acceptance criteria: `Make up Trial` is not forced into the service catalog dropdown, booking intake has an optional trial section with amount and schedule, the amount persists into booking totals, trial schedule persists as a trial event, and contract preview displays the trial when present.
+
+Update:
+- Removed the forced `Make up Trial` service catalog seed and deactivate any exact-name row inserted by the previous implementation.
+- Restored the optional makeup trial section in Step 3 with trial date, trial amount, trial begins, and trial completion target.
+- Trial submission now creates a `trial` event and, when amount is greater than zero, a linked `Make up Trial` fee line item so totals and contract pricing use the normal booking charge model.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing Vite sourcemap and chunk-size warnings.
+- Local API validation booking `11` persisted a `Make up Trial` event with `kind: trial`, `10:00 AM` start, `11:30 AM` completion, and a linked `$125` fee line item.
+- Playwright contract preview on `http://localhost:5173/bookings/11/contract` showed `Make up Trial` in Service Schedule, Rate Schedule, Booking Charges, and Grand Total.
+- Playwright new-booking check showed the optional trial section with date, amount, start, and completion controls, and the Step 4 service picker no longer listed `Make up Trial`.

@@ -39,14 +39,6 @@ const defaultServiceItems: Array<typeof serviceItemsTable.$inferInsert> = [
     sortOrder: 30,
   },
   {
-    name: "Make up Trial",
-    description: "Charged makeup trial appointment before the booked event.",
-    kind: "fee",
-    defaultUnitPrice: "100.00",
-    unitLabel: "booking",
-    sortOrder: 15,
-  },
-  {
     name: "Early Morning Fee",
     description: "Flat fee for early service start times.",
     kind: "fee",
@@ -82,6 +74,11 @@ function serializeServiceItem(item: typeof serviceItemsTable.$inferSelect) {
 }
 
 export async function ensureDefaultServiceItems() {
+  await db
+    .update(serviceItemsTable)
+    .set({ active: false })
+    .where(eq(serviceItemsTable.name, "Make up Trial"));
+
   const existing = await db.select({
     id: serviceItemsTable.id,
     active: serviceItemsTable.active,
@@ -100,20 +97,6 @@ export async function ensureDefaultServiceItems() {
       continue;
     }
 
-    if (key === "make up trial") {
-      await db
-        .update(serviceItemsTable)
-        .set({
-          name: defaultItem.name,
-          description: defaultItem.description,
-          kind: defaultItem.kind,
-          defaultUnitPrice: defaultItem.defaultUnitPrice,
-          unitLabel: defaultItem.unitLabel,
-          active: true,
-          sortOrder: defaultItem.sortOrder,
-        })
-        .where(eq(serviceItemsTable.id, existingItem.id));
-    }
   }
 
   if (itemsToInsert.length === 0) return;
