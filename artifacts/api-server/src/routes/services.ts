@@ -44,7 +44,7 @@ const defaultServiceItems: Array<typeof serviceItemsTable.$inferInsert> = [
     kind: "service",
     defaultUnitPrice: "0.00",
     unitLabel: "trial",
-    sortOrder: 35,
+    sortOrder: 15,
   },
   {
     name: "Early Morning Fee",
@@ -81,21 +81,44 @@ function serializeServiceItem(item: typeof serviceItemsTable.$inferSelect) {
   };
 }
 
-async function ensureDefaultServiceItems() {
+export async function ensureDefaultServiceItems() {
   const existing = await db.select({
+    id: serviceItemsTable.id,
     active: serviceItemsTable.active,
     name: serviceItemsTable.name,
   }).from(serviceItemsTable);
-  const existingActiveNames = new Set(
-    existing
-      .filter((item) => item.active)
-      .map((item) => item.name.trim().toLowerCase()),
-  );
-  const missingItems = defaultServiceItems.filter((item) => !existingActiveNames.has(item.name.trim().toLowerCase()));
+  const existingByName = new Map(existing.map((item) => [item.name.trim().toLowerCase(), item]));
 
-  if (missingItems.length === 0) return;
+  const itemsToInsert: Array<typeof serviceItemsTable.$inferInsert> = [];
 
-  await db.insert(serviceItemsTable).values(missingItems);
+  for (const defaultItem of defaultServiceItems) {
+    const key = defaultItem.name.trim().toLowerCase();
+    const existingItem = existingByName.get(key);
+
+    if (!existingItem) {
+      itemsToInsert.push(defaultItem);
+      continue;
+    }
+
+    if (key === "make up trial") {
+      await db
+        .update(serviceItemsTable)
+        .set({
+          name: defaultItem.name,
+          description: defaultItem.description,
+          kind: defaultItem.kind,
+          defaultUnitPrice: defaultItem.defaultUnitPrice,
+          unitLabel: defaultItem.unitLabel,
+          active: true,
+          sortOrder: defaultItem.sortOrder,
+        })
+        .where(eq(serviceItemsTable.id, existingItem.id));
+    }
+  }
+
+  if (itemsToInsert.length === 0) return;
+
+  await db.insert(serviceItemsTable).values(itemsToInsert);
 }
 
 router.get("/services", async (req, res): Promise<void> => {

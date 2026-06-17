@@ -1944,3 +1944,14 @@ Start:
 - User requested a service option named `Make up Trial` plus a trial date option for booking intake, then a direct push to `main`.
 - Scope is Work Package 2.3 Booking Intake UI with related service-catalog seeding: add the reusable service option and create a real booking event with `kind: "trial"` from new booking intake.
 - Acceptance criteria: the service catalog exposes `Make up Trial` for existing and new databases, new booking intake has an optional Trial date field, submitting with a trial date creates a trial event, validation passes, and the change is committed and pushed to `main`.
+
+Update:
+- Promoted the `Make up Trial` catalog sync into API server startup so the row is created before traffic is served, instead of relying only on request-time seeding.
+- Kept the route-level sync as a safety net, but the actual durable fix now happens in `artifacts/api-server/src/index.ts` during boot.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Local dev server started with auth vars blanked so the API and frontend loaded without auth gates.
+- Playwright verification on `http://localhost:5173/bookings/new` showed `Make up Trial - $0 / trial` in the service picker options, and the `Optional trial` block rendered with `Trial Date`, `Trial Begins`, and `Trial Completion Target`.
