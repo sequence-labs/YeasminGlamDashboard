@@ -106,6 +106,8 @@ Status: Pending.
 
 Acceptance criteria:
 - New booking intake lets the user pick reusable services/fees.
+- Service choices include `Make up Trial`.
+- New booking intake can capture an optional trial date as a trial event.
 - User can adjust quantity, unit price, and notes per selected line item.
 - Selected line items affect booking totals and persist through the API.
 

@@ -39,6 +39,14 @@ const defaultServiceItems: Array<typeof serviceItemsTable.$inferInsert> = [
     sortOrder: 30,
   },
   {
+    name: "Make up Trial",
+    description: "Trial makeup appointment before the booked event.",
+    kind: "service",
+    defaultUnitPrice: "0.00",
+    unitLabel: "trial",
+    sortOrder: 35,
+  },
+  {
     name: "Early Morning Fee",
     description: "Flat fee for early service start times.",
     kind: "fee",
@@ -74,10 +82,20 @@ function serializeServiceItem(item: typeof serviceItemsTable.$inferSelect) {
 }
 
 async function ensureDefaultServiceItems() {
-  const existing = await db.select({ id: serviceItemsTable.id }).from(serviceItemsTable).limit(1);
-  if (existing.length > 0) return;
+  const existing = await db.select({
+    active: serviceItemsTable.active,
+    name: serviceItemsTable.name,
+  }).from(serviceItemsTable);
+  const existingActiveNames = new Set(
+    existing
+      .filter((item) => item.active)
+      .map((item) => item.name.trim().toLowerCase()),
+  );
+  const missingItems = defaultServiceItems.filter((item) => !existingActiveNames.has(item.name.trim().toLowerCase()));
 
-  await db.insert(serviceItemsTable).values(defaultServiceItems);
+  if (missingItems.length === 0) return;
+
+  await db.insert(serviceItemsTable).values(missingItems);
 }
 
 router.get("/services", async (req, res): Promise<void> => {

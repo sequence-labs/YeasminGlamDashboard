@@ -1937,3 +1937,10 @@ Validation:
 - `BASE_PATH=/YeasminGlamDashboard/ VITE_API_BASE_URL=https://whisperflowserver.onrender.com/glam-api pnpm --filter @workspace/glam-crm run build` passed with existing Vite sourcemap and chunk-size warnings.
 - `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
 - Production curl checks with `Origin: https://sequence-labs.github.io` showed `/glam-api/api/healthz` returned `200`, `/glam-api/api/session` returned `authenticated:false` / `authRequired:true`, and `/glam-api/api/expenses` returned protected `401` instead of the screenshot's stale `404`.
+
+## 2026-06-17 - Makeup Trial Booking Option
+
+Start:
+- User requested a service option named `Make up Trial` plus a trial date option for booking intake, then a direct push to `main`.
+- Scope is Work Package 2.3 Booking Intake UI with related service-catalog seeding: add the reusable service option and create a real booking event with `kind: "trial"` from new booking intake.
+- Acceptance criteria: the service catalog exposes `Make up Trial` for existing and new databases, new booking intake has an optional Trial date field, submitting with a trial date creates a trial event, validation passes, and the change is committed and pushed to `main`.

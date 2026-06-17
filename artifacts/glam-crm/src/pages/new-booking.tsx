@@ -53,6 +53,9 @@ const bookingSchema = z.object({
   initialEventName: z.string().optional(),
   initialServicesBegin: z.string().optional(),
   initialCompletionTarget: z.string().optional(),
+  trialDate: z.string().optional(),
+  trialServicesBegin: z.string().optional(),
+  trialCompletionTarget: z.string().optional(),
   status: z.enum(["draft", "active", "completed", "cancelled"]).default("draft"),
   retainerAmount: z.coerce.number().min(0).default(0),
   balanceDueDate: z.string().optional(),
@@ -66,6 +69,18 @@ const bookingSchema = z.object({
     !!data.initialEventName?.trim() ||
     !!data.initialServicesBegin?.trim() ||
     !!data.initialCompletionTarget?.trim();
+  const hasTrialSchedule =
+    !!data.trialDate ||
+    !!data.trialServicesBegin?.trim() ||
+    !!data.trialCompletionTarget?.trim();
+
+  if (hasTrialSchedule && !data.trialDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["trialDate"],
+      message: "Trial date is required when adding trial timing",
+    });
+  }
 
   if (!hasInitialEvent) return;
 
@@ -117,6 +132,9 @@ export default function NewBooking() {
       initialEventName: "",
       initialServicesBegin: "",
       initialCompletionTarget: "",
+      trialDate: "",
+      trialServicesBegin: "",
+      trialCompletionTarget: "",
       status: "draft",
       retainerAmount: 0,
       balanceDueDate: "",
@@ -245,6 +263,23 @@ export default function NewBooking() {
           });
         } catch {
           toast({ title: "Booking created, but the first event was not added", variant: "destructive" });
+        }
+      }
+
+      if (data.trialDate) {
+        try {
+          await createEvent.mutateAsync({
+            id: booking.id,
+            data: {
+              eventName: "Make up Trial",
+              eventDate: data.trialDate,
+              servicesBegin: optionalText(data.trialServicesBegin),
+              completionTarget: optionalText(data.trialCompletionTarget),
+              kind: "trial",
+            },
+          });
+        } catch {
+          toast({ title: "Booking created, but the trial date was not added", variant: "destructive" });
         }
       }
 
@@ -521,6 +556,57 @@ export default function NewBooking() {
                     </FormItem>
                   )}
                 />
+
+                <div className="md:col-span-2 rounded-xl border border-card-border/70 bg-accent/15 p-4 sm:p-5">
+                  <div className="mb-4">
+                    <span className="crm-eyebrow !text-[10px]">Optional trial</span>
+                    <p className="mt-1 text-sm text-muted-foreground">Schedule the makeup trial as its own booking event.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="trialDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trial Date</FormLabel>
+                          <FormControl>
+                            <Input type="date" {...field} data-testid="input-trial-date" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="trialServicesBegin"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trial Begins</FormLabel>
+                          <FormControl>
+                            <TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-trial-services-begin" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="trialCompletionTarget"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trial Completion Target</FormLabel>
+                          <FormControl>
+                            <TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-trial-completion-target" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
