@@ -1955,3 +1955,12 @@ Validation:
 - `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
 - Local dev server started with auth vars blanked so the API and frontend loaded without auth gates.
 - Playwright verification on `http://localhost:5173/bookings/new` showed `Make up Trial - $0 / trial` in the service picker options, and the `Optional trial` block rendered with `Trial Date`, `Trial Begins`, and `Trial Completion Target`.
+
+Update:
+- Reworked `Make up Trial` from a zero-value service into a chargeable fee-style catalog item with a $100 default unit price and booking unit label.
+- Removed the separate trial subpanel from the schedule step and kept only a standard `Trial Date` field, so the booking flow stays uniform while the item is still selectable as a normal catalog line item.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed after the fee/service adjustment.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed after the schedule-field cleanup.
+- Playwright verification on `http://localhost:5173/bookings/new` showed `Make up Trial - $100 / booking` in the service picker.

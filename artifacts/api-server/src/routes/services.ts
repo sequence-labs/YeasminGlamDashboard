@@ -40,10 +40,10 @@ const defaultServiceItems: Array<typeof serviceItemsTable.$inferInsert> = [
   },
   {
     name: "Make up Trial",
-    description: "Trial makeup appointment before the booked event.",
-    kind: "service",
-    defaultUnitPrice: "0.00",
-    unitLabel: "trial",
+    description: "Charged makeup trial appointment before the booked event.",
+    kind: "fee",
+    defaultUnitPrice: "100.00",
+    unitLabel: "booking",
     sortOrder: 15,
   },
   {
