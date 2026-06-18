@@ -2002,3 +2002,16 @@ Update:
 - `npm test` in `/Users/iftatbhuiyan/WhisperSpeechServer` passed.
 - Local shared-server smoke on port 8799 passed: `/glam-api/api/healthz` returned 200, unauthenticated `/expenses` and `/notifications` returned 401 instead of 404, CORS preflight for `POST /expenses` returned 204, authenticated `POST /expenses` returned 201, and the temporary validation expense was archived with DELETE 204.
 - Production unauthenticated checks returned 401, but authenticated `POST /glam-api/api/expenses` still returned 404 before pushing the rebuilt Render-service bundle, confirming the deployed route table is stale behind auth.
+
+Update:
+- Production route moved from 404 to 500 after the Render bundle push, indicating the route is deployed but failing inside the handler.
+- First Supabase schema push attempt failed because `.local/deployment-secrets.env` does not define `GLAM_DATABASE_URL`; retrying with the stored Supabase pooler URL.
+
+Validation:
+- `pnpm --filter @workspace/api-server run build` passed and produced updated embedded bundles.
+- `pnpm --filter @workspace/scripts run sync:glam-api-bundle` passed after the path fix and copied 12 bundle files into `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api`.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- `npm test` passed in `/Users/iftatbhuiyan/WhisperSpeechServer`.
+- Pushed `/Users/iftatbhuiyan/WhisperSpeechServer` commit `b02512c` so Render deploys the rebuilt CRM API bundle.
+- `DATABASE_URL=$SUPABASE_POOLER_DATABASE_URL pnpm --filter @workspace/db run push` passed and Drizzle reported `Changes applied`.
+- Production authenticated smoke passed on `https://whisperflowserver.onrender.com/glam-api/api/expenses`: login returned 200, list returned 200, create returned 201 for temporary expense id 1, archive returned 204, and final list returned 200.
