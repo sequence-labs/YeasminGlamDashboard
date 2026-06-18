@@ -284,12 +284,12 @@ router.get("/bookings", async (req, res): Promise<void> => {
     ? await db.select(selection)
       .from(bookingsTable)
       .innerJoin(clientsTable, eq(bookingsTable.clientId, clientsTable.id))
-      .orderBy(bookingsTable.createdAt)
+      .orderBy(bookingsTable.firstServiceDate, desc(bookingsTable.createdAt))
     : await db.select(selection)
       .from(bookingsTable)
       .innerJoin(clientsTable, eq(bookingsTable.clientId, clientsTable.id))
       .where(isNull(bookingsTable.deletedAt))
-      .orderBy(bookingsTable.createdAt);
+      .orderBy(bookingsTable.firstServiceDate, desc(bookingsTable.createdAt));
 
   const serialized = await Promise.all(rows.map(async (r) => {
     const totals = await effectiveBookingTotals(r.booking);

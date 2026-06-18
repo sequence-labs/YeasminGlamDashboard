@@ -2015,3 +2015,20 @@ Validation:
 - Pushed `/Users/iftatbhuiyan/WhisperSpeechServer` commit `b02512c` so Render deploys the rebuilt CRM API bundle.
 - `DATABASE_URL=$SUPABASE_POOLER_DATABASE_URL pnpm --filter @workspace/db run push` passed and Drizzle reported `Changes applied`.
 - Production authenticated smoke passed on `https://whisperflowserver.onrender.com/glam-api/api/expenses`: login returned 200, list returned 200, create returned 201 for temporary expense id 1, archive returned 204, and final list returned 200.
+
+## 2026-06-18 - Bookings Date Ordering
+
+Start:
+- User requested the Bookings list be ordered by booking date, with the nearest/most recent date at the top and the furthest-away date at the bottom.
+- Scope is the `GET /bookings` ordering used by `artifacts/glam-crm/src/pages/bookings.tsx`; avoid UI redesign or contract changes.
+- Acceptance criteria: bookings API returns rows sorted by `firstServiceDate` ascending, undated rows do not displace dated bookings, and focused validation passes.
+
+Validation:
+- Updated `GET /bookings` to order by `firstServiceDate` ascending, with `createdAt` descending as the tie-breaker.
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/api-server run build` passed and rebuilt the embedded API bundle.
+- `pnpm --filter @workspace/scripts run sync:glam-api-bundle` passed and copied 12 bundle files into `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api`.
+- Verified `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api/embedded.mjs` contains the `firstServiceDate` ordering.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- `npm test` passed in `/Users/iftatbhuiyan/WhisperSpeechServer`.
