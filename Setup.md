@@ -135,6 +135,17 @@ GLAM_COOKIE_PATH=/glam-api
 
 Keep the existing WhisperSpeechServer environment variables unchanged.
 
+When API server routes change, rebuild and sync the embedded CRM bundle into the Render service repo before pushing that service:
+
+```sh
+pnpm --filter @workspace/api-server run build
+pnpm --filter @workspace/scripts run sync:glam-api-bundle
+cd /Users/iftatbhuiyan/WhisperSpeechServer
+npm test
+```
+
+The sync command copies `artifacts/api-server/dist/*.mjs` and `*.mjs.map` into `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api` by default. Override the destination with `GLAM_API_BUNDLE_TARGET` if the Render service checkout lives somewhere else.
+
 ## Supabase Postgres Setup
 
 Supabase is used as hosted Postgres for Makeup Artist Hub. The app still uses the current Drizzle/Postgres schema; this is not a rewrite to Supabase client APIs.

@@ -1985,3 +1985,20 @@ Validation:
 - Local API validation booking `11` persisted a `Make up Trial` event with `kind: trial`, `10:00 AM` start, `11:30 AM` completion, and a linked `$125` fee line item.
 - Playwright contract preview on `http://localhost:5173/bookings/11/contract` showed `Make up Trial` in Service Schedule, Rate Schedule, Booking Charges, and Grand Total.
 - Playwright new-booking check showed the optional trial section with date, amount, start, and completion controls, and the Step 4 service picker no longer listed `Make up Trial`.
+
+## 2026-06-18 - Production Expenses API 404
+
+Start:
+- User reported expense creation failing on the GitHub Pages production app. Screenshot and attached logs show Render returning 404 for `POST /glam-api/api/expenses`, `GET /glam-api/api/expenses`, and `GET /glam-api/api/notifications`, while the app UI loads.
+- Scope is Work Package 2.11 Expense Tracking and Shared Render API deployment: verify local route registration, compare production behavior, and apply a durable fix instead of a UI-only workaround.
+- Acceptance criteria: production API has registered expenses/notifications routes under `/glam-api/api`, expense creation no longer returns 404, validation commands pass, and deployment assumptions are documented if they change.
+
+Update:
+- Added a `sync:glam-api-bundle` script and setup documentation for copying rebuilt API bundles into `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api`.
+- First validation run failed because the script resolved the repo root as `/Users/iftatbhuiyan` instead of `/Users/iftatbhuiyan/Makeup-Artist-Hub`; fixing that path calculation before rerunning.
+
+Update:
+- Rebuilt `artifacts/api-server/dist` and synced it into `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api`; the copied bundle now contains `GET/POST /expenses` and `GET /notifications`.
+- `npm test` in `/Users/iftatbhuiyan/WhisperSpeechServer` passed.
+- Local shared-server smoke on port 8799 passed: `/glam-api/api/healthz` returned 200, unauthenticated `/expenses` and `/notifications` returned 401 instead of 404, CORS preflight for `POST /expenses` returned 204, authenticated `POST /expenses` returned 201, and the temporary validation expense was archived with DELETE 204.
+- Production unauthenticated checks returned 401, but authenticated `POST /glam-api/api/expenses` still returned 404 before pushing the rebuilt Render-service bundle, confirming the deployed route table is stale behind auth.
