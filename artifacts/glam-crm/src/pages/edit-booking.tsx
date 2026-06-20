@@ -224,6 +224,32 @@ function lineItemTotal(item: EditBookingFormValues["lineItems"][number]) {
   return (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
 }
 
+function eventUpdatePayload(event: EditBookingFormValues["events"][number], index: number) {
+  return {
+    kind: event.kind,
+    eventName: event.eventName.trim(),
+    eventDate: event.eventDate,
+    servicesBegin: nullableText(event.servicesBegin),
+    completionTarget: nullableText(event.completionTarget),
+    sortOrder: index * 10,
+  };
+}
+
+function lineItemUpdatePayload(item: EditBookingFormValues["lineItems"][number], index: number) {
+  return {
+    serviceItemId: item.serviceItemId ?? null,
+    eventId: parseEventId(item.eventId),
+    name: item.name.trim(),
+    description: nullableText(item.description),
+    kind: item.kind,
+    quantity: Number(item.quantity || 0),
+    unitPrice: Number(item.unitPrice || 0),
+    unitLabel: item.unitLabel.trim(),
+    calculationNote: nullableText(item.calculationNote),
+    sortOrder: index * 10,
+  };
+}
+
 export default function EditBooking() {
   const [, params] = useRoute("/bookings/:id/edit");
   const id = Number(params?.id ?? 0);
@@ -505,17 +531,10 @@ export default function EditBooking() {
         }
       }
       for (const [index, event] of data.events.entries()) {
-        const updatePayload = {
-          kind: event.kind,
-          eventName: event.eventName.trim(),
-          eventDate: event.eventDate,
-          servicesBegin: nullableText(event.servicesBegin),
-          completionTarget: nullableText(event.completionTarget),
-          sortOrder: index * 10,
-        };
+        const updatePayload = eventUpdatePayload(event, index);
         if (event.id) {
           const original = initialValues.events.find((item) => item.id === event.id);
-          if (!original || !isSameValue({ ...updatePayload, id: event.id }, { ...original, sortOrder: index * 10 })) {
+          if (!original || !isSameValue(updatePayload, eventUpdatePayload(original, index))) {
             await updateEvent.mutateAsync({ id: booking.id, eventId: event.id, data: updatePayload });
           }
         } else {
@@ -541,21 +560,10 @@ export default function EditBooking() {
         }
       }
       for (const [index, item] of data.lineItems.entries()) {
-        const updatePayload = {
-          serviceItemId: item.serviceItemId ?? null,
-          eventId: parseEventId(item.eventId),
-          name: item.name.trim(),
-          description: nullableText(item.description),
-          kind: item.kind,
-          quantity: Number(item.quantity || 0),
-          unitPrice: Number(item.unitPrice || 0),
-          unitLabel: item.unitLabel.trim(),
-          calculationNote: nullableText(item.calculationNote),
-          sortOrder: index * 10,
-        };
+        const updatePayload = lineItemUpdatePayload(item, index);
         if (item.id) {
           const original = initialValues.lineItems.find((lineItem) => lineItem.id === item.id);
-          if (!original || !isSameValue({ ...updatePayload, id: item.id }, { ...original, eventId: parseEventId(original.eventId), sortOrder: index * 10 })) {
+          if (!original || !isSameValue(updatePayload, lineItemUpdatePayload(original, index))) {
             await updateLineItem.mutateAsync({ id: booking.id, lineItemId: item.id, data: updatePayload });
           }
         } else {

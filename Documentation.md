@@ -2065,3 +2065,12 @@ Validation:
 - `pnpm --filter @workspace/glam-crm run build` passed after the event-type dirty-state fix with the existing UI sourcemap and chunk-size warnings.
 - `pnpm run typecheck` passed after the event-type dirty-state fix across workspace libs, API server, frontend, mockup sandbox, and scripts.
 - Browser validation on local booking `9` confirmed changing only Event Type marks one section as `Changed`, enables `Save changes`, and `Restore section` returns the field to its original value.
+
+Update:
+- Server logs from the save-path check showed a payment-only save also sent no-op event and line-item PATCH requests because form empty strings were compared against API-normalized nulls. Normalized existing event and line-item comparisons to the same API payload shape before deciding whether to send PATCH requests.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed after the no-op PATCH fix.
+- Browser validation on local booking `9` changed only Payment Method, submitted `Save changes`, confirmed the API persisted the temporary value, confirmed the network sent only `PATCH /api/bookings/9` and no event or line-item PATCHes, and restored the original local value.
+- `pnpm --filter @workspace/glam-crm run build` passed after the no-op PATCH fix with the existing UI sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed after the no-op PATCH fix across workspace libs, API server, frontend, mockup sandbox, and scripts.
