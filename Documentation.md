@@ -2032,3 +2032,36 @@ Validation:
 - Verified `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api/embedded.mjs` contains the `firstServiceDate` ordering.
 - `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
 - `npm test` passed in `/Users/iftatbhuiyan/WhisperSpeechServer`.
+
+## 2026-06-20 - Full Booking Edit Intake
+
+Start:
+- User requested replacing the small `Edit Booking Details` modal with a full-page edit workflow that mirrors the six-step new booking intake, prefilled with the existing booking.
+- Scope is Work Package 2.3 Booking Intake UI and booking-detail editing: preserve existing production bookings and API contracts, expose draft booking edit fields that are currently hard to change, highlight changed sections, and provide restore-to-original controls.
+- Acceptance criteria: booking detail opens a full edit page instead of the narrow modal, draft bookings can edit core details, schedule, services/fees, payment due date, payment method, and notes; changed areas are visually flagged; changes can be restored before save; active/signed bookings are protected from direct edits; focused validation passes.
+
+Update:
+- Added a full-page `/bookings/:id/edit` draft editor and routed the booking detail edit action to it.
+- First frontend typecheck failed on generated API typing: `useGetClient` needed an explicit generated query key, event create payloads cannot send null timing fields, and line-item create payloads cannot send null service item IDs. Fixing those payload shapes before rerunning validation.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the existing UI sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Browser validation on local booking `9` confirmed `Edit Booking Details` opens `/bookings/9/edit`, the six-section editor is prefilled, editing the payment method marks one section as `Changed`, enables `Save changes`, and `Restore section` clears the change and disables save again.
+- Browser validation temporarily moved local booking `6` to `active`, confirmed the protected booking banner and `Move to draft` action are shown, confirmed `Save changes` is disabled, and confirmed the payment field is not editable. Booking `6` was restored to `draft` after the check.
+
+Update:
+- A first save-path browser check failed because it expected the booking detail page body to visibly include the updated payment method after save. The API did persist the temporary value, so this was a validation expectation issue rather than a save failure. Local booking `9` was restored to its original payment method before rerunning the save check against the API response.
+
+Validation:
+- Browser save-path validation on local booking `9` changed the payment method from the full-page editor, submitted `Save changes`, confirmed navigation back to `/bookings/9`, confirmed the API response persisted the temporary payment method, and restored the original local value after the check.
+
+Update:
+- Final diff review found that `eventType` was displayed in Step 1 but missing from Step 1's changed-state and restore comparison. Added it so changing only the event type highlights Step 1, enables save, and restores correctly.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed after the event-type dirty-state fix.
+- `pnpm --filter @workspace/glam-crm run build` passed after the event-type dirty-state fix with the existing UI sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed after the event-type dirty-state fix across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Browser validation on local booking `9` confirmed changing only Event Type marks one section as `Changed`, enables `Save changes`, and `Restore section` returns the field to its original value.

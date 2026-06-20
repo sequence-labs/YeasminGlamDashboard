@@ -560,18 +560,12 @@ export default function BookingDetail() {
                   Signed{booking.signedByName ? ` · ${booking.signedByName}` : ""}
                 </span>
               )}
-              <BookingMetaDialog
-                bookingId={id}
-                bookingClientName={booking.clientName}
-                bookingClientId={booking.clientId}
-                contractTemplateId={booking.contractTemplateId ?? null}
-                contractTemplates={contractTemplates ?? []}
-                eventType={booking.eventType}
-                location={booking.location}
-                firstServiceDate={booking.firstServiceDate ?? null}
-                primaryEventId={booking.events[0]?.id}
-                primaryEventName={booking.events[0]?.eventName}
-              />
+              <Button asChild variant="outline" className="h-10" data-testid="btn-edit-booking-details">
+                <Link href={`/bookings/${id}/edit`}>
+                  <Edit className="h-4 w-4" />
+                  Edit Booking Details
+                </Link>
+              </Button>
               <Button
                 variant="destructive"
                 onClick={handleDeleteBooking}

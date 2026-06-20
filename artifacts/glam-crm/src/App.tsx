@@ -12,6 +12,7 @@ import ClientDetail from "@/pages/client-detail";
 import Bookings from "@/pages/bookings";
 import NewBooking from "@/pages/new-booking";
 import BookingDetail from "@/pages/booking-detail";
+import EditBooking from "@/pages/edit-booking";
 import ContractRoute from "@/pages/contract-route";
 import Services from "@/pages/services";
 import Artist from "@/pages/artist";
@@ -41,6 +42,7 @@ function AppRoutes() {
 
       <Route path="/bookings" component={Bookings} />
       <Route path="/bookings/new" component={NewBooking} />
+      <Route path="/bookings/:id/edit" component={EditBooking} />
       <Route path="/bookings/:id" component={BookingDetail} />
       <Route path="/bookings/:id/contract" component={ContractRoute} />
 
