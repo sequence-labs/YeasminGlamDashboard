@@ -64,7 +64,7 @@ const eventSchema = z.object({
   sortOrder: z.number().optional(),
 });
 
-const editBookingSchema = z.object({
+const editBookingSchemaBase = z.object({
   clientName: z.string().min(1, "Client name is required"),
   clientEmail: z.string().min(1, "Client email is required").email("Enter a valid email"),
   clientPhone: z.string().optional().refine((value) => !value || isCompleteUSPhone(value), "Enter a full 10-digit phone number"),
@@ -75,14 +75,60 @@ const editBookingSchema = z.object({
   location: z.string().min(1, "Location is required"),
   locationDetail: z.string().optional(),
   firstServiceDate: z.string().optional(),
+  initialEventId: z.number().optional(),
+  initialEventName: z.string().optional(),
+  initialServicesBegin: z.string().optional(),
+  initialCompletionTarget: z.string().optional(),
+  trialEventId: z.number().optional(),
+  trialLineItemId: z.number().optional(),
+  trialDate: z.string().optional(),
+  trialServicesBegin: z.string().optional(),
+  trialCompletionTarget: z.string().optional(),
+  trialAmount: z.coerce.number().min(0, "Trial amount cannot be negative").default(0),
+  trialLineItemSortOrder: z.number().optional(),
   events: z.array(eventSchema).default([]),
   lineItems: z.array(lineItemSchema).default([]),
   balanceDueDate: z.string().optional(),
   paymentMethod: z.string().optional(),
-  retainerAmount: z.coerce.number().min(0).default(0),
-  earlyMorningFee: z.coerce.number().min(0).default(0),
-  travelFee: z.coerce.number().min(0).default(0),
   notes: z.string().optional(),
+});
+
+const editBookingSchema = editBookingSchemaBase.superRefine((data, ctx) => {
+  const hasInitialEvent =
+    !!data.initialEventName?.trim() ||
+    !!data.initialServicesBegin?.trim() ||
+    !!data.initialCompletionTarget?.trim();
+  const hasTrial =
+    !!data.trialDate ||
+    !!data.trialServicesBegin?.trim() ||
+    !!data.trialCompletionTarget?.trim() ||
+    data.trialAmount > 0;
+
+  if (hasTrial && !data.trialDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["trialDate"],
+      message: "Trial date is required when adding a makeup trial",
+    });
+  }
+
+  if (!hasInitialEvent) return;
+
+  if (!data.initialEventName?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["initialEventName"],
+      message: "Event name is required when editing the first event",
+    });
+  }
+
+  if (!data.firstServiceDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["firstServiceDate"],
+      message: "First service date is required when editing the first event",
+    });
+  }
 });
 
 type EditBookingFormValues = z.infer<typeof editBookingSchema>;
@@ -98,6 +144,17 @@ function nullableText(value?: string | null) {
 
 function toDateInputValue(value?: string | null) {
   return value ? value.slice(0, 10) : "";
+}
+
+const TRIAL_LINE_ITEM_NAME = "Make up Trial";
+
+function bySortOrder<T extends { sortOrder?: number | null; id?: number }>(left: T, right: T) {
+  return (left.sortOrder ?? 0) - (right.sortOrder ?? 0) || (left.id ?? 0) - (right.id ?? 0);
+}
+
+function isTrialLineItem(item: BookingLineItem, trialEventId?: number) {
+  if (trialEventId && item.eventId === trialEventId) return true;
+  return item.kind === "fee" && item.name.trim().toLowerCase() === TRIAL_LINE_ITEM_NAME.toLowerCase();
 }
 
 function normalizeForCompare(value: unknown) {
@@ -141,6 +198,12 @@ function buildInitialValues(
   client: { email?: string | null; phone?: string | null; notes?: string | null } | undefined,
   fallbackContractTemplateId: number | null,
 ): EditBookingFormValues {
+  const serviceEvents = [...booking.events].filter((event) => event.kind !== "trial").sort(bySortOrder);
+  const initialEvent = serviceEvents[0];
+  const additionalEvents = serviceEvents.slice(1);
+  const trialEvent = [...booking.events].filter((event) => event.kind === "trial").sort(bySortOrder)[0];
+  const trialLineItem = booking.lineItems.find((item) => isTrialLineItem(item, trialEvent?.id));
+
   return {
     clientName: booking.clientName,
     clientEmail: client?.email ?? booking.clientEmail ?? "",
@@ -152,13 +215,21 @@ function buildInitialValues(
     location: booking.location,
     locationDetail: booking.locationDetail ?? "",
     firstServiceDate: toDateInputValue(booking.firstServiceDate),
-    events: booking.events.map(eventToForm),
-    lineItems: booking.lineItems.map(lineItemToForm),
+    initialEventId: initialEvent?.id,
+    initialEventName: initialEvent?.eventName ?? "",
+    initialServicesBegin: initialEvent?.servicesBegin ?? "",
+    initialCompletionTarget: initialEvent?.completionTarget ?? "",
+    trialEventId: trialEvent?.id,
+    trialLineItemId: trialLineItem?.id,
+    trialDate: toDateInputValue(trialEvent?.eventDate),
+    trialServicesBegin: trialEvent?.servicesBegin ?? "",
+    trialCompletionTarget: trialEvent?.completionTarget ?? "",
+    trialAmount: trialLineItem?.unitPrice ?? 0,
+    trialLineItemSortOrder: trialLineItem?.sortOrder,
+    events: additionalEvents.map(eventToForm),
+    lineItems: booking.lineItems.filter((item) => item.id !== trialLineItem?.id).map(lineItemToForm),
     balanceDueDate: toDateInputValue(booking.balanceDueDate),
     paymentMethod: booking.paymentMethod ?? "",
-    retainerAmount: booking.retainerAmount ?? 0,
-    earlyMorningFee: booking.earlyMorningFee ?? 0,
-    travelFee: booking.travelFee ?? 0,
     notes: booking.notes ?? "",
   };
 }
@@ -235,6 +306,45 @@ function eventUpdatePayload(event: EditBookingFormValues["events"][number], inde
   };
 }
 
+function hasInitialEvent(values: Pick<EditBookingFormValues, "initialEventName" | "initialServicesBegin" | "initialCompletionTarget">) {
+  return Boolean(
+    values.initialEventName?.trim() ||
+    values.initialServicesBegin?.trim() ||
+    values.initialCompletionTarget?.trim(),
+  );
+}
+
+function initialEventUpdatePayload(values: EditBookingFormValues) {
+  return {
+    kind: "event" as const,
+    eventName: values.initialEventName?.trim() ?? "",
+    eventDate: values.firstServiceDate ?? "",
+    servicesBegin: nullableText(values.initialServicesBegin),
+    completionTarget: nullableText(values.initialCompletionTarget),
+    sortOrder: 0,
+  };
+}
+
+function hasTrial(values: Pick<EditBookingFormValues, "trialDate" | "trialServicesBegin" | "trialCompletionTarget" | "trialAmount">) {
+  return Boolean(
+    values.trialDate ||
+    values.trialServicesBegin?.trim() ||
+    values.trialCompletionTarget?.trim() ||
+    Number(values.trialAmount || 0) > 0,
+  );
+}
+
+function trialEventUpdatePayload(values: EditBookingFormValues) {
+  return {
+    kind: "trial" as const,
+    eventName: TRIAL_LINE_ITEM_NAME,
+    eventDate: values.trialDate ?? "",
+    servicesBegin: nullableText(values.trialServicesBegin),
+    completionTarget: nullableText(values.trialCompletionTarget),
+    sortOrder: 5,
+  };
+}
+
 function lineItemUpdatePayload(item: EditBookingFormValues["lineItems"][number], index: number) {
   return {
     serviceItemId: item.serviceItemId ?? null,
@@ -247,6 +357,21 @@ function lineItemUpdatePayload(item: EditBookingFormValues["lineItems"][number],
     unitLabel: item.unitLabel.trim(),
     calculationNote: nullableText(item.calculationNote),
     sortOrder: index * 10,
+  };
+}
+
+function trialLineItemUpdatePayload(values: EditBookingFormValues, eventId: number | null, sortOrder: number) {
+  return {
+    serviceItemId: null,
+    eventId,
+    name: TRIAL_LINE_ITEM_NAME,
+    description: "Optional makeup trial appointment before the event.",
+    kind: "fee" as const,
+    quantity: 1,
+    unitPrice: Number(values.trialAmount || 0),
+    unitLabel: "trial",
+    calculationNote: `${TRIAL_LINE_ITEM_NAME} @ $${Number(values.trialAmount || 0)}`,
+    sortOrder,
   };
 }
 
@@ -299,13 +424,18 @@ export default function EditBooking() {
       location: "",
       locationDetail: "",
       firstServiceDate: "",
+      initialEventName: "",
+      initialServicesBegin: "",
+      initialCompletionTarget: "",
+      trialDate: "",
+      trialServicesBegin: "",
+      trialCompletionTarget: "",
+      trialAmount: 0,
+      trialLineItemSortOrder: undefined,
       events: [],
       lineItems: [],
       balanceDueDate: "",
       paymentMethod: "",
-      retainerAmount: 0,
-      earlyMorningFee: 0,
-      travelFee: 0,
       notes: "",
     },
   });
@@ -335,9 +465,9 @@ export default function EditBooking() {
   const selectedServiceItem = activeServiceItems.find((item) => String(item.id) === selectedServiceItemId);
   const currentLineItems = watchedValues.lineItems ?? [];
   const currentEvents = watchedValues.events ?? [];
-  const servicesTotal = currentLineItems.reduce((sum, item) => sum + lineItemTotal(item), 0);
-  const totalWithFees = servicesTotal + Number(watchedValues.earlyMorningFee || 0) + Number(watchedValues.travelFee || 0);
-  const estimatedRetainer = Number(watchedValues.retainerAmount || 0) || totalWithFees * 0.25;
+  const trialAmount = Number(watchedValues.trialAmount || 0);
+  const servicesTotal = currentLineItems.reduce((sum, item) => sum + lineItemTotal(item), 0) + trialAmount;
+  const estimatedRetainer = servicesTotal * 0.25;
 
   const changed = {
     client: sectionChanged(
@@ -347,6 +477,8 @@ export default function EditBooking() {
         clientPhone: watchedValues.clientPhone,
         clientNotes: watchedValues.clientNotes,
         eventType: watchedValues.eventType,
+        contractTemplateId: watchedValues.contractTemplateId,
+        status: watchedValues.status,
       },
       initialValues && {
         clientName: initialValues.clientName,
@@ -354,6 +486,8 @@ export default function EditBooking() {
         clientPhone: initialValues.clientPhone,
         clientNotes: initialValues.clientNotes,
         eventType: initialValues.eventType,
+        contractTemplateId: initialValues.contractTemplateId,
+        status: initialValues.status,
       },
     ),
     location: sectionChanged(
@@ -361,28 +495,38 @@ export default function EditBooking() {
       initialValues && { location: initialValues.location, locationDetail: initialValues.locationDetail },
     ),
     schedule: sectionChanged(
-      { firstServiceDate: watchedValues.firstServiceDate, events: watchedValues.events },
-      initialValues && { firstServiceDate: initialValues.firstServiceDate, events: initialValues.events },
+      {
+        firstServiceDate: watchedValues.firstServiceDate,
+        initialEventName: watchedValues.initialEventName,
+        initialServicesBegin: watchedValues.initialServicesBegin,
+        initialCompletionTarget: watchedValues.initialCompletionTarget,
+        trialDate: watchedValues.trialDate,
+        trialServicesBegin: watchedValues.trialServicesBegin,
+        trialCompletionTarget: watchedValues.trialCompletionTarget,
+        trialAmount: watchedValues.trialAmount,
+        events: watchedValues.events,
+      },
+      initialValues && {
+        firstServiceDate: initialValues.firstServiceDate,
+        initialEventName: initialValues.initialEventName,
+        initialServicesBegin: initialValues.initialServicesBegin,
+        initialCompletionTarget: initialValues.initialCompletionTarget,
+        trialDate: initialValues.trialDate,
+        trialServicesBegin: initialValues.trialServicesBegin,
+        trialCompletionTarget: initialValues.trialCompletionTarget,
+        trialAmount: initialValues.trialAmount,
+        events: initialValues.events,
+      },
     ),
     services: sectionChanged(watchedValues.lineItems, initialValues?.lineItems),
     payment: sectionChanged(
       {
-        status: watchedValues.status,
-        contractTemplateId: watchedValues.contractTemplateId,
         balanceDueDate: watchedValues.balanceDueDate,
         paymentMethod: watchedValues.paymentMethod,
-        retainerAmount: watchedValues.retainerAmount,
-        earlyMorningFee: watchedValues.earlyMorningFee,
-        travelFee: watchedValues.travelFee,
       },
       initialValues && {
-        status: initialValues.status,
-        contractTemplateId: initialValues.contractTemplateId,
         balanceDueDate: initialValues.balanceDueDate,
         paymentMethod: initialValues.paymentMethod,
-        retainerAmount: initialValues.retainerAmount,
-        earlyMorningFee: initialValues.earlyMorningFee,
-        travelFee: initialValues.travelFee,
       },
     ),
     notes: sectionChanged(watchedValues.notes, initialValues?.notes),
@@ -399,6 +543,8 @@ export default function EditBooking() {
       form.setValue("clientPhone", initialValues.clientPhone);
       form.setValue("clientNotes", initialValues.clientNotes);
       form.setValue("eventType", initialValues.eventType);
+      form.setValue("contractTemplateId", initialValues.contractTemplateId);
+      form.setValue("status", initialValues.status);
     }
     if (section === "location") {
       form.setValue("location", initialValues.location);
@@ -406,19 +552,22 @@ export default function EditBooking() {
     }
     if (section === "schedule") {
       form.setValue("firstServiceDate", initialValues.firstServiceDate);
+      form.setValue("initialEventName", initialValues.initialEventName);
+      form.setValue("initialServicesBegin", initialValues.initialServicesBegin);
+      form.setValue("initialCompletionTarget", initialValues.initialCompletionTarget);
+      form.setValue("trialDate", initialValues.trialDate);
+      form.setValue("trialServicesBegin", initialValues.trialServicesBegin);
+      form.setValue("trialCompletionTarget", initialValues.trialCompletionTarget);
+      form.setValue("trialAmount", initialValues.trialAmount);
+      form.setValue("trialLineItemSortOrder", initialValues.trialLineItemSortOrder);
       replaceEvents(initialValues.events);
     }
     if (section === "services") {
       replaceLineItems(initialValues.lineItems);
     }
     if (section === "payment") {
-      form.setValue("status", initialValues.status);
-      form.setValue("contractTemplateId", initialValues.contractTemplateId);
       form.setValue("balanceDueDate", initialValues.balanceDueDate);
       form.setValue("paymentMethod", initialValues.paymentMethod);
-      form.setValue("retainerAmount", initialValues.retainerAmount);
-      form.setValue("earlyMorningFee", initialValues.earlyMorningFee);
-      form.setValue("travelFee", initialValues.travelFee);
     }
     if (section === "notes") {
       form.setValue("notes", initialValues.notes);
@@ -499,9 +648,6 @@ export default function EditBooking() {
         firstServiceDate: nullableText(data.firstServiceDate),
         balanceDueDate: nullableText(data.balanceDueDate),
         paymentMethod: nullableText(data.paymentMethod),
-        retainerAmount: Number(data.retainerAmount || 0),
-        earlyMorningFee: Number(data.earlyMorningFee || 0),
-        travelFee: Number(data.travelFee || 0),
         notes: nullableText(data.notes),
       };
       const originalBookingUpdate = {
@@ -513,14 +659,65 @@ export default function EditBooking() {
         firstServiceDate: nullableText(initialValues.firstServiceDate),
         balanceDueDate: nullableText(initialValues.balanceDueDate),
         paymentMethod: nullableText(initialValues.paymentMethod),
-        retainerAmount: Number(initialValues.retainerAmount || 0),
-        earlyMorningFee: Number(initialValues.earlyMorningFee || 0),
-        travelFee: Number(initialValues.travelFee || 0),
         notes: nullableText(initialValues.notes),
       };
 
       if (!isSameValue(bookingUpdate, originalBookingUpdate)) {
         await updateBooking.mutateAsync({ id: booking.id, data: bookingUpdate });
+      }
+
+      const shouldSaveInitialEvent = hasInitialEvent(data);
+      if (shouldSaveInitialEvent) {
+        const updatePayload = initialEventUpdatePayload(data);
+        if (data.initialEventId) {
+          if (!isSameValue(updatePayload, initialEventUpdatePayload(initialValues))) {
+            await updateEvent.mutateAsync({ id: booking.id, eventId: data.initialEventId, data: updatePayload });
+          }
+        } else {
+          await createEvent.mutateAsync({
+            id: booking.id,
+            data: {
+              eventName: updatePayload.eventName,
+              eventDate: updatePayload.eventDate,
+              servicesBegin: optionalText(data.initialServicesBegin),
+              completionTarget: optionalText(data.initialCompletionTarget),
+              kind: "event",
+              sortOrder: 0,
+            },
+          });
+        }
+      }
+
+      const shouldSaveTrial = hasTrial(data);
+      let trialEventId = data.trialEventId ?? null;
+      if (shouldSaveTrial) {
+        const updatePayload = trialEventUpdatePayload(data);
+        if (trialEventId) {
+          if (!isSameValue(updatePayload, trialEventUpdatePayload(initialValues))) {
+            await updateEvent.mutateAsync({ id: booking.id, eventId: trialEventId, data: updatePayload });
+          }
+        } else {
+          const trialEvent = await createEvent.mutateAsync({
+            id: booking.id,
+            data: {
+              eventName: TRIAL_LINE_ITEM_NAME,
+              eventDate: updatePayload.eventDate,
+              servicesBegin: optionalText(data.trialServicesBegin),
+              completionTarget: optionalText(data.trialCompletionTarget),
+              kind: "trial",
+              sortOrder: 5,
+            },
+          });
+          trialEventId = trialEvent.id;
+        }
+      } else {
+        if (data.trialLineItemId) {
+          await deleteLineItem.mutateAsync({ id: booking.id, lineItemId: data.trialLineItemId });
+        }
+        if (trialEventId) {
+          await deleteEvent.mutateAsync({ id: booking.id, eventId: trialEventId });
+        }
+        trialEventId = null;
       }
 
       const originalEventIds = new Set(initialValues.events.map((event) => event.id).filter(Boolean) as number[]);
@@ -531,10 +728,11 @@ export default function EditBooking() {
         }
       }
       for (const [index, event] of data.events.entries()) {
-        const updatePayload = eventUpdatePayload(event, index);
+        const eventIndex = index + 1;
+        const updatePayload = eventUpdatePayload(event, eventIndex);
         if (event.id) {
           const original = initialValues.events.find((item) => item.id === event.id);
-          if (!original || !isSameValue(updatePayload, eventUpdatePayload(original, index))) {
+          if (!original || !isSameValue(updatePayload, eventUpdatePayload(original, eventIndex))) {
             await updateEvent.mutateAsync({ id: booking.id, eventId: event.id, data: updatePayload });
           }
         } else {
@@ -546,7 +744,7 @@ export default function EditBooking() {
               eventDate: event.eventDate,
               servicesBegin: optionalText(event.servicesBegin),
               completionTarget: optionalText(event.completionTarget),
-              sortOrder: index * 10,
+              sortOrder: eventIndex * 10,
             },
           });
         }
@@ -583,6 +781,35 @@ export default function EditBooking() {
             },
           });
         }
+      }
+
+      const trialAmount = Number(data.trialAmount || 0);
+      if (shouldSaveTrial && trialAmount > 0 && trialEventId) {
+        const trialSortOrder = data.trialLineItemSortOrder ?? data.lineItems.length * 10;
+        const updatePayload = trialLineItemUpdatePayload(data, trialEventId, trialSortOrder);
+        if (data.trialLineItemId) {
+          const originalPayload = trialLineItemUpdatePayload(initialValues, initialValues.trialEventId ?? null, trialSortOrder);
+          if (!isSameValue(updatePayload, originalPayload)) {
+            await updateLineItem.mutateAsync({ id: booking.id, lineItemId: data.trialLineItemId, data: updatePayload });
+          }
+        } else {
+          await createLineItem.mutateAsync({
+            id: booking.id,
+            data: {
+              eventId: trialEventId,
+              name: TRIAL_LINE_ITEM_NAME,
+              description: "Optional makeup trial appointment before the event.",
+              kind: "fee",
+              quantity: 1,
+              unitPrice: trialAmount,
+              unitLabel: "trial",
+              calculationNote: `${TRIAL_LINE_ITEM_NAME} @ $${trialAmount}`,
+              sortOrder: data.lineItems.length * 10,
+            },
+          });
+        }
+      } else if (shouldSaveTrial && data.trialLineItemId) {
+        await deleteLineItem.mutateAsync({ id: booking.id, lineItemId: data.trialLineItemId });
       }
 
       await Promise.all([
@@ -715,6 +942,37 @@ export default function EditBooking() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  <FormField control={form.control} name="contractTemplateId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contract *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={loadingContractTemplates}>
+                        <FormControl><SelectTrigger data-testid="select-edit-contract"><SelectValue placeholder="Select contract" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {(contractTemplates ?? []).filter((contract) => contract.active || String(contract.id) === initialValues.contractTemplateId).map((contract) => (
+                            <SelectItem key={contract.id} value={String(contract.id)}>
+                              {contract.name}{contract.isDefault ? " (Default)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="status" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger data-testid="select-edit-status"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft (Inquiry)</SelectItem>
+                          <SelectItem value="active">Active (Contracted)</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
                   <FormField control={form.control} name="clientNotes" render={({ field }) => (
                     <FormItem className="md:col-span-2">
                       <FormLabel>Client Notes</FormLabel>
@@ -751,72 +1009,137 @@ export default function EditBooking() {
 
               <SectionShell
                 step="Step 3 · Schedule"
-                title="Service schedule"
-                detail="Edit the booking date, event rows, trial rows, and service timing."
+                title="First event schedule"
+                detail="Add the first service schedule now if the timing is known. More events can be added later."
                 changed={changed.schedule}
                 onRestore={() => restoreSection("schedule")}
               >
-                <FormField control={form.control} name="firstServiceDate" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Service Date</FormLabel>
-                    <FormControl><Input type="date" {...field} data-testid="input-edit-first-service-date" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <div className="space-y-4">
-                  {eventFields.map((field, index) => (
-                    <div key={field.id} className="rounded-xl border border-card-border/70 bg-accent/15 p-4 sm:p-5">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <Badge variant="outline">Event {index + 1}</Badge>
-                        <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => removeEvent(index)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <FormField control={form.control} name={`events.${index}.kind`} render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Kind</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent>
-                                <SelectItem value="event">Event</SelectItem>
-                                <SelectItem value="trial">Makeup trial</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`events.${index}.eventDate`} render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Date</FormLabel>
-                            <FormControl><Input type="date" {...field} data-testid={`input-edit-event-date-${index}`} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`events.${index}.eventName`} render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Event Name</FormLabel>
-                            <FormControl><Input {...field} data-testid={`input-edit-event-name-${index}`} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`events.${index}.servicesBegin`} render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Services Begin</FormLabel>
-                            <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix={`input-edit-event-begin-${index}`} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`events.${index}.completionTarget`} render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Completion Target</FormLabel>
-                            <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix={`input-edit-event-complete-${index}`} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                      </div>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField control={form.control} name="initialEventName" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Event Name</FormLabel>
+                      <FormControl><Input placeholder="e.g. Wedding morning, Reception glam" {...field} data-testid="input-edit-initial-event-name" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="firstServiceDate" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Service Date</FormLabel>
+                      <FormControl><Input type="date" {...field} data-testid="input-edit-first-service-date" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="initialServicesBegin" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Services Begin</FormLabel>
+                      <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-edit-initial-services-begin" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <FormField control={form.control} name="initialCompletionTarget" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Completion Target</FormLabel>
+                      <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-edit-initial-completion-target" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+
+                  <div className="rounded-xl border border-card-border/70 bg-accent/15 p-4 sm:p-5 md:col-span-2">
+                    <div className="mb-4">
+                      <span className="crm-eyebrow !text-[10px]">Optional makeup trial</span>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Add a trial appointment and charge. It will appear in the contract schedule and pricing.
+                      </p>
                     </div>
-                  ))}
+
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <FormField control={form.control} name="trialDate" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trial Date</FormLabel>
+                          <FormControl><Input type="date" {...field} data-testid="input-edit-trial-date" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="trialAmount" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trial Amount ($)</FormLabel>
+                          <FormControl><Input type="number" min="0" step="0.01" {...field} data-testid="input-edit-trial-amount" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="trialServicesBegin" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trial Begins</FormLabel>
+                          <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-edit-trial-services-begin" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="trialCompletionTarget" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Trial Completion Target</FormLabel>
+                          <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix="input-edit-trial-completion-target" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {eventFields.length > 0 ? (
+                    <div className="space-y-4">
+                      <div>
+                        <span className="crm-eyebrow !text-[10px]">Additional events</span>
+                        <p className="mt-1 text-sm text-muted-foreground">Use this only when this booking has more than one service event.</p>
+                      </div>
+                      {eventFields.map((field, index) => (
+                        <div key={field.id} className="rounded-xl border border-card-border/70 bg-accent/15 p-4 sm:p-5">
+                          <div className="mb-4 flex items-center justify-between gap-3">
+                            <Badge variant="outline">Additional event {index + 1}</Badge>
+                            <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => removeEvent(index)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <FormField control={form.control} name={`events.${index}.eventDate`} render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Date</FormLabel>
+                                <FormControl><Input type="date" {...field} data-testid={`input-edit-event-date-${index}`} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`events.${index}.eventName`} render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Event Name</FormLabel>
+                                <FormControl><Input {...field} data-testid={`input-edit-event-name-${index}`} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`events.${index}.servicesBegin`} render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Services Begin</FormLabel>
+                                <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix={`input-edit-event-begin-${index}`} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`events.${index}.completionTarget`} render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Completion Target</FormLabel>
+                                <FormControl><TimePartsInput value={field.value} onChange={field.onChange} testIdPrefix={`input-edit-event-complete-${index}`} /></FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                   <Button
                     type="button"
                     variant="outline"
@@ -826,12 +1149,12 @@ export default function EditBooking() {
                       eventDate: watchedValues.firstServiceDate || "",
                       servicesBegin: "",
                       completionTarget: "",
-                      sortOrder: currentEvents.length * 10,
+                      sortOrder: (currentEvents.length + 1) * 10,
                     })}
                     data-testid="btn-edit-add-event"
                   >
                     <Plus className="h-4 w-4" />
-                    Add event or trial
+                    Add another event
                   </Button>
                 </div>
               </SectionShell>
@@ -958,7 +1281,7 @@ export default function EditBooking() {
                 <div className="grid grid-cols-1 gap-3 border-t border-card-border/60 pt-5 md:grid-cols-3">
                   <SummaryTile label="Services & fees" value={servicesTotal} />
                   <SummaryTile label="Estimated retainer" value={estimatedRetainer} />
-                  <SummaryTile label="Estimated balance" value={Math.max(0, totalWithFees - estimatedRetainer)} tone="primary" />
+                  <SummaryTile label="Estimated balance" value={Math.max(0, servicesTotal - estimatedRetainer)} tone="primary" />
                 </div>
               </SectionShell>
 
@@ -969,37 +1292,6 @@ export default function EditBooking() {
                 onRestore={() => restoreSection("payment")}
               >
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <FormField control={form.control} name="contractTemplateId" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Contract</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={loadingContractTemplates}>
-                        <FormControl><SelectTrigger data-testid="select-edit-contract"><SelectValue placeholder="Select contract" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {(contractTemplates ?? []).filter((contract) => contract.active || String(contract.id) === initialValues.contractTemplateId).map((contract) => (
-                            <SelectItem key={contract.id} value={String(contract.id)}>
-                              {contract.name}{contract.isDefault ? " (Default)" : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="status" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger data-testid="select-edit-status"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
                   <FormField control={form.control} name="balanceDueDate" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Balance Due Date</FormLabel>
@@ -1011,27 +1303,6 @@ export default function EditBooking() {
                     <FormItem>
                       <FormLabel>Payment Method</FormLabel>
                       <FormControl><Input placeholder="e.g. Zelle, Venmo, Cash" {...field} data-testid="input-edit-payment-method" /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="retainerAmount" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Retainer Amount ($)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="earlyMorningFee" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Early Morning Fee ($)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="travelFee" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Travel Fee ($)</FormLabel>
-                      <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

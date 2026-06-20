@@ -2074,3 +2074,25 @@ Validation:
 - Browser validation on local booking `9` changed only Payment Method, submitted `Save changes`, confirmed the API persisted the temporary value, confirmed the network sent only `PATCH /api/bookings/9` and no event or line-item PATCHes, and restored the original local value.
 - `pnpm --filter @workspace/glam-crm run build` passed after the no-op PATCH fix with the existing UI sourcemap and chunk-size warnings.
 - `pnpm run typecheck` passed after the no-op PATCH fix across workspace libs, API server, frontend, mockup sandbox, and scripts.
+
+## 2026-06-20 - Align Booking Edit With Intake
+
+Start:
+- User clarified that the full booking edit page should be a near-duplicate of the new booking intake, not a parallel form with different Step 3 and Step 5 semantics.
+- Scope remains Work Package 2.3 Booking Intake UI: Step 3 in edit should expose the same optional makeup trial block as new booking, including trial amount, and Step 5 should keep payment simple with balance due date and payment method while totals stay calculated from services, fees, and trial amount.
+- Acceptance criteria: edit Step 3 mirrors create Step 3 for optional makeup trial fields, existing trial events and linked trial amount prefill into that block, edit Step 5 mirrors create Step 5's simpler payment details, save remains scoped to actual changes, and focused validation passes.
+
+Update:
+- Reworked `/bookings/:id/edit` to mirror the create-booking intake grouping more closely: Contract and Status moved into Step 1, Step 3 now uses the same first-event schedule plus optional makeup trial block, and Step 5 only shows Balance Due Date and Payment Method.
+- Existing `trial` booking events and their linked `Make up Trial` fee line item are now pulled into the Step 3 trial date/timing/amount fields instead of appearing as generic event or service rows.
+- Trial amount edits update the linked trial fee line item so booking totals and contract pricing continue to recalculate through the existing API model. Clearing the optional trial block removes the linked trial fee and trial event.
+- Extra non-trial events are preserved under an additional-events area below the create-style Step 3 controls so existing bookings with more than one service event do not lose data.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the existing UI sourcemap and chunk-size warnings.
+- `pnpm run typecheck` passed across workspace libs, API server, frontend, mockup sandbox, and scripts.
+- Browser validation on local booking `11` confirmed edit Step 3 shows `First event schedule`, the separate `Optional makeup trial` block, prefilled trial date `2026-07-10`, prefilled trial amount `125`, and no generic service row for the linked trial fee.
+- Browser validation on local booking `11` confirmed edit Step 5 shows only `Balance Due Date` and `Payment Method`.
+- Browser validation changed booking `11` trial amount from `125` to `130`, confirmed the network sent only `PATCH /api/bookings/11/line-items/52`, confirmed the API persisted the temporary amount, and restored the local trial fee back to `125`.
+- Browser validation on local booking `9` changed only Payment Method, confirmed the network still sent only `PATCH /api/bookings/9`, and restored the original local value.
