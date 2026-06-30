@@ -6,6 +6,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
 import { formatUSPhone } from "@/lib/phone";
 import { Fragment, useEffect } from "react";
+import { renderDescription } from "@/lib/description";
 
 const AGREEMENT_TITLE = "Non-Bridal Makeup and Hair Service Agreement";
 
@@ -296,7 +297,7 @@ export default function ContractView() {
 
         {/* Header */}
         <div className="text-center mb-8 pb-6 border-b-2 border-black">
-          <h1 className="text-2xl font-bold tracking-tight uppercase mb-1">Non-Bridal Makeup &amp; Hair Service Agreement</h1>
+          <h1 className="text-2xl font-bold text-black tracking-tight uppercase mb-1">Non-Bridal Makeup &amp; Hair Service Agreement</h1>
           <p className="text-sm text-gray-600">Professional Non-Bridal Makeup and Hair Services</p>
           <p className="text-sm mt-3 max-w-2xl mx-auto">
             This Non-Bridal Makeup &amp; Hair Service Agreement ("Agreement") is between{" "}
@@ -363,6 +364,12 @@ export default function ContractView() {
           ) : (
             <p className="italic text-gray-500 text-sm">No events scheduled yet.</p>
           )}
+          <p className="text-sm text-gray-700 mt-4">
+            <strong>Arrival and start time:</strong> Artist sets the arrival and start time as needed to meet
+            the completion target. Client is responsible for ensuring all recipients are present, prepared, and
+            ready at the agreed start time. The order and pacing of services are at Artist's discretion.
+          </p>
+          <ClientInitials className="mt-3" />
         </Section>
 
         {/* Section 3 */}
@@ -373,7 +380,7 @@ export default function ContractView() {
           </p>
 
           <div className="mb-5">
-            <h3 className="font-bold text-sm mb-2">Rate Schedule</h3>
+            <h3 className="font-bold text-sm text-black mb-2">Rate Schedule</h3>
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="bg-gray-100">
@@ -385,7 +392,10 @@ export default function ContractView() {
                 {pricingLineItems.length > 0 ? (
                   pricingLineItems.map((group) => (
                     <tr key={group.key} className="border-b border-gray-200">
-                      <Td>{group.representativeItem.name}</Td>
+                      <Td>
+                        <div>{group.representativeItem.name}</div>
+                        {renderDescription(group.representativeItem.description, "text-gray-600 text-xs mt-0.5")}
+                      </Td>
                       <Td right>{lineItemRateDescription(group.representativeItem)}</Td>
                     </tr>
                   ))
@@ -406,7 +416,7 @@ export default function ContractView() {
             </table>
           </div>
 
-          <h3 className="font-bold text-sm mb-2">Booking Charges</h3>
+          <h3 className="font-bold text-sm text-black mb-2">Booking Charges</h3>
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="bg-gray-100">
@@ -432,7 +442,10 @@ export default function ContractView() {
                   )}
                   {lineItemGroups.map((group) => (
                     <tr key={group.key} className="border-b border-gray-200">
-                      <Td>{group.representativeItem.name}</Td>
+                      <Td>
+                        <div>{group.representativeItem.name}</div>
+                        {renderDescription(group.representativeItem.description, "text-gray-600 text-xs mt-0.5")}
+                      </Td>
                       <Td>{`${formatQuantity(group.totalQuantity)} ${quantityUnitLabel(group.representativeItem.unitLabel, group.totalQuantity)}`}</Td>
                       <Td>{lineItemRateDescription(group.representativeItem)}</Td>
                       <Td right>{formatMoney(group.totalAmount)}</Td>
@@ -447,7 +460,10 @@ export default function ContractView() {
                   </tr>
                   {bookingLevelLineItemGroups.map((group) => (
                     <tr key={group.key} className="border-b border-gray-200">
-                      <Td>{group.representativeItem.name}</Td>
+                      <Td>
+                        <div>{group.representativeItem.name}</div>
+                        {renderDescription(group.representativeItem.description, "text-gray-600 text-xs mt-0.5")}
+                      </Td>
                       <Td>{`${formatQuantity(group.totalQuantity)} ${quantityUnitLabel(group.representativeItem.unitLabel, group.totalQuantity)}`}</Td>
                       <Td>{lineItemRateDescription(group.representativeItem)}</Td>
                       <Td right>{formatMoney(group.totalAmount)}</Td>
@@ -520,6 +536,13 @@ export default function ContractView() {
             begin or continue services until the balance is paid. Client should send payment confirmation after
             payment is completed.
           </p>
+          <p className="text-sm text-gray-700 mb-3">
+            <strong>Written confirmation of changes:</strong> Any change to the fees, refunds, credits, or services
+            under this Agreement — including any discount, reduction, refund, or credit — is valid only if confirmed
+            in writing by Artist. Verbal statements, agreements, or arrangements made during or immediately after
+            the service are not binding, do not modify this Agreement, and do not reduce or waive any amount the
+            Client already owes under this Agreement.
+          </p>
           <ClientInitials />
         </Section>
 
@@ -542,12 +565,22 @@ export default function ContractView() {
             people are subject to Artist availability, may be declined, and must be paid before the additional
             service begins.
           </p>
+          <p className="text-sm text-gray-700 mb-2">
+            <strong>On-day upgrades and scope changes:</strong> If any recipient requests a look or style beyond
+            the booked scope (including detailed eye looks, glitter/shimmer, elaborate or additional hairstyles, or
+            extra coverage), Artist may, at Artist's sole discretion, decline the request, perform it as time allows, or
+            charge the applicable add-on rate as listed in Artist's services. Accommodating any such request does
+            not extend the scheduled completion time, and no refund, credit, or price reduction will be given for
+            any booked service that is shortened or skipped because added or upgraded work consumed the available
+            time.
+          </p>
           <p className="text-sm text-gray-700">
             <strong>Assigned artists:</strong> {artistName} is assigned to provide services. Makeup and hair may be
             performed by Artist, an assistant, second artist, subcontracted stylist, or other assigned professional
             selected by Artist. Artist may bring additional artists or assistants as needed to complete the agreed
             services.
           </p>
+          <ClientInitials className="mt-3" />
         </Section>
 
         {/* Section 6 */}
@@ -600,7 +633,23 @@ export default function ContractView() {
             No refund, credit, or price reduction will be given for services shortened, modified, or skipped due
             to late arrival, lack of preparation, client delay, guest delay, venue delay, room access issues, or
             schedule changes outside Artist's control. Client-caused overtime is $100 per hour, billed in
-            30-minute increments, subject to Artist availability.
+            30-minute increments, subject to Artist availability. Artist guarantees the booked services will be
+            made available within the scheduled service window. Any service not received because a recipient was
+            late, unprepared, extended their own service, requested upgrades, or was otherwise unavailable when
+            reached is forfeited, and no refund, credit, or reduction is owed.
+          </p>
+          <p className="text-sm text-gray-700 mb-2">
+            <strong>Time allocation:</strong> Each makeup service is allotted an approximate working window based
+            on the booked look. More detailed or upgraded looks require additional time. When a recipient's service
+            extends beyond its approximate window, that additional time comes from the overall schedule, and any
+            service not reached as a result is forfeited, and no refund, credit, or reduction is owed. Artist determines time allocation using
+            professional judgment to complete as many booked services as possible.
+          </p>
+          <p className="text-sm text-gray-700 mb-2">
+            <strong>No on-site renegotiation:</strong> Any request to add, upgrade, or change a service during the
+            event is handled under this Agreement. Artist is not required to pause an in-progress service to
+            renegotiate scope, pricing, or timing. Continuing to provide a requested service does not waive any
+            term of this Agreement.
           </p>
           <div className="mb-3 border-l-4 border-black bg-gray-100 px-4 py-3 text-sm text-black">
             <p className="font-bold uppercase tracking-wide text-xs mb-1">Required Health Disclosure</p>
@@ -753,16 +802,23 @@ export default function ContractView() {
           </div>
           <p className="text-sm text-gray-700">
             <strong>General terms:</strong> This Agreement is governed by New York law. The parties will try to
-            resolve disputes informally first. Any changes must be in writing and confirmed by both parties.
+            resolve disputes informally first. Any changes must be in writing; changes to fees, refunds, credits, or services are confirmed in writing by Artist as set out in Section 4, and all other changes are confirmed by both parties.
             Electronic signatures are valid. This Agreement is the full agreement between the parties and replaces
             prior messages, quotes, or discussions. Services will be performed in accordance with applicable
             health, sanitation, legal, and venue requirements disclosed to Artist in advance.
+          </p>
+          <p className="text-sm text-gray-700 mt-3">
+            <strong>Good-faith resolution of concerns:</strong> The parties agree to raise any concerns about the
+            services directly with the other party and allow a reasonable opportunity to resolve them before
+            posting public statements or reviews. This does not prevent either party from sharing an honest
+            experience; it asks only for a good-faith attempt to resolve privately first.
           </p>
           <p className="text-sm text-gray-700 mt-3">
             By signing below, Client confirms that Client understands the non-refundable retainer, cancellation
             policy, final payment deadline, guaranteed minimum services, late/unprepared client policy, service
             limitations, allergy disclosure requirements, and no-payment-no-service rule.
           </p>
+          <ClientInitials className="mt-3" />
         </Section>
 
         {/* Section 11 */}
@@ -798,7 +854,7 @@ export default function ContractView() {
 function Section({ number, title, children }: { number: string; title: string; children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      <h2 className="font-bold text-base border-b-2 border-black pb-1 mb-3">
+      <h2 className="font-bold text-base text-black border-b-2 border-black pb-1 mb-3">
         {number}. {title}
       </h2>
       {children}

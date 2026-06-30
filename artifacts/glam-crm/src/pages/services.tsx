@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -266,10 +267,11 @@ export default function Services() {
                     <FormItem className="min-w-0 md:col-span-2 xl:col-span-3">
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Scope, limits, or contract language"
+                        <Textarea
+                          placeholder={"- Bullet point one\n- Bullet point two\n- Bullet point three"}
+                          rows={3}
                           {...field}
-                          className="crm-input-focus"
+                          className="crm-input-focus resize-y"
                         />
                       </FormControl>
                       <FormMessage />
@@ -448,11 +450,12 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
         aria-label="Service name"
       />
 
-      <Input
+      <Textarea
         value={description}
         onChange={(event) => setDescription(event.target.value)}
-        placeholder="Description or scope"
-        className="crm-input-focus h-9"
+        placeholder={"- Bullet point one\n- Bullet point two"}
+        rows={2}
+        className="crm-input-focus resize-y text-sm"
         aria-label="Description"
       />
 

@@ -724,7 +724,7 @@ export default function BookingDetail() {
                             {group.eventId ? `${group.totalQuantity} × ${group.representativeItem.name}` : `${group.totalQuantity} × ${group.representativeItem.name}`}
                           </div>
                           {group.representativeItem.description && (
-                            <div className="text-muted-foreground mt-1">
+                            <div className="text-muted-foreground mt-1 whitespace-pre-wrap">
                               {group.representativeItem.description}
                             </div>
                           )}
