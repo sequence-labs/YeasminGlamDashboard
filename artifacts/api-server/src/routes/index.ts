@@ -16,6 +16,7 @@ import calendarRouter from "./calendar";
 import leadsRouter from "./leads";
 import expensesRouter from "./expenses";
 import addonsRouter from "./addons";
+import bookingUpgradeMenuRouter from "./booking-upgrade-menu";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(calendarRouter);
 router.use(leadsRouter);
 router.use(expensesRouter);
 router.use(addonsRouter);
+router.use(bookingUpgradeMenuRouter);
 
 export default router;

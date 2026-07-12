@@ -3,11 +3,12 @@ import { useEffect } from "react";
 import {
   useGetContract,
   getGetContractQueryKey,
-  useListServiceItems,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Printer, ArrowLeft } from "lucide-react";
 import { renderDescription } from "@/lib/description";
+import { UpgradeMenuSidebar } from "@/components/booking/UpgradeMenuSidebar";
+import { useUpgradeMenuConfig } from "@/lib/upgrade-menu-config-api";
 
 function formatMoney(value: number) {
   return `$${value.toLocaleString(undefined, {
@@ -27,7 +28,7 @@ export default function UpgradeMenuView() {
   const { data: contract, isLoading } = useGetContract(id, {
     query: { enabled: !!id, queryKey: getGetContractQueryKey(id) },
   });
-  const { data: services, isLoading: servicesLoading } = useListServiceItems();
+  const { data: menuConfig, isLoading: servicesLoading } = useUpgradeMenuConfig(id);
 
   useEffect(() => {
     if (!contract) return;
@@ -66,8 +67,8 @@ export default function UpgradeMenuView() {
   const artistEmail = contract.artistEmail ?? "";
   const artistPhone = contract.artistPhone ?? "";
   const artistContact = [artistEmail, artistPhone].filter(Boolean).join(" / ");
-  const activeServices = (services ?? [])
-    .filter((s) => s.active && s.showOnUpgradeMenu)
+  const menuItems = (menuConfig?.items ?? [])
+    .filter((i) => i.included)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
@@ -86,54 +87,58 @@ export default function UpgradeMenuView() {
         </button>
       </div>
 
-      <div className="contract-print-page max-w-[820px] mx-auto px-10 py-10 print:px-8 print:py-6 font-sans">
-        {/* Header */}
-        <div className="text-center mb-8 pb-6 border-b-2 border-black">
-          <p className="text-sm uppercase tracking-[0.18em] text-gray-600">{artistBusinessName}</p>
-          <h1 className="text-2xl font-bold text-black tracking-tight uppercase mt-1 mb-1">Upgrade &amp; Add-On Menu</h1>
-          <p className="text-sm text-gray-600">Enhancements available for your event</p>
-          <p className="text-sm mt-3 max-w-2xl mx-auto">
-            Prepared for <strong>{client.name}</strong> by <strong>{artistName}</strong>. Review the available
-            add-ons below. To add any of these — before the event or on the day — your artist will send a secure
-            link where you confirm with a one-time email code. Nothing is charged until you approve in writing.
-          </p>
-        </div>
+      <div className="flex">
+        <UpgradeMenuSidebar bookingId={id} />
 
-        {/* Menu table */}
-        {activeServices.length === 0 ? (
-          <p className="text-sm text-gray-700">No add-on services are currently listed.</p>
-        ) : (
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b-2 border-black bg-gray-100">
-                <th className="py-2 px-3 font-semibold text-left">Add-On</th>
-                <th className="py-2 px-3 font-semibold text-right whitespace-nowrap">Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activeServices.map((s) => (
-                <tr key={s.id} className="border-b border-gray-200 align-top">
-                  <td className="py-2 px-3">
-                    <div className="font-medium text-black">{s.name}</div>
-                    {s.description && (
-                      <div className="mt-0.5 text-xs text-gray-600">{renderDescription(s.description)}</div>
-                    )}
-                  </td>
-                  <td className="py-2 px-3 text-right whitespace-nowrap">{rateDescription(s.defaultUnitPrice, s.unitLabel)}</td>
+        <div className="flex-1 contract-print-page max-w-[820px] mx-auto px-10 py-10 print:px-8 print:py-6 font-sans">
+          {/* Header */}
+          <div className="text-center mb-8 pb-6 border-b-2 border-black">
+            <p className="text-sm uppercase tracking-[0.18em] text-gray-600">{artistBusinessName}</p>
+            <h1 className="text-2xl font-bold text-black tracking-tight uppercase mt-1 mb-1">Upgrade &amp; Add-On Menu</h1>
+            <p className="text-sm text-gray-600">Enhancements available for your event</p>
+            <p className="text-sm mt-3 max-w-2xl mx-auto">
+              Prepared for <strong>{client.name}</strong> by <strong>{artistName}</strong>. Review the available
+              add-ons below. To add any of these — before the event or on the day — your artist will send a secure
+              link where you confirm with a one-time email code. Nothing is charged until you approve in writing.
+            </p>
+          </div>
+
+          {/* Menu table */}
+          {menuItems.length === 0 ? (
+            <p className="text-sm text-gray-700">No add-on services are currently listed.</p>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b-2 border-black bg-gray-100">
+                  <th className="py-2 px-3 font-semibold text-left">Add-On</th>
+                  <th className="py-2 px-3 font-semibold text-right whitespace-nowrap">Rate</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {menuItems.map((s) => (
+                  <tr key={s.serviceItemId} className="border-b border-gray-200 align-top">
+                    <td className="py-2 px-3">
+                      <div className="font-medium text-black">{s.name}</div>
+                      {s.description && (
+                        <div className="mt-0.5 text-xs text-gray-600">{renderDescription(s.description)}</div>
+                      )}
+                    </td>
+                    <td className="py-2 px-3 text-right whitespace-nowrap">{rateDescription(s.unitPrice, s.unitLabel)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
 
-        {/* Footer */}
-        <div className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-600">
-          <p className="mb-1">
-            <strong>How approvals work:</strong> Each approved add-on is treated as a written amendment to your
-            signed service agreement and is added to your balance. Approval requires a one-time code sent to the
-            email on file, so every add-on is confirmed by you — not added on your behalf.
-          </p>
-          {artistContact && <p className="mt-2">Questions? Contact {artistName} at {artistContact}.</p>}
+          {/* Footer */}
+          <div className="mt-8 pt-4 border-t border-gray-300 text-xs text-gray-600">
+            <p className="mb-1">
+              <strong>How approvals work:</strong> Each approved add-on is treated as a written amendment to your
+              signed service agreement and is added to your balance. Approval requires a one-time code sent to the
+              email on file, so every add-on is confirmed by you — not added on your behalf.
+            </p>
+            {artistContact && <p className="mt-2">Questions? Contact {artistName} at {artistContact}.</p>}
+          </div>
         </div>
       </div>
     </div>

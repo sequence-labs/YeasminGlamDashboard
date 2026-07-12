@@ -15,3 +15,4 @@ export * from "./payment-intents";
 export * from "./leads";
 export * from "./expenses";
 export * from "./addons";
+export * from "./booking-upgrade-menu";
