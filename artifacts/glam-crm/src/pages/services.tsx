@@ -70,7 +70,7 @@ function ServiceCatalogSection({
 
       {items.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-card-border bg-card">
-          <div className="hidden border-b border-card-border/70 bg-accent/15 px-3 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground lg:grid lg:grid-cols-[82px_minmax(150px,1.1fr)_minmax(180px,1.5fr)_88px_94px_120px_74px_78px] lg:items-center lg:gap-2">
+          <div className="hidden border-b border-card-border/70 bg-accent/15 px-3 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground lg:grid lg:grid-cols-[82px_minmax(150px,1.1fr)_minmax(180px,1.5fr)_88px_94px_120px_74px_72px_78px] lg:items-center lg:gap-2">
             <span>Type</span>
             <span>Name</span>
             <span>Description</span>
@@ -78,6 +78,7 @@ function ServiceCatalogSection({
             <span>Unit</span>
             <span>Class</span>
             <span>Status</span>
+            <span>Menu</span>
             <span className="text-right">Actions</span>
           </div>
           {items.map((item) => (
@@ -378,6 +379,7 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
   const [unitPrice, setUnitPrice] = useState(item.defaultUnitPrice.toString());
   const [unitLabel, setUnitLabel] = useState(item.unitLabel);
   const [active, setActive] = useState(item.active);
+  const [showOnUpgradeMenu, setShowOnUpgradeMenu] = useState(item.showOnUpgradeMenu);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const updateServiceItem = useUpdateServiceItem();
@@ -398,6 +400,7 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
           defaultUnitPrice: parseFloat(unitPrice) || 0,
           unitLabel,
           active,
+          showOnUpgradeMenu,
         },
       },
       {
@@ -429,7 +432,7 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
 
   return (
     <div
-      className="grid gap-2 border-b border-border p-3 last:border-b-0 lg:grid-cols-[82px_minmax(150px,1.1fr)_minmax(180px,1.5fr)_88px_94px_120px_74px_78px] lg:items-center"
+      className="grid gap-2 border-b border-border p-3 last:border-b-0 lg:grid-cols-[82px_minmax(150px,1.1fr)_minmax(180px,1.5fr)_88px_94px_120px_74px_72px_78px] lg:items-center"
       data-testid={`service-row-${item.id}`}
     >
       <div className="flex flex-wrap items-center gap-2 lg:block">
@@ -437,6 +440,7 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
           {kind === "fee" ? "Fee" : "Service"}
         </Badge>
         {!active && <Badge variant="outline">Inactive</Badge>}
+        {!showOnUpgradeMenu && <Badge variant="outline">Off menu</Badge>}
         <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground lg:hidden">
           <CircleDollarSign className="w-3.5 h-3.5" />
           {formatMoney(parseFloat(unitPrice) || 0)} per {unitLabel}
@@ -489,6 +493,14 @@ function ServiceItemRow({ item }: { item: ServiceItem }) {
       <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground lg:justify-center">
         <span className="lg:hidden">Active</span>
         <Switch checked={active} onCheckedChange={setActive} aria-label="Active" />
+      </div>
+
+      <div
+        className="flex items-center justify-between gap-2 text-sm text-muted-foreground lg:justify-center"
+        title="Show this item on the client-facing upgrade/add-on menu (PDF + portal)"
+      >
+        <span className="lg:hidden">On menu</span>
+        <Switch checked={showOnUpgradeMenu} onCheckedChange={setShowOnUpgradeMenu} aria-label="Show on upgrade menu" />
       </div>
 
       <div className="flex justify-end gap-1">

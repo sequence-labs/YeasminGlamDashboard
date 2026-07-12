@@ -9,6 +9,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BookingStatusBadge } from "@/components/BookingStatusBadge";
 import {
   AlertCircle,
   ArrowUpRight,
@@ -65,18 +66,6 @@ function formatDate(value?: string | null) {
   return value ? format(parseISO(value), "MMM d") : "TBD";
 }
 
-function statusTone(status: string) {
-  switch (status) {
-    case "completed":
-      return "border-emerald-700/15 bg-emerald-700/8 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300";
-    case "active":
-      return "border-primary/25 bg-primary/8 text-primary";
-    case "cancelled":
-      return "border-destructive/25 bg-destructive/8 text-destructive";
-    default:
-      return "border-border bg-muted/60 text-muted-foreground";
-  }
-}
 
 function paymentLabel(booking: { retainerPaid: boolean; balancePaid: boolean }) {
   if (booking.balancePaid) return "Paid in full";
@@ -312,9 +301,7 @@ export default function Dashboard() {
                 {/* Event meta */}
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={statusTone(nextUpcomingEvent.bookingStatus ?? "draft")} variant="outline">
-                      {nextUpcomingEvent.bookingStatus ?? "draft"}
-                    </Badge>
+                    <BookingStatusBadge status={nextUpcomingEvent.bookingStatus ?? "draft"} />
                     <span className="crm-eyebrow !tracking-[0.18em]">{nextUpcomingEvent.eventType ?? "Event"}</span>
                   </div>
                   <h3
@@ -527,7 +514,7 @@ export default function Dashboard() {
                         <td className="px-4 py-4 text-muted-foreground">{b.eventType}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-muted-foreground">{formatDate(b.firstServiceDate)}</td>
                         <td className="px-4 py-4">
-                          <Badge className={statusTone(b.status)} variant="outline">{b.status}</Badge>
+                          <BookingStatusBadge status={b.status} />
                         </td>
                         <td
                           className="px-4 py-4 text-right font-serif text-base text-foreground tabular-nums"
@@ -582,7 +569,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-3">
-                      <Badge className={statusTone(b.status)} variant="outline">{b.status}</Badge>
+                      <BookingStatusBadge status={b.status} />
                       <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">{paymentLabel(b)}</span>
                     </div>
                   </Link>
@@ -626,7 +613,7 @@ function MetricTile({
   return (
     <div
       data-testid={testId}
-      className={`relative overflow-hidden rounded-2xl border p-5 transition-all duration-300 ease-out
+      className={`relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 transition-all duration-300 ease-out
         ${emphasis
           ? "border-primary/20 bg-[linear-gradient(155deg,hsl(var(--accent)/0.6)_0%,hsl(var(--card))_55%)]"
           : "border-card-border bg-card"
@@ -634,8 +621,10 @@ function MetricTile({
         shadow-[0_1px_0_0_hsl(var(--card-border)/0.4),0_14px_36px_-26px_var(--elevate-3)]
         hover:-translate-y-px hover:shadow-[0_1px_0_0_hsl(var(--primary)/0.15),0_22px_46px_-28px_var(--elevate-3)]`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="crm-eyebrow">{eyebrow}</span>
+      {/* min-h reserves space for a 2-line eyebrow (e.g. "Retainers due") so the value
+          below starts at the same offset whether the label wraps or not. */}
+      <div className="flex min-h-[2.25rem] items-start justify-between gap-2">
+        <span className="crm-eyebrow leading-tight">{eyebrow}</span>
         <Icon
           className={`h-4 w-4 shrink-0 ${emphasis ? "text-primary" : "text-muted-foreground"}`}
           strokeWidth={1.5}
@@ -647,7 +636,9 @@ function MetricTile({
       >
         {value}
       </div>
-      <div className="mt-2 text-[12.5px] text-muted-foreground">{detail}</div>
+      {/* mt-auto pins the detail line to the card's bottom edge regardless of how much
+          vertical space the eyebrow/value took above it, so it lines up across the row. */}
+      <div className="mt-auto pt-2 text-[12.5px] text-muted-foreground">{detail}</div>
       {emphasis && (
         <span
           aria-hidden

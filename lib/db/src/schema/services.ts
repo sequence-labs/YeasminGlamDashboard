@@ -12,6 +12,10 @@ export const serviceItemsTable = pgTable("service_items", {
   defaultUnitPrice: numeric("default_unit_price", { precision: 10, scale: 2 }).notNull().default("0"),
   unitLabel: text("unit_label").notNull().default("person"),
   active: boolean("active").notNull().default(true),
+  // Controls whether this item appears on the client-facing upgrade/add-on menu (PDF +
+  // portal). Independent of `active` — a service can stay bookable in intake while being
+  // hidden from the browsable menu, or vice versa.
+  showOnUpgradeMenu: boolean("show_on_upgrade_menu").notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

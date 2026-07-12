@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BookingStatusBadge } from "@/components/BookingStatusBadge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,18 +55,6 @@ const statusOptions = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-function statusTone(status: string) {
-  switch (status) {
-    case "completed":
-      return "border-emerald-700/15 bg-emerald-700/8 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300";
-    case "active":
-      return "border-primary/25 bg-primary/8 text-primary";
-    case "cancelled":
-      return "border-destructive/25 bg-destructive/8 text-destructive";
-    default:
-      return "border-border bg-muted/60 text-muted-foreground";
-  }
-}
 
 export default function Bookings() {
   const [showDeleted, setShowDeleted] = useState(false);
@@ -292,9 +281,7 @@ export default function Bookings() {
                           <h3 className="text-[1.125rem] font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
                             {booking.clientName}
                           </h3>
-                          <Badge className={statusTone(booking.status)} variant="outline">
-                            {booking.status}
-                          </Badge>
+                          <BookingStatusBadge status={booking.status} />
                           {booking.deletedAt && (
                             <Badge variant="destructive">Deleted</Badge>
                           )}

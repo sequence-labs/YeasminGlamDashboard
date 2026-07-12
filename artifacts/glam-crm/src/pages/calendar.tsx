@@ -12,8 +12,10 @@ import {
 import {
   getGetCalendarFeedTokenQueryKey,
   useGetCalendarFeedToken,
+  useListBookings,
   useListCalendarEvents,
   useRotateCalendarFeedToken,
+  type Booking,
   type CalendarEvent,
 } from "@workspace/api-client-react";
 import {
@@ -27,13 +29,50 @@ import {
   parseISO,
   startOfMonth,
   startOfWeek,
+  subDays,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Copy, Download, ExternalLink, RotateCw } from "lucide-react";
-import { Link } from "wouter";
+import { CalendarPlus, ChevronLeft, ChevronRight, CircleDollarSign, Copy, Download, RotateCw } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { apiBaseUrl } from "@/lib/api-base";
 
 type ViewMode = "month" | "week" | "day";
+
+type PaymentDue = { bookingId: number; clientName: string; eventType: string; date: string; balanceDue: number };
+
+function money(n: number) {
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })}`;
+}
+
+// Derives a payment-due marker for a booking (mirrors the ICS feed): the balance is due on
+// the explicit balanceDueDate, or the day before the first service, and only shown while
+// the balance is still outstanding. Returns null when there's nothing to remind about.
+function derivePaymentDue(b: Booking): PaymentDue | null {
+  if (b.deletedAt || b.status === "cancelled" || b.balancePaid) return null;
+  const ymd = /^\d{4}-\d{2}-\d{2}$/;
+  let date: string | null = null;
+  if (b.balanceDueDate && ymd.test(b.balanceDueDate)) date = b.balanceDueDate;
+  else if (b.firstServiceDate && ymd.test(b.firstServiceDate)) date = format(subDays(parseISO(b.firstServiceDate), 1), "yyyy-MM-dd");
+  if (!date) return null;
+  const balanceDue = Math.max(0, Number(b.grandTotal) - (b.retainerPaid ? Number(b.retainerAmount) : 0));
+  return { bookingId: b.id, clientName: b.clientName, eventType: b.eventType, date, balanceDue };
+}
+
+function PaymentPill({ p, onOpen }: { p: PaymentDue; onOpen: (id: number) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(p.bookingId)}
+      title={`Balance due ${money(p.balanceDue)} — ${p.clientName}`}
+      className="flex w-full items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-1 text-left text-[11px] font-medium text-amber-700 transition-colors hover:bg-amber-500/20 dark:text-amber-300"
+    >
+      <CircleDollarSign className="h-3 w-3 shrink-0" />
+      <span className="truncate">{p.clientName}</span>
+      <span className="ml-auto shrink-0 tabular-nums opacity-80">{money(p.balanceDue)}</span>
+    </button>
+  );
+}
 
 export default function CalendarPage() {
   const [cursor, setCursor] = React.useState(() => startOfMonth(new Date()));
@@ -64,6 +103,9 @@ export default function CalendarPage() {
     start: format(range.start, "yyyy-MM-dd"),
     end: format(range.end, "yyyy-MM-dd"),
   });
+  const { data: bookings = [] } = useListBookings();
+  const [, setLocation] = useLocation();
+  const openBooking = React.useCallback((id: number) => setLocation(`/bookings/${id}`), [setLocation]);
 
   const byDate = React.useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
@@ -74,6 +116,17 @@ export default function CalendarPage() {
     }
     return map;
   }, [events]);
+
+  const paymentsByDate = React.useMemo(() => {
+    const map = new Map<string, PaymentDue[]>();
+    for (const b of bookings) {
+      const p = derivePaymentDue(b);
+      if (!p) continue;
+      if (!map.has(p.date)) map.set(p.date, []);
+      map.get(p.date)!.push(p);
+    }
+    return map;
+  }, [bookings]);
 
   const days = React.useMemo(() => {
     const result: Date[] = [];
@@ -154,11 +207,11 @@ export default function CalendarPage() {
               <Skeleton className="h-96 w-full" />
             </div>
           ) : view === "month" ? (
-            <MonthGrid cursor={cursor} days={days} byDate={byDate} onSelect={setSelectedEvent} />
+            <MonthGrid cursor={cursor} days={days} byDate={byDate} paymentsByDate={paymentsByDate} onSelect={setSelectedEvent} onOpenBooking={openBooking} />
           ) : view === "week" ? (
-            <WeekView days={days} byDate={byDate} onSelect={setSelectedEvent} />
+            <WeekView days={days} byDate={byDate} paymentsByDate={paymentsByDate} onSelect={setSelectedEvent} onOpenBooking={openBooking} />
           ) : (
-            <DayView day={cursor} events={byDate.get(format(cursor, "yyyy-MM-dd")) || []} onSelect={setSelectedEvent} />
+            <DayView day={cursor} events={byDate.get(format(cursor, "yyyy-MM-dd")) || []} payments={paymentsByDate.get(format(cursor, "yyyy-MM-dd")) || []} onSelect={setSelectedEvent} onOpenBooking={openBooking} />
           )}
         </div>
       </div>
@@ -173,12 +226,16 @@ function MonthGrid({
   cursor,
   days,
   byDate,
+  paymentsByDate,
   onSelect,
+  onOpenBooking,
 }: {
   cursor: Date;
   days: Date[];
   byDate: Map<string, CalendarEvent[]>;
+  paymentsByDate: Map<string, PaymentDue[]>;
   onSelect: (e: CalendarEvent) => void;
+  onOpenBooking: (id: number) => void;
 }) {
   return (
     <div className="grid grid-cols-7 border-t border-card-border/40 text-xs">
@@ -190,6 +247,10 @@ function MonthGrid({
       {days.map((day) => {
         const key = format(day, "yyyy-MM-dd");
         const events = byDate.get(key) || [];
+        const payments = paymentsByDate.get(key) || [];
+        const shownEvents = events.slice(0, 3);
+        const shownPayments = payments.slice(0, 2);
+        const overflow = events.length - shownEvents.length + (payments.length - shownPayments.length);
         const inMonth = isSameMonth(day, cursor);
         const today = isSameDay(day, new Date());
         return (
@@ -203,7 +264,7 @@ function MonthGrid({
               {format(day, "d")}
             </div>
             <ul className="mt-1 space-y-1">
-              {events.slice(0, 3).map((ev) => (
+              {shownEvents.map((ev) => (
                 <li key={`${ev.eventId}-${ev.bookingId}`}>
                   <button
                     type="button"
@@ -217,8 +278,13 @@ function MonthGrid({
                   </button>
                 </li>
               ))}
-              {events.length > 3 && (
-                <li className="px-1 text-[10px] text-muted-foreground">+{events.length - 3} more</li>
+              {shownPayments.map((p) => (
+                <li key={`pay-${p.bookingId}`}>
+                  <PaymentPill p={p} onOpen={onOpenBooking} />
+                </li>
+              ))}
+              {overflow > 0 && (
+                <li className="px-1 text-[10px] text-muted-foreground">+{overflow} more</li>
               )}
             </ul>
           </div>
@@ -231,17 +297,22 @@ function MonthGrid({
 function WeekView({
   days,
   byDate,
+  paymentsByDate,
   onSelect,
+  onOpenBooking,
 }: {
   days: Date[];
   byDate: Map<string, CalendarEvent[]>;
+  paymentsByDate: Map<string, PaymentDue[]>;
   onSelect: (e: CalendarEvent) => void;
+  onOpenBooking: (id: number) => void;
 }) {
   return (
     <div className="grid grid-cols-7">
       {days.map((day) => {
         const key = format(day, "yyyy-MM-dd");
         const events = byDate.get(key) || [];
+        const payments = paymentsByDate.get(key) || [];
         const today = isSameDay(day, new Date());
         return (
           <div key={key} className="min-h-[400px] border-r border-card-border/40 p-3">
@@ -267,6 +338,11 @@ function WeekView({
                   </button>
                 </li>
               ))}
+              {payments.map((p) => (
+                <li key={`pay-${p.bookingId}`}>
+                  <PaymentPill p={p} onOpen={onOpenBooking} />
+                </li>
+              ))}
             </ul>
           </div>
         );
@@ -278,11 +354,15 @@ function WeekView({
 function DayView({
   day,
   events,
+  payments,
   onSelect,
+  onOpenBooking,
 }: {
   day: Date;
   events: CalendarEvent[];
+  payments: PaymentDue[];
   onSelect: (e: CalendarEvent) => void;
+  onOpenBooking: (id: number) => void;
 }) {
   return (
     <div className="p-6">
@@ -292,28 +372,49 @@ function DayView({
       </div>
       <div className="crm-gold-rule mt-4 w-16" />
       <ul className="mt-6 space-y-3">
-        {events.length === 0 ? (
+        {events.length === 0 && payments.length === 0 ? (
           <li className="text-sm text-muted-foreground">Nothing scheduled.</li>
         ) : (
-          events.map((ev) => (
-            <li key={`${ev.eventId}-${ev.bookingId}`}>
-              <button
-                type="button"
-                onClick={() => onSelect(ev)}
-                className="grid w-full grid-cols-[120px_minmax(0,1fr)] gap-4 rounded-xl border border-card-border bg-card p-4 text-left transition-colors hover:border-primary/30"
-              >
-                <div className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                  {ev.servicesBegin || "—"}
-                </div>
-                <div>
-                  <div className="font-serif text-lg text-foreground" style={{ fontVariationSettings: "'opsz' 48" }}>
-                    {ev.clientName}
+          <>
+            {events.map((ev) => (
+              <li key={`${ev.eventId}-${ev.bookingId}`}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(ev)}
+                  className="grid w-full grid-cols-[120px_minmax(0,1fr)] gap-4 rounded-xl border border-card-border bg-card p-4 text-left transition-colors hover:border-primary/30"
+                >
+                  <div className="text-sm font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    {ev.servicesBegin || "—"}
                   </div>
-                  <div className="text-xs text-muted-foreground">{ev.eventName} · {ev.location}</div>
-                </div>
-              </button>
-            </li>
-          ))
+                  <div>
+                    <div className="font-serif text-lg text-foreground" style={{ fontVariationSettings: "'opsz' 48" }}>
+                      {ev.clientName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{ev.eventName} · {ev.location}</div>
+                  </div>
+                </button>
+              </li>
+            ))}
+            {payments.map((p) => (
+              <li key={`pay-${p.bookingId}`}>
+                <button
+                  type="button"
+                  onClick={() => onOpenBooking(p.bookingId)}
+                  className="grid w-full grid-cols-[120px_minmax(0,1fr)] gap-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-left transition-colors hover:border-amber-500/50"
+                >
+                  <div className="flex items-center gap-1.5 text-sm font-medium uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                    <CircleDollarSign className="h-4 w-4" /> Due
+                  </div>
+                  <div>
+                    <div className="font-serif text-lg text-foreground" style={{ fontVariationSettings: "'opsz' 48" }}>
+                      {money(p.balanceDue)} balance
+                    </div>
+                    <div className="text-xs text-muted-foreground">{p.clientName} · {p.eventType} · Booking #{p.bookingId}</div>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </>
         )}
       </ul>
     </div>
@@ -347,11 +448,22 @@ function EventDetailDialog({ event, onClose }: { event: CalendarEvent | null; on
   );
 }
 
+// Builds an absolute, subscribable feed URL from the token. In production apiBaseUrl is the
+// API's absolute origin; in local dev it's empty, so we fall back to the current window
+// origin (which proxies /api to the API server — reachable from any device on the same Wi-Fi).
+function buildFeedUrls(token: string) {
+  const base = (apiBaseUrl || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/+$/, "");
+  const httpUrl = `${base}/api/public/calendar/${token}.ics`;
+  const webcalUrl = httpUrl.replace(/^https?:\/\//i, "webcal://");
+  return { httpUrl, webcalUrl };
+}
+
 function FeedDialog({ open, onOpenChange, toast }: { open: boolean; onOpenChange: (v: boolean) => void; toast: ReturnType<typeof useToast>["toast"] }) {
   const { data, refetch } = useGetCalendarFeedToken({
     query: { enabled: open, queryKey: getGetCalendarFeedTokenQueryKey() },
   });
   const rotate = useRotateCalendarFeedToken();
+  const urls = data ? buildFeedUrls(data.token) : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -362,41 +474,60 @@ function FeedDialog({ open, onOpenChange, toast }: { open: boolean; onOpenChange
             Sync to Apple, Google, or Outlook
           </DialogTitle>
           <DialogDescription>
-            Paste this URL into your calendar app's "Subscribe to calendar" — it stays in sync automatically.
+            Subscribe once and every booking, trial, and session stays in sync automatically — new events
+            and changes appear on their own.
           </DialogDescription>
         </DialogHeader>
-        {data && (
-          <div className="space-y-3">
-            <code className="block break-all rounded-lg border border-card-border bg-muted/40 p-3 text-xs">{data.url}</code>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(data.url);
-                  toast({ title: "Feed URL copied" });
-                }}
-              >
-                <Copy className="h-4 w-4" /> Copy URL
-              </Button>
-              <Button asChild variant="outline">
-                <a href={data.url} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-4 w-4" /> Open
-                </a>
-              </Button>
-              <Button
-                variant="ghost"
-                disabled={rotate.isPending}
-                onClick={() =>
-                  rotate.mutate(undefined, {
-                    onSuccess: () => {
-                      refetch();
-                      toast({ title: "Feed token rotated", description: "Old URL is no longer valid." });
-                    },
-                  })
-                }
-              >
-                <RotateCw className="h-4 w-4" /> Rotate token
-              </Button>
+        {urls && (
+          <div className="space-y-4">
+            <Button asChild className="w-full">
+              <a href={urls.webcalUrl}>
+                <CalendarPlus className="h-4 w-4" /> Add to Apple Calendar
+              </a>
+            </Button>
+
+            <div className="space-y-2">
+              <span className="crm-eyebrow !text-[10px]">Or paste this link into any calendar app</span>
+              <code className="block break-all rounded-lg border border-card-border bg-muted/40 p-3 text-xs">{urls.httpUrl}</code>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(urls.httpUrl);
+                    toast({ title: "Feed URL copied" });
+                  }}
+                >
+                  <Copy className="h-4 w-4" /> Copy URL
+                </Button>
+                <Button asChild variant="outline" size="sm">
+                  <a href={urls.httpUrl} target="_blank" rel="noreferrer" download="glam-calendar.ics">
+                    <Download className="h-4 w-4" /> Download .ics
+                  </a>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={rotate.isPending}
+                  onClick={() =>
+                    rotate.mutate(undefined, {
+                      onSuccess: () => {
+                        refetch();
+                        toast({ title: "Feed link reset", description: "The old link no longer works." });
+                      },
+                    })
+                  }
+                >
+                  <RotateCw className="h-4 w-4" /> Reset link
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-card-border/70 bg-accent/20 p-3 text-xs leading-relaxed text-muted-foreground">
+              <span className="font-medium text-foreground/80">On iPhone:</span> tap “Add to Apple Calendar,” or go
+              to Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar and paste the link.
+              Keep the studio’s network reachable for updates — the deployed link syncs from anywhere; this local
+              link syncs while your phone is on the same Wi-Fi.
             </div>
           </div>
         )}

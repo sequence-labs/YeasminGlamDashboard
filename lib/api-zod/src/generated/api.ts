@@ -109,6 +109,7 @@ export const ListServiceItemsResponseItem = zod.object({
   "defaultUnitPrice": zod.number(),
   "unitLabel": zod.string().describe('e.g. person, event, booking, hour'),
   "active": zod.boolean(),
+  "showOnUpgradeMenu": zod.boolean().describe('Whether this item appears on the client-facing upgrade\/add-on menu (PDF + portal), independent of `active`.'),
   "sortOrder": zod.number(),
   "createdAt": zod.string()
 })
@@ -129,6 +130,7 @@ export const CreateServiceItemBody = zod.object({
   "defaultUnitPrice": zod.number(),
   "unitLabel": zod.string().min(1),
   "active": zod.boolean().optional(),
+  "showOnUpgradeMenu": zod.boolean().optional(),
   "sortOrder": zod.number().optional()
 })
 
@@ -150,6 +152,7 @@ export const UpdateServiceItemBody = zod.object({
   "defaultUnitPrice": zod.number().optional(),
   "unitLabel": zod.string().optional(),
   "active": zod.boolean().optional(),
+  "showOnUpgradeMenu": zod.boolean().optional(),
   "sortOrder": zod.number().optional()
 })
 
@@ -161,6 +164,7 @@ export const UpdateServiceItemResponse = zod.object({
   "defaultUnitPrice": zod.number(),
   "unitLabel": zod.string().describe('e.g. person, event, booking, hour'),
   "active": zod.boolean(),
+  "showOnUpgradeMenu": zod.boolean().describe('Whether this item appears on the client-facing upgrade\/add-on menu (PDF + portal), independent of `active`.'),
   "sortOrder": zod.number(),
   "createdAt": zod.string()
 })

@@ -43,8 +43,9 @@ import { Switch } from "@/components/ui/switch";
 import { useLocation } from "wouter";
 import { TimePartsInput } from "@/components/TimePartsInput";
 import { BookingPortalShareDialog } from "@/components/booking/BookingPortalShareDialog";
-import { BookingEmailDialog } from "@/components/booking/BookingEmailDialog";
 import { BookingPaymentLinksCard } from "@/components/booking/BookingPaymentLinksCard";
+import { BookingAddonsSection } from "@/components/booking/BookingAddonsSection";
+import { useAddonRequests } from "@/lib/addons-api";
 
 function lineItemAmount(item: BookingLineItem) {
   return item.total ?? item.quantity * item.unitPrice;
@@ -91,6 +92,8 @@ export default function BookingDetail() {
   const updateEvent = useUpdateEvent();
   const { data: serviceItems, isLoading: loadingServiceItems } = useListServiceItems();
   const { data: contractTemplates } = useListContractTemplates();
+  const { data: addonData } = useAddonRequests(id);
+  const approvedAddonsTotal = addonData?.approvedAddonsTotal ?? 0;
   const createLineItem = useCreateBookingLineItem();
   const updateLineItem = useUpdateBookingLineItem();
   const deleteLineItem = useDeleteBookingLineItem();
@@ -197,7 +200,9 @@ export default function BookingDetail() {
   const effectiveGrandTotal = eventsTotal + lineItemsTotal + earlyMorningFee + travelFee;
   const effectiveRetainerAmount = effectiveGrandTotal * 0.25;
   const effectiveRetainerCredit = booking?.retainerPaid ? effectiveRetainerAmount : 0;
-  const effectiveBalanceDue = Math.max(0, effectiveGrandTotal - effectiveRetainerCredit);
+  // Approved add-ons are billed at 100% as amendments — they raise the balance but never
+  // the retainer (the retainer is the deposit on the original booking only).
+  const effectiveBalanceDue = Math.max(0, effectiveGrandTotal - effectiveRetainerCredit) + approvedAddonsTotal;
   const displayedLineItemGroups = useMemo(() => {
     return groupedLineItems.flatMap((group) => {
       if (!expandedLineItemGroupKeys.includes(group.key)) {
@@ -547,11 +552,6 @@ export default function BookingDetail() {
                 </Link>
               </Button>
               <BookingPortalShareDialog bookingId={id} />
-              <BookingEmailDialog
-                bookingId={id}
-                clientId={booking.clientId}
-                clientEmail={booking.clientEmail}
-              />
               {booking.signedAt && (
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full border border-emerald-700/25 bg-emerald-700/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300"
@@ -841,6 +841,8 @@ export default function BookingDetail() {
                 </div>
               ) : null}
             </div>
+
+            <BookingAddonsSection bookingId={id} serviceItems={serviceItems ?? []} />
           </TabsContent>
 
           <TabsContent value="financials" className="space-y-6 mt-6">
@@ -848,7 +850,7 @@ export default function BookingDetail() {
               bookingId={id}
               clientName={booking.clientName}
               retainerAmount={Number(effectiveRetainerAmount) || 0}
-              balanceDue={Math.max(0, Number(booking.grandTotal) - Number(effectiveRetainerAmount) - (booking.payments?.reduce((s: number, p: any) => s + Number(p.amount), 0) ?? 0))}
+              balanceDue={Math.max(0, Number(booking.grandTotal) - Number(effectiveRetainerAmount) - (booking.payments?.reduce((s: number, p: any) => s + Number(p.amount), 0) ?? 0)) + approvedAddonsTotal}
               eventName={booking.events?.[0]?.eventName || booking.eventType}
             />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -969,6 +971,12 @@ export default function BookingDetail() {
                         <div className="flex justify-between text-muted-foreground">
                           <span>Retainer Paid</span>
                           <span>-{formatMoney(effectiveRetainerAmount)}</span>
+                        </div>
+                      ) : null}
+                      {approvedAddonsTotal > 0 ? (
+                        <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                          <span>Approved add-ons</span>
+                          <span data-testid="text-approved-addons">+{formatMoney(approvedAddonsTotal)}</span>
                         </div>
                       ) : null}
                       <div className="flex justify-between font-medium">

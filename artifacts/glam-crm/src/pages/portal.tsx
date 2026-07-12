@@ -115,10 +115,7 @@ export default function PortalPage() {
           <h2 className="crm-section-title mt-1">Contract</h2>
         </div>
         <div className="px-6 py-6">
-          <div
-            className="prose prose-sm max-w-none whitespace-pre-wrap text-sm leading-relaxed text-foreground/90"
-            dangerouslySetInnerHTML={{ __html: data.contractTemplate.body }}
-          />
+          <ContractBody body={data.contractTemplate.body} />
         </div>
       </section>
 
@@ -222,6 +219,66 @@ function SignatureSection({ token }: { token: string }) {
         </div>
       </form>
     </section>
+  );
+}
+
+const CONTRACT_CLAUSE_LABELS: Record<string, string> = {
+  intro: "Agreement",
+  schedule: "Schedule",
+  pricing: "Pricing",
+  payment: "Payment & Retainer",
+  scope: "Scope of Services",
+  responsibilities: "Client Responsibilities",
+  limitations: "Service Limitations",
+  cancellation: "Cancellation & Rescheduling",
+  emergency: "Emergencies & Substitutions",
+  general: "General Terms",
+  signatures: "Acknowledgement",
+};
+
+function clauseLabel(key: string): string {
+  if (CONTRACT_CLAUSE_LABELS[key]) return CONTRACT_CLAUSE_LABELS[key];
+  const spaced = key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+// Renders the contract template body as clean, readable text. The body is stored
+// as a JSON document ({ clauses: { key: text } }); parse it and render each clause
+// as a titled block. Falls back to safe plain text for any non-JSON body. Display
+// only — this is not a signing surface, and intentionally avoids dangerouslySetInnerHTML.
+function ContractBody({ body }: { body: string }) {
+  const clauses = React.useMemo<[string, string][] | null>(() => {
+    if (!body?.trim()) return null;
+    try {
+      const parsed = JSON.parse(body);
+      const raw = parsed?.clauses;
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        const entries = Object.entries(raw).filter(
+          ([, v]) => typeof v === "string" && (v as string).trim().length > 0,
+        ) as [string, string][];
+        if (entries.length > 0) return entries;
+      }
+    } catch {
+      // not JSON — fall through to plain-text rendering below
+    }
+    return null;
+  }, [body]);
+
+  if (!clauses) {
+    return (
+      <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{body}</div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {clauses.map(([key, text]) => (
+        <div key={key}>
+          <h3 className="crm-eyebrow !text-[10px]">{clauseLabel(key)}</h3>
+          <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{text}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -1688,7 +1688,7 @@ components:
 
     ServiceItem:
       type: object
-      required: [id, name, kind, defaultUnitPrice, unitLabel, active, sortOrder, createdAt]
+      required: [id, name, kind, defaultUnitPrice, unitLabel, active, showOnUpgradeMenu, sortOrder, createdAt]
       properties:
         id:
           type: integer
@@ -1706,6 +1706,9 @@ components:
           description: "e.g. person, event, booking, hour"
         active:
           type: boolean
+        showOnUpgradeMenu:
+          type: boolean
+          description: "Whether this item appears on the client-facing upgrade/add-on menu (PDF + portal), independent of `active`."
         sortOrder:
           type: integer
         createdAt:
@@ -1730,6 +1733,8 @@ components:
           minLength: 1
         active:
           type: boolean
+        showOnUpgradeMenu:
+          type: boolean
         sortOrder:
           type: integer
 
@@ -1749,6 +1754,8 @@ components:
         unitLabel:
           type: string
         active:
+          type: boolean
+        showOnUpgradeMenu:
           type: boolean
         sortOrder:
           type: integer

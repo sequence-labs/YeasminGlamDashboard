@@ -15,6 +15,7 @@ import paymentIntentsRouter from "./payment-intents";
 import calendarRouter from "./calendar";
 import leadsRouter from "./leads";
 import expensesRouter from "./expenses";
+import addonsRouter from "./addons";
 
 const router: IRouter = Router();
 
@@ -34,5 +35,6 @@ router.use(paymentIntentsRouter);
 router.use(calendarRouter);
 router.use(leadsRouter);
 router.use(expensesRouter);
+router.use(addonsRouter);
 
 export default router;

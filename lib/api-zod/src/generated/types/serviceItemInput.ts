@@ -16,5 +16,6 @@ export interface ServiceItemInput {
   /** @minLength 1 */
   unitLabel: string;
   active?: boolean;
+  showOnUpgradeMenu?: boolean;
   sortOrder?: number;
 }

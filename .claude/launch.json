@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Glam CRM (Frontend)",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "PORT=5173 pnpm --filter @workspace/glam-crm run dev"],
+      "port": 5173,
+      "autoPort": false
+    },
+    {
+      "name": "API Server",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "GLAM_ADMIN_PASSWORD= GLAM_SESSION_SECRET= PORT=8787 pnpm --filter @workspace/api-server run dev"],
+      "port": 8787,
+      "autoPort": false
+    }
+  ]
+}

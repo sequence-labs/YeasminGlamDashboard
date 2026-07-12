@@ -30,21 +30,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BookingStatusBadge } from "@/components/BookingStatusBadge";
 import { format, parseISO } from "date-fns";
 import { useLocation } from "wouter";
-
-function statusTone(status: string) {
-  switch (status) {
-    case "completed":
-      return "border-emerald-700/15 bg-emerald-700/8 text-emerald-700 dark:border-emerald-400/25 dark:bg-emerald-400/10 dark:text-emerald-300";
-    case "active":
-      return "border-primary/25 bg-primary/8 text-primary";
-    case "cancelled":
-      return "border-destructive/25 bg-destructive/8 text-destructive";
-    default:
-      return "border-border bg-muted/60 text-muted-foreground";
-  }
-}
 
 function monogramFrom(name: string) {
   const trimmed = name.trim();
@@ -371,9 +359,7 @@ export default function ClientDetail() {
                             <span className="text-[15px] font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
                               {booking.eventType}
                             </span>
-                            <Badge className={statusTone(booking.status)} variant="outline">
-                              {booking.status}
-                            </Badge>
+                            <BookingStatusBadge status={booking.status} />
                           </div>
                           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12.5px] text-muted-foreground">
                             <span>

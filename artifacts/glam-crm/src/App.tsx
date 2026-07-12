@@ -20,13 +20,20 @@ import ContractTemplates from "@/pages/contract-templates";
 import CalendarPage from "@/pages/calendar";
 import ExpensesPage from "@/pages/expenses";
 import PortalPage from "@/pages/portal";
+import AddonApprovalPage from "@/pages/addon-approval";
+import AddonMenuPage from "@/pages/addon-menu";
+import UpgradeMenuView from "@/pages/upgrade-menu-view";
 
 const queryClient = new QueryClient();
+
+const PUBLIC_PATH_PREFIXES = ["/p/", "/a/", "/a-menu/"];
 
 function PublicSwitch() {
   return (
     <Switch>
       <Route path="/p/:token" component={PortalPage} />
+      <Route path="/a/:token" component={AddonApprovalPage} />
+      <Route path="/a-menu/:shareToken" component={AddonMenuPage} />
     </Switch>
   );
 }
@@ -43,8 +50,9 @@ function AppRoutes() {
       <Route path="/bookings" component={Bookings} />
       <Route path="/bookings/new" component={NewBooking} />
       <Route path="/bookings/:id/edit" component={EditBooking} />
-      <Route path="/bookings/:id" component={BookingDetail} />
       <Route path="/bookings/:id/contract" component={ContractRoute} />
+      <Route path="/bookings/:id/upgrade-menu" component={UpgradeMenuView} />
+      <Route path="/bookings/:id" component={BookingDetail} />
 
       <Route path="/services" component={Services} />
       <Route path="/artist" component={Artist} />
@@ -61,7 +69,7 @@ function AppRoutes() {
 function PublicGate({ children }: { children: React.ReactNode }) {
   if (typeof window === "undefined") return <>{children}</>;
   const path = window.location.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ""), "");
-  if (path.startsWith("/p/")) {
+  if (PUBLIC_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
     return (
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <PublicSwitch />

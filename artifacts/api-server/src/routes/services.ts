@@ -130,6 +130,7 @@ router.post("/services", async (req, res): Promise<void> => {
     defaultUnitPrice: parsed.data.defaultUnitPrice.toFixed(2),
     unitLabel: parsed.data.unitLabel,
     active: parsed.data.active ?? true,
+    showOnUpgradeMenu: parsed.data.showOnUpgradeMenu ?? true,
     sortOrder: parsed.data.sortOrder ?? 0,
   }).returning();
 
@@ -156,6 +157,7 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
   if (parsed.data.defaultUnitPrice !== undefined) updateData.defaultUnitPrice = parsed.data.defaultUnitPrice.toFixed(2);
   if (parsed.data.unitLabel !== undefined) updateData.unitLabel = parsed.data.unitLabel;
   if (parsed.data.active !== undefined) updateData.active = parsed.data.active;
+  if (parsed.data.showOnUpgradeMenu !== undefined) updateData.showOnUpgradeMenu = parsed.data.showOnUpgradeMenu;
   if (parsed.data.sortOrder !== undefined) updateData.sortOrder = parsed.data.sortOrder;
 
   const [item] = await db

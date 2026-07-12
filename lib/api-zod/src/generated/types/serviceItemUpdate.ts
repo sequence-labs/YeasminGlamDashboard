@@ -16,5 +16,6 @@ export interface ServiceItemUpdate {
   defaultUnitPrice?: number;
   unitLabel?: string;
   active?: boolean;
+  showOnUpgradeMenu?: boolean;
   sortOrder?: number;
 }

@@ -14,3 +14,4 @@ export * from "./scheduling";
 export * from "./payment-intents";
 export * from "./leads";
 export * from "./expenses";
+export * from "./addons";

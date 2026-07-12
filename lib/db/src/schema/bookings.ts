@@ -25,6 +25,7 @@ export const bookingsTable = pgTable("bookings", {
   lifecycleStage: text("lifecycle_stage").notNull().default("lead"),
   signedAt: timestamp("signed_at"),
   signedByName: text("signed_by_name"),
+  docusignEnvelopeId: text("docusign_envelope_id"),
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

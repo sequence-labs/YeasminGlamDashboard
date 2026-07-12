@@ -57,6 +57,8 @@ export interface ServiceItem {
   /** e.g. person, event, booking, hour */
   unitLabel: string;
   active: boolean;
+  /** Whether this item appears on the client-facing upgrade/add-on menu (PDF + portal), independent of `active`. */
+  showOnUpgradeMenu: boolean;
   sortOrder: number;
   createdAt: string;
 }
@@ -78,6 +80,7 @@ export interface ServiceItemInput {
   /** @minLength 1 */
   unitLabel: string;
   active?: boolean;
+  showOnUpgradeMenu?: boolean;
   sortOrder?: number;
 }
 
@@ -98,6 +101,7 @@ export interface ServiceItemUpdate {
   defaultUnitPrice?: number;
   unitLabel?: string;
   active?: boolean;
+  showOnUpgradeMenu?: boolean;
   sortOrder?: number;
 }
 
