@@ -752,7 +752,7 @@ export default function BookingDetail() {
                             <SelectItem value="booking">Booking-level</SelectItem>
                             {booking.events.map((event) => (
                               <SelectItem key={event.id} value={String(event.id)}>
-                                {event.eventName}
+                                {event.eventName} · {format(parseISO(event.eventDate), "MMM d, yyyy")}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1067,7 +1067,7 @@ function LineItemDialog({
   trigger,
 }: {
   bookingId: number;
-  events: Array<{ id: number; eventName: string }>;
+  events: Array<{ id: number; eventName: string; eventDate: string }>;
   lineItem?: BookingLineItem;
   defaultKind?: "service" | "fee";
   defaultSortOrder?: number;
@@ -1254,7 +1254,7 @@ function LineItemDialog({
                     <SelectItem value="booking">Booking-level</SelectItem>
                     {events.map((event) => (
                       <SelectItem key={event.id} value={String(event.id)}>
-                        {event.eventName}
+                        {event.eventName} · {format(parseISO(event.eventDate), "MMM d, yyyy")}
                       </SelectItem>
                     ))}
                   </SelectContent>
