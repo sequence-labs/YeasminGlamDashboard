@@ -97,9 +97,7 @@ export default function BookingDetail() {
   const createLineItem = useCreateBookingLineItem();
   const updateLineItem = useUpdateBookingLineItem();
   const deleteLineItem = useDeleteBookingLineItem();
-  const [selectedServiceItemId, setSelectedServiceItemId] = useState("");
   const [mutatingGroupKey, setMutatingGroupKey] = useState<string | null>(null);
-  const [queuedSplitLineItemIds, setQueuedSplitLineItemIds] = useState<number[]>([]);
   const [expandedLineItemGroupKeys, setExpandedLineItemGroupKeys] = useState<string[]>([]);
   const [draggedEventId, setDraggedEventId] = useState<number | null>(null);
   const [draggedLineItemGroupKey, setDraggedLineItemGroupKey] = useState<string | null>(null);
@@ -145,7 +143,6 @@ export default function BookingDetail() {
   const earlyMorningFee = booking?.earlyMorningFee ?? 0;
   const travelFee = booking?.travelFee ?? 0;
   const activeServiceItems = serviceItems?.filter((item) => item.active) ?? [];
-  const selectedServiceItem = activeServiceItems.find((item) => item.id.toString() === selectedServiceItemId);
   const groupedLineItems = useMemo(() => {
     const groups = new Map<string, GroupedLineItem>();
     if (!booking) {
@@ -248,30 +245,33 @@ export default function BookingDetail() {
     );
   }
 
-  const handleAddCatalogLineItem = () => {
-    if (!selectedServiceItem) return;
-
+  const handleAddCatalogLineItem = (
+    serviceItem: ServiceItem,
+    eventId: number | null,
+    onDone?: () => void,
+  ) => {
     createLineItem.mutate({
       id,
       data: {
-        serviceItemId: selectedServiceItem.id,
-        name: selectedServiceItem.name,
-        description: optionalText(selectedServiceItem.description),
-        kind: selectedServiceItem.kind,
+        serviceItemId: serviceItem.id,
+        eventId: eventId ?? undefined,
+        name: serviceItem.name,
+        description: optionalText(serviceItem.description),
+        kind: serviceItem.kind,
         quantity: 1,
-        unitPrice: selectedServiceItem.defaultUnitPrice,
-        unitLabel: selectedServiceItem.unitLabel,
-        calculationNote: selectedServiceItem.kind === "fee"
-          ? optionalText(selectedServiceItem.description)
-          : `1 x $${selectedServiceItem.defaultUnitPrice}`,
+        unitPrice: serviceItem.defaultUnitPrice,
+        unitLabel: serviceItem.unitLabel,
+        calculationNote: serviceItem.kind === "fee"
+          ? optionalText(serviceItem.description)
+          : `1 x $${serviceItem.defaultUnitPrice}`,
         sortOrder: lineItems.length * 10,
       },
     }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetBookingQueryKey(id) });
         queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
-        setSelectedServiceItemId("");
         toast({ title: "Service or fee added" });
+        onDone?.();
       },
       onError: () => toast({ title: "Failed to add service or fee", variant: "destructive" }),
     });
@@ -326,53 +326,6 @@ export default function BookingDetail() {
       toast({ title: "Split applied. You can now assign each item individually." });
     } catch {
       toast({ title: "Failed to split service or fee", variant: "destructive" });
-    } finally {
-      setMutatingGroupKey(null);
-    }
-  };
-
-  const handleApplyPendingSplits = async () => {
-    if (queuedSplitLineItemIds.length === 0 || mutatingGroupKey !== null) return;
-    setMutatingGroupKey("save:line-items");
-    const pendingIds = [...queuedSplitLineItemIds];
-    const failed: number[] = [];
-    let totalSplits = 0;
-
-    try {
-      for (const lineItemId of pendingIds) {
-        const lineItem = lineItems.find((item) => item.id === lineItemId);
-        if (!lineItem) {
-          failed.push(lineItemId);
-          continue;
-        }
-        try {
-          await performLineItemSplit(lineItem);
-          totalSplits += 1;
-        } catch {
-          failed.push(lineItemId);
-        }
-      }
-
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: getGetBookingQueryKey(id) }),
-        queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() }),
-      ]);
-
-      if (failed.length === 0) {
-        setQueuedSplitLineItemIds([]);
-        toast({ title: `Applied ${totalSplits} split action${totalSplits === 1 ? "" : "s"}.` });
-      } else if (totalSplits > 0) {
-        setQueuedSplitLineItemIds(failed);
-        toast({
-          title: "Some split actions could not be applied",
-          description: "The remaining changes are still queued. You can try Save again.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Unable to apply split actions", variant: "destructive" });
-      }
-    } catch {
-      toast({ title: "Failed to apply split actions", variant: "destructive" });
     } finally {
       setMutatingGroupKey(null);
     }
@@ -452,13 +405,13 @@ export default function BookingDetail() {
     }
   };
 
-  const handleLineItemGroupDrop = async (targetGroupKey: string) => {
+  const handleLineItemGroupDrop = async (scopedGroups: GroupedLineItem[], targetGroupKey: string) => {
     if (!draggedLineItemGroupKey || draggedLineItemGroupKey === targetGroupKey || mutatingGroupKey !== null) return;
-    const currentIndex = displayedLineItemGroups.findIndex((group) => group.key === draggedLineItemGroupKey);
-    const targetIndex = displayedLineItemGroups.findIndex((group) => group.key === targetGroupKey);
+    const currentIndex = scopedGroups.findIndex((group) => group.key === draggedLineItemGroupKey);
+    const targetIndex = scopedGroups.findIndex((group) => group.key === targetGroupKey);
     if (currentIndex < 0 || targetIndex < 0) return;
 
-    const nextGroups = [...displayedLineItemGroups];
+    const nextGroups = [...scopedGroups];
     const [draggedGroup] = nextGroups.splice(currentIndex, 1);
     nextGroups.splice(targetIndex, 0, draggedGroup);
 
@@ -645,6 +598,29 @@ export default function BookingDetail() {
                         <div className="text-foreground">{event.completionTarget || "TBD"}</div>
                       </div>
                     </div>
+
+                    <EventLineItemsSection
+                      bookingId={id}
+                      eventId={event.id}
+                      events={booking.events}
+                      groups={displayedLineItemGroups.filter((group) => group.eventId === event.id)}
+                      activeServiceItems={activeServiceItems}
+                      loadingServiceItems={loadingServiceItems}
+                      lineItemCount={lineItems.length}
+                      mutatingGroupKey={mutatingGroupKey}
+                      draggedGroupKey={draggedLineItemGroupKey}
+                      onDragStart={setDraggedLineItemGroupKey}
+                      onDragEnd={() => setDraggedLineItemGroupKey(null)}
+                      onDrop={handleLineItemGroupDrop}
+                      onAddFromCatalog={handleAddCatalogLineItem}
+                      onSplit={handleLineItemSplit}
+                      onExpand={(key) => setExpandedLineItemGroupKeys((current) => (current.includes(key) ? current : [...current, key]))}
+                      onEventChange={handleGroupedLineItemEventChange}
+                      onDelete={handleGroupedLineItemDelete}
+                      createLineItemPending={createLineItem.isPending}
+                      updateLineItemPending={updateLineItem.isPending}
+                      deleteLineItemPending={deleteLineItem.isPending}
+                    />
                   </div>
                 ))}
               </div>
@@ -656,190 +632,44 @@ export default function BookingDetail() {
               </div>
             )}
 
-            <div className="crm-section p-6">
-              <div className="mb-5 flex items-center justify-between border-b border-card-border/60 pb-4">
-                <div>
-                  <span className="crm-eyebrow">Catalog · Selected</span>
-                  <h2 className="crm-section-title mt-1">Selected services &amp; fees</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Assign each service or fee to an event, or keep it as a booking-level charge.
-                  </p>
-                </div>
-                <div
-                  className="font-serif text-xl text-foreground tabular-nums"
-                  style={{ fontVariationSettings: "'opsz' 72", letterSpacing: "-0.025em" }}
-                >
-                  ${lineItemsTotal.toLocaleString()}
-                </div>
+            <div className="crm-section p-5">
+              <div>
+                <span className="crm-eyebrow">Booking-level</span>
+                <h3 className="text-lg font-semibold tracking-tight text-primary">Booking-level charges</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Services or fees that apply to the whole booking, not tied to a specific event day.</p>
               </div>
+              <EventLineItemsSection
+                bookingId={id}
+                eventId={null}
+                events={booking.events}
+                groups={displayedLineItemGroups.filter((group) => group.eventId === null)}
+                activeServiceItems={activeServiceItems}
+                loadingServiceItems={loadingServiceItems}
+                lineItemCount={lineItems.length}
+                mutatingGroupKey={mutatingGroupKey}
+                draggedGroupKey={draggedLineItemGroupKey}
+                onDragStart={setDraggedLineItemGroupKey}
+                onDragEnd={() => setDraggedLineItemGroupKey(null)}
+                onDrop={handleLineItemGroupDrop}
+                onAddFromCatalog={handleAddCatalogLineItem}
+                onSplit={handleLineItemSplit}
+                onExpand={(key) => setExpandedLineItemGroupKeys((current) => (current.includes(key) ? current : [...current, key]))}
+                onEventChange={handleGroupedLineItemEventChange}
+                onDelete={handleGroupedLineItemDelete}
+                createLineItemPending={createLineItem.isPending}
+                updateLineItemPending={updateLineItem.isPending}
+                deleteLineItemPending={deleteLineItem.isPending}
+              />
+            </div>
 
-              <div className="mb-4 rounded-md border bg-muted/20 p-3">
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto_auto] lg:items-end">
-                  <div>
-                    <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Add from catalog</div>
-                    <Select value={selectedServiceItemId} onValueChange={setSelectedServiceItemId} disabled={loadingServiceItems || activeServiceItems.length === 0}>
-                      <SelectTrigger data-testid="select-add-line-item">
-                        <SelectValue placeholder={loadingServiceItems ? "Loading services and fees..." : "Choose service or fee"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {activeServiceItems.map((item) => (
-                          <SelectItem key={item.id} value={String(item.id)}>
-                            {item.name} · ${item.defaultUnitPrice} / {item.unitLabel}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button type="button" onClick={handleAddCatalogLineItem} disabled={!selectedServiceItem || createLineItem.isPending} data-testid="btn-add-selected-line-item">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Selected
-                  </Button>
-                  <LineItemDialog bookingId={id} events={booking.events} defaultKind="service" defaultSortOrder={lineItems.length * 10} trigger={<Button type="button" variant="outline" data-testid="btn-custom-service">Custom Service</Button>} />
-                  <LineItemDialog bookingId={id} events={booking.events} defaultKind="fee" defaultSortOrder={lineItems.length * 10} trigger={<Button type="button" variant="outline" data-testid="btn-custom-fee">Custom Fee</Button>} />
-                </div>
+            <div className="crm-section p-5 flex items-center justify-between">
+              <span className="text-sm font-medium text-muted-foreground">Total services &amp; fees (all events + booking-level)</span>
+              <div
+                className="font-serif text-xl text-foreground tabular-nums"
+                style={{ fontVariationSettings: "'opsz' 72", letterSpacing: "-0.025em" }}
+              >
+                ${lineItemsTotal.toLocaleString()}
               </div>
-
-                  {groupedLineItems.length > 0 ? (
-                <div className="space-y-3">
-                  {displayedLineItemGroups.map((group) => {
-                    const splitCandidate = group.items.find((item) => item.quantity > 1);
-                    const canShowSplit = group.totalQuantity > 1;
-
-                    return (
-                    <div
-                      key={group.key}
-                      draggable={mutatingGroupKey === null}
-                      onDragStart={() => setDraggedLineItemGroupKey(group.key)}
-                      onDragOver={(dragEvent) => dragEvent.preventDefault()}
-                      onDrop={() => handleLineItemGroupDrop(group.key)}
-                      onDragEnd={() => setDraggedLineItemGroupKey(null)}
-                      className={`grid grid-cols-1 gap-3 text-sm border rounded-md p-3 lg:grid-cols-[1fr_140px_220px_auto_auto_auto] lg:items-center ${draggedLineItemGroupKey === group.key ? "opacity-60" : ""}`}
-                    >
-                      <div className="flex min-w-0 gap-3">
-                        <div className="mt-0.5 cursor-grab text-muted-foreground active:cursor-grabbing" aria-label="Drag to reorder service or fee">
-                          <GripVertical className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-medium text-foreground">
-                            {group.eventId ? `${group.totalQuantity} × ${group.representativeItem.name}` : `${group.totalQuantity} × ${group.representativeItem.name}`}
-                          </div>
-                          {group.representativeItem.description && (
-                            <div className="text-muted-foreground mt-1 whitespace-pre-wrap">
-                              {group.representativeItem.description}
-                            </div>
-                          )}
-                          {group.items.length > 1 ? (
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              Assigned in {group.items.length} line entries
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div className="text-muted-foreground">
-                        {group.totalQuantity} x ${group.representativeItem.unitPrice}
-                      </div>
-                      <div>
-                        <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Event</div>
-                        <Select
-                          value={group.eventId ? String(group.eventId) : "booking"}
-                          onValueChange={(value) => handleGroupedLineItemEventChange(group, value)}
-                          disabled={updateLineItem.isPending || mutatingGroupKey === `event:${group.key}`}
-                        >
-                          <SelectTrigger data-testid={`select-line-item-event-${group.key}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="booking">Booking-level</SelectItem>
-                            {booking.events.map((event) => (
-                              <SelectItem key={event.id} value={String(event.id)}>
-                                {event.eventName} · {format(parseISO(event.eventDate), "MMM d, yyyy")}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="font-serif text-right">${group.totalAmount.toLocaleString()}</div>
-                        <div className="flex justify-end gap-1">
-                        {canShowSplit ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 px-2"
-                            onClick={() => {
-                              if (!splitCandidate) {
-                                setExpandedLineItemGroupKeys((current) => (
-                                  current.includes(group.key) ? current : [...current, group.key]
-                                ));
-                                return;
-                              }
-                              handleLineItemSplit(splitCandidate, group.key);
-                            }}
-                            disabled={
-                              createLineItem.isPending ||
-                              updateLineItem.isPending ||
-                              deleteLineItem.isPending ||
-                              mutatingGroupKey === `split:${splitCandidate?.id}`
-                            }
-                            data-testid={`btn-split-line-item-${group.key}`}
-                          >
-                            {splitCandidate && mutatingGroupKey === `split:${splitCandidate.id}` ? "Splitting..." : "Split"}
-                          </Button>
-                        ) : null}
-                          <LineItemDialog
-                              bookingId={id}
-                              events={booking.events}
-                              lineItem={group.representativeItem}
-                              trigger={<Button type="button" variant="outline" size="sm" className="h-8 px-2" data-testid={`btn-edit-line-item-${group.key}`}><Edit className="w-3.5 h-3.5 mr-1" /> Edit</Button>}
-                            />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => handleGroupedLineItemDelete(group)}
-                          disabled={deleteLineItem.isPending || mutatingGroupKey === `delete:${group.key}`}
-                          data-testid={`btn-delete-line-item-${group.key}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="border rounded-md border-dashed p-6 text-center text-muted-foreground">
-                  No booking intake line items were added.
-                </div>
-              )}
-
-              {queuedSplitLineItemIds.length > 0 ? (
-                <div className="mt-4 flex flex-wrap gap-2 items-center">
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={handleApplyPendingSplits}
-                    disabled={queuedSplitLineItemIds.length === 0 || mutatingGroupKey !== null}
-                    data-testid="btn-apply-split-changes"
-                  >
-                    Save line item changes
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setQueuedSplitLineItemIds([])}
-                    disabled={mutatingGroupKey !== null}
-                  >
-                    Discard queued changes
-                  </Button>
-                  <span className="text-xs text-muted-foreground">
-                    {queuedSplitLineItemIds.length} split change{queuedSplitLineItemIds.length === 1 ? "" : "s"} queued
-                  </span>
-                </div>
-              ) : null}
             </div>
 
             <BookingAddonsSection bookingId={id} serviceItems={serviceItems ?? []} />
@@ -1058,12 +888,234 @@ type BookingMetaFormValues = z.infer<typeof bookingMetaSchema>;
 
 type LineItemFormValues = z.infer<typeof lineItemFormSchema>;
 
+/**
+ * The services & fees scoped to one event (or, with eventId=null, to the booking level).
+ * Lets the artist add a catalog item, a custom service, or a custom fee that lands
+ * correctly-assigned immediately — no separate "add then reassign via dropdown" step.
+ */
+function EventLineItemsSection({
+  bookingId,
+  eventId,
+  events,
+  groups,
+  activeServiceItems,
+  loadingServiceItems,
+  lineItemCount,
+  mutatingGroupKey,
+  draggedGroupKey,
+  onDragStart,
+  onDragEnd,
+  onDrop,
+  onAddFromCatalog,
+  onSplit,
+  onExpand,
+  onEventChange,
+  onDelete,
+  createLineItemPending,
+  updateLineItemPending,
+  deleteLineItemPending,
+}: {
+  bookingId: number;
+  eventId: number | null;
+  events: Array<{ id: number; eventName: string; eventDate: string }>;
+  groups: GroupedLineItem[];
+  activeServiceItems: ServiceItem[];
+  loadingServiceItems: boolean;
+  lineItemCount: number;
+  mutatingGroupKey: string | null;
+  draggedGroupKey: string | null;
+  onDragStart: (key: string) => void;
+  onDragEnd: () => void;
+  onDrop: (scopedGroups: GroupedLineItem[], targetKey: string) => void;
+  onAddFromCatalog: (serviceItem: ServiceItem, eventId: number | null, onDone?: () => void) => void;
+  onSplit: (item: BookingLineItem, groupKey: string) => void;
+  onExpand: (key: string) => void;
+  onEventChange: (group: GroupedLineItem, eventIdValue: string) => void;
+  onDelete: (group: GroupedLineItem) => void;
+  createLineItemPending: boolean;
+  updateLineItemPending: boolean;
+  deleteLineItemPending: boolean;
+}) {
+  const [addSelectValue, setAddSelectValue] = useState("");
+  const addSelectedItem = activeServiceItems.find((item) => item.id.toString() === addSelectValue);
+  const subtotal = groups.reduce((sum, group) => sum + group.totalAmount, 0);
+
+  return (
+    <div className="mt-4 border-t pt-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-sm font-medium text-foreground">Services &amp; fees</div>
+        {subtotal > 0 && (
+          <div className="font-serif text-base text-foreground tabular-nums">${subtotal.toLocaleString()}</div>
+        )}
+      </div>
+
+      <div className="mb-3 rounded-md border bg-muted/20 p-2.5">
+        <div className="grid grid-cols-1 gap-2 lg:grid-cols-[1fr_auto_auto_auto] lg:items-center">
+          <Select value={addSelectValue} onValueChange={setAddSelectValue} disabled={loadingServiceItems || activeServiceItems.length === 0}>
+            <SelectTrigger className="h-9" data-testid={`select-add-line-item-${eventId ?? "booking"}`}>
+              <SelectValue placeholder={loadingServiceItems ? "Loading..." : "Add from catalog"} />
+            </SelectTrigger>
+            <SelectContent>
+              {activeServiceItems.map((item) => (
+                <SelectItem key={item.id} value={String(item.id)}>
+                  {item.name} · ${item.defaultUnitPrice} / {item.unitLabel}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            size="sm"
+            className="h-9"
+            onClick={() => addSelectedItem && onAddFromCatalog(addSelectedItem, eventId, () => setAddSelectValue(""))}
+            disabled={!addSelectedItem || createLineItemPending}
+            data-testid={`btn-add-selected-line-item-${eventId ?? "booking"}`}
+          >
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+            Add
+          </Button>
+          <LineItemDialog
+            bookingId={bookingId}
+            events={events}
+            defaultKind="service"
+            defaultEventId={eventId}
+            defaultSortOrder={lineItemCount * 10}
+            trigger={<Button type="button" variant="outline" size="sm" className="h-9" data-testid={`btn-custom-service-${eventId ?? "booking"}`}>Custom Service</Button>}
+          />
+          <LineItemDialog
+            bookingId={bookingId}
+            events={events}
+            defaultKind="fee"
+            defaultEventId={eventId}
+            defaultSortOrder={lineItemCount * 10}
+            trigger={<Button type="button" variant="outline" size="sm" className="h-9" data-testid={`btn-custom-fee-${eventId ?? "booking"}`}>Custom Fee</Button>}
+          />
+        </div>
+      </div>
+
+      {groups.length === 0 ? (
+        <div className="rounded-md border border-dashed p-4 text-center text-xs text-muted-foreground">
+          {eventId == null ? "No booking-level charges yet." : "No services or fees added to this event yet."}
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {groups.map((group) => {
+            const splitCandidate = group.items.find((item) => item.quantity > 1);
+            const canShowSplit = group.totalQuantity > 1;
+
+            return (
+              <div
+                key={group.key}
+                draggable={mutatingGroupKey === null}
+                onDragStart={() => onDragStart(group.key)}
+                onDragOver={(dragEvent) => dragEvent.preventDefault()}
+                onDrop={() => onDrop(groups, group.key)}
+                onDragEnd={onDragEnd}
+                className={`grid grid-cols-1 gap-3 text-sm border rounded-md p-3 lg:grid-cols-[1fr_120px_190px_auto_auto_auto] lg:items-center ${draggedGroupKey === group.key ? "opacity-60" : ""}`}
+              >
+                <div className="flex min-w-0 gap-3">
+                  <div className="mt-0.5 cursor-grab text-muted-foreground active:cursor-grabbing" aria-label="Drag to reorder service or fee">
+                    <GripVertical className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-foreground">
+                      {group.totalQuantity} × {group.representativeItem.name}
+                    </div>
+                    {group.representativeItem.description && (
+                      <div className="text-muted-foreground mt-1 whitespace-pre-wrap">
+                        {group.representativeItem.description}
+                      </div>
+                    )}
+                    {group.items.length > 1 ? (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Assigned in {group.items.length} line entries
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="text-muted-foreground">
+                  {group.totalQuantity} x ${group.representativeItem.unitPrice}
+                </div>
+                <div>
+                  <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Move to</div>
+                  <Select
+                    value={group.eventId ? String(group.eventId) : "booking"}
+                    onValueChange={(value) => onEventChange(group, value)}
+                    disabled={updateLineItemPending || mutatingGroupKey === `event:${group.key}`}
+                  >
+                    <SelectTrigger className="h-9" data-testid={`select-line-item-event-${group.key}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="booking">Booking-level</SelectItem>
+                      {events.map((event) => (
+                        <SelectItem key={event.id} value={String(event.id)}>
+                          {event.eventName} · {format(parseISO(event.eventDate), "MMM d, yyyy")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="font-serif text-right">${group.totalAmount.toLocaleString()}</div>
+                <div className="flex justify-end gap-1">
+                  {canShowSplit ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => {
+                        if (!splitCandidate) {
+                          onExpand(group.key);
+                          return;
+                        }
+                        onSplit(splitCandidate, group.key);
+                      }}
+                      disabled={
+                        createLineItemPending ||
+                        updateLineItemPending ||
+                        deleteLineItemPending ||
+                        mutatingGroupKey === `split:${splitCandidate?.id}`
+                      }
+                      data-testid={`btn-split-line-item-${group.key}`}
+                    >
+                      {splitCandidate && mutatingGroupKey === `split:${splitCandidate.id}` ? "Splitting..." : "Split"}
+                    </Button>
+                  ) : null}
+                  <LineItemDialog
+                    bookingId={bookingId}
+                    events={events}
+                    lineItem={group.representativeItem}
+                    trigger={<Button type="button" variant="outline" size="sm" className="h-8 px-2" data-testid={`btn-edit-line-item-${group.key}`}><Edit className="w-3.5 h-3.5 mr-1" /> Edit</Button>}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => onDelete(group)}
+                    disabled={deleteLineItemPending || mutatingGroupKey === `delete:${group.key}`}
+                    data-testid={`btn-delete-line-item-${group.key}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LineItemDialog({
   bookingId,
   events,
   lineItem,
   defaultKind = "service",
   defaultSortOrder = 0,
+  defaultEventId,
   trigger,
 }: {
   bookingId: number;
@@ -1071,8 +1123,12 @@ function LineItemDialog({
   lineItem?: BookingLineItem;
   defaultKind?: "service" | "fee";
   defaultSortOrder?: number;
+  /** Preselects the Event field when adding a new item from within a specific event's
+   * section — null means booking-level. Ignored when editing an existing item. */
+  defaultEventId?: number | null;
   trigger?: React.ReactNode;
 }) {
+  const defaultEventValue = defaultEventId == null ? "booking" : String(defaultEventId);
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -1094,7 +1150,7 @@ function LineItemDialog({
       sortOrder: lineItem.sortOrder,
     } : {
       serviceItemId: null,
-      eventId: "booking",
+      eventId: defaultEventValue,
       name: defaultKind === "fee" ? "Custom Fee" : "Custom Service",
       description: "",
       kind: defaultKind,
@@ -1161,7 +1217,7 @@ function LineItemDialog({
         setOpen(false);
         form.reset({
           serviceItemId: null,
-          eventId: "booking",
+          eventId: defaultEventValue,
           name: defaultKind === "fee" ? "Custom Fee" : "Custom Service",
           description: "",
           kind: defaultKind,

@@ -444,7 +444,7 @@ export default function BridalContractView() {
               {eventChargeGroups.map(({ event, lineItemGroups }) => (
                 <Fragment key={event.id}>
                   <tr key={`event-${event.id}`} className="border-b border-gray-200 bg-gray-50">
-                    <Td colSpan={4}><strong>{event.eventName}</strong></Td>
+                    <Td colSpan={4}><strong>{event.eventName} · {format(parseISO(event.eventDate), "MMM d, yyyy")}</strong></Td>
                   </tr>
                   {event.subtotal > 0 && (
                     <tr key={`event-subtotal-${event.id}`} className="border-b border-gray-200">
