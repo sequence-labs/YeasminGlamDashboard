@@ -2096,3 +2096,129 @@ Validation:
 - Browser validation on local booking `11` confirmed edit Step 5 shows only `Balance Due Date` and `Payment Method`.
 - Browser validation changed booking `11` trial amount from `125` to `130`, confirmed the network sent only `PATCH /api/bookings/11/line-items/52`, confirmed the API persisted the temporary amount, and restored the local trial fee back to `125`.
 - Browser validation on local booking `9` changed only Payment Method, confirmed the network still sent only `PATCH /api/bookings/9`, and restored the original local value.
+
+## 2026-07-26 - Local Production-Data Snapshot Runtime
+
+Start:
+- User requested a localhost runtime populated from the hosted production data without allowing localhost actions to write to production.
+- Scope is environment/runtime setup only: create a separate local Postgres snapshot database, point the local API at it, and launch the frontend/API in the built-in Browser. No product source behavior changes are intended.
+- Safety acceptance criteria: production is used only as a dump source; localhost uses a distinct database name; local API writes remain confined to that local database; browser opens the snapshot-backed app.
+
+Failure:
+- Initial snapshot command failed before touching the database because the PostgreSQL `createdb` invocation used an unsupported `-d` option. No production mutation occurred and the local snapshot database was not created by that failed command.
+- Fresh dump completed without a production write, but restore stopped on the Supabase-only `supabase_vault` extension, which is unavailable in local Homebrew PostgreSQL. The target local snapshot database is partial and must be recreated before retrying.
+- A follow-up restore-only attempt could not find the temporary dump after the prior shell ended, so the next retry will dump and restore within one bounded command.
+
+Update:
+- PostgreSQL 17 was started locally and a fresh dump was taken from `SUPABASE_DIRECT_DATABASE_URL`. The first restore path was corrected to restore only `public`, avoiding Supabase-managed schemas and the unavailable `supabase_vault` extension.
+- Created local database `makeup_artist_hub_prod_snapshot` and restored the application schema/data into it. The hosted database was used only as a dump source.
+- Started the API on port `8787` with `DATABASE_URL=postgresql://$USER@127.0.0.1:5432/makeup_artist_hub_prod_snapshot`, `GLAM_DISABLE_RUNNER=true`, blank local auth/session variables, and blank SMTP variables. The existing Vite frontend remains on port `5173` and proxies to this API.
+
+Validation:
+- Local database verification returned `makeup_artist_hub_prod_snapshot|18` for the booking count and `18` for the client count.
+- `curl http://127.0.0.1:8787/api/healthz` returned `{"status":"ok"}` with HTTP 200.
+- `GET /api/bookings` returned production snapshot bookings with HTTP 200.
+- `GET /api/clients` returned production snapshot clients with HTTP 200.
+- Built-in Browser loaded `http://localhost:5173/calendar` with title `Glam CRM`; the July 2026 calendar rendered snapshot events including Jannatul ferdous and Jenat Fahima.
+- Browser warning/error log check returned no entries for the snapshot-backed calendar page.
+
+Residual risk:
+- The snapshot is a point-in-time copy and will become stale as production changes. Refresh it by repeating the documented dump/restore flow.
+- The sandbox database is writable by design, but it is a separate local database. Do not replace its `DATABASE_URL` with a hosted connection string.
+
+## 2026-07-27 - Apple Calendar Subscription Reliability
+
+Start:
+- User requested that the Calendar subscription control work correctly with Apple Calendar, expose relevant booking information, and update subscribed calendars as data changes.
+- Scope is Work Package 2.13: tokenized iCalendar feed behavior and the Calendar subscription dialog. No schema or generated API contract changes are required.
+- Reference expectation: Apple supports adding a subscription by web address and shows subscribed calendars across devices signed into the same iCloud account; the feed must therefore remain reachable, stable, and read-only.
+
+Update:
+- `artifacts/api-server/src/routes/public-calendar.ts` now emits a stable `X-WR-RELCALID`, `X-PUBLISHED-TTL:PT15M`, `REFRESH-INTERVAL;VALUE=DURATION:PT15M`, `STATUS:CONFIRMED`, `TRANSP:OPAQUE`, `CLASS:PRIVATE`, change-sensitive event `SEQUENCE` values, `ETag`, `Content-Disposition`, and revalidation-friendly cache headers.
+- Service and payment entries retain rich summaries, locations, timezone-aware start/end times, and detailed notes covering client, service breakdown, totals, retainer, balance, payment method, event date, and booking ID.
+- `VITE_PUBLIC_CALENDAR_BASE_URL` is now supported by the subscription UI so production or LAN-reachable feeds can be used instead of a phone-inaccessible `localhost` URL. The dialog now clearly exposes the Apple handoff and copyable subscription URL.
+
+Validation:
+- API and frontend typechecks passed.
+- API and frontend production builds passed; existing sourcemap and bundle-size warnings remain non-blocking.
+- Live local feed response returned `Content-Type: text/calendar`, inline `.ics` disposition, `Cache-Control: public, max-age=60, must-revalidate`, and an ETag.
+- Feed inspection confirmed stable `X-WR-RELCALID`, refresh hints, timezone-aware `DTSTART`/`DTEND`, `SUMMARY`, `LOCATION`, rich `DESCRIPTION`, `STATUS:CONFIRMED`, `TRANSP:OPAQUE`, `CLASS:PRIVATE`, and non-zero `SEQUENCE` values.
+- Browser mobile QA at `430x932` loaded `/calendar` with no console warnings/errors, opened the subscription dialog with `Add to Apple Calendar` and a copyable feed URL, and opened the Jannatul Ferdous event detail from the mobile agenda.
+- Browser desktop QA at `1280x900` retained the original month/week/day controls and seven-column month grid with no console warnings/errors.
+
+Remaining risk:
+- Apple Calendar's actual refresh timing is controlled by Apple; the feed advertises a 15-minute target but cannot force an immediate client refresh.
+- End-to-end device testing still requires adding a deployed HTTPS or LAN-reachable URL to an Apple Calendar account. The local `localhost` feed is intentionally documented as computer-only.
+
+## 2026-07-27 - Mobile Calendar Redesign
+
+Start:
+- User requested a complete mobile redesign of the Calendar tab because the desktop seven-column month grid collapses into an unreadable narrow layout.
+- Scope is Work Package 2.10 UI and UX Polish, limited to `artifacts/glam-crm/src/pages/calendar.tsx`; desktop month/week/day behavior and API/data contracts remain unchanged.
+- Target flow: `/calendar` at a mobile viewport -> month navigation -> clearly grouped scheduled dates -> event/payment detail interaction.
+- Visual thesis: replace the shrunken calendar matrix with a calm editorial agenda where the date is the anchor and each event is a readable, tappable row.
+
+## 2026-07-27 - Multi-Event Calendar Fidelity
+
+Start:
+- User requested that one booking's multiple events and payment due information remain accurate, distinguishable, and synchronized in both the in-app calendar and Apple subscription feed.
+- Scope is Work Package 2.14. The local production-derived snapshot is the only write target for validation; hosted production remains dump-only.
+
+Initial audit:
+- The database supports multiple `booking_events` rows per booking, each with its own event date and service window.
+- The current payment model supports one explicit booking-level `balanceDueDate`; it does not support several independently dated payment milestones within one booking, so no due dates will be fabricated.
+- The existing feed already emits one VEVENT per booking event and one balance-due VEVENT per eligible booking. This pass will verify the identity inputs cover every rendered field and that the browser makes the relationship clear.
+
+Validation failure:
+- The first focused typecheck after adding stable ICS stamps failed because the inferred service-item type required `status` on payment reminder items. The fix is scoped to the feed item construction and will add the explicit confirmed status to those reminders.
+- The first live feed probe against the restarted API returned HTTP 401 because the restart command omitted the repository's local auth-disable flag. No data was changed; the probe will be repeated with the documented sandbox auth settings.
+
+Update:
+- Public service-event summaries now include the booking number, service-event sequences hash every rendered event/booking field, locations include the optional location detail, and cancelled bookings publish `STATUS:CANCELLED` instead of looking confirmed.
+- Payment reminders now include client, event type, booking number, location, and the computed outstanding balance; zero-dollar reminders are omitted. The in-app mobile agenda uses the same identifiers so multiple events and due reminders are distinguishable.
+- VEVENT `DTSTAMP` now uses the stable booking creation timestamp. This keeps an unchanged feed body and ETag stable between refreshes while source changes still alter the relevant `SEQUENCE` and feed ETag.
+
+Validation:
+- API/frontend typechecks and production builds passed. Existing sourcemap and bundle-size warnings remain non-blocking.
+- Live feed probe against the isolated snapshot returned stable ETags across a two-second interval and HTTP 304 for a matching `If-None-Match` request.
+- Snapshot booking 6 has three event rows (event IDs 5, 6, and 7); the feed emitted one stable UID per row and included booking references for the related event/due entries.
+- Reversible local API update of booking 6's location changed event 5's `SEQUENCE` from `206269409` to `4014024096` and changed the feed ETag; the original location was restored and the feed ETag returned to its prior value. The update was confined to `makeup_artist_hub_prod_snapshot`.
+- Reversible local API update of booking 6's balance due date from `2026-09-10` to `2026-09-09` changed the balance reminder `SEQUENCE` from `2128408334` to `4179093626` and changed the feed ETag; the original due date was restored to `2026-09-10`.
+- Built-in Browser mobile QA at `430x932` showed August 2026 with 8 events and 5 due reminders, including all three event dates for booking 22 and booking-numbered due reminders, with no browser warning/error logs. Desktop QA at `1280x900` retained the month/week/day controls and seven-column month grid.
+
+Remaining risk:
+- The current schema has one explicit booking-level `balanceDueDate`; it cannot yet represent several independently dated retainer, partial, custom, or event-specific payment milestones inside one booking. The calendar and feed do not invent such dates. A future payment-schedule table should be added before claiming full multi-milestone support.
+- The tokenized Apple feed necessarily exposes the booking details included in its entries to anyone holding the URL; treat feed-token rotation as the privacy control.
+
+## 2026-07-27 - Responsive Desktop Calendar Preview
+
+Start:
+- User requested that the computer calendar adapt to available screen width and that clicking an event open a booking-details preview.
+- Scope is Work Package 2.15, limited to `artifacts/glam-crm/src/pages/calendar.tsx`; API and database contracts remain unchanged.
+- Target flow: `/calendar` -> responsive calendar surface -> click event -> booking preview -> optional full booking route.
+
+Validation failure:
+- The first hot-reload browser check at `1221x1138` logged `ReferenceError: BookingPreviewDialog is not defined` from `CalendarPage`, even though the compact agenda itself rendered. The preview symbol/module output will be inspected and corrected before continuing interaction QA.
+
+Direction update:
+- User clarified that Mac/desktop must retain the full calendar-view presentation. The responsive implementation will therefore keep the seven-column month/week/day surface for computer widths and limit the agenda presentation to mobile; narrow computer widths will use a controlled scrollable calendar canvas.
+
+Update:
+- Desktop/tablet computer widths now retain the full month/week/day calendar. Month and week canvases use a readable minimum width with horizontal scrolling only when the available content area is genuinely narrower than the calendar.
+- The mobile agenda is limited to below the `md` breakpoint and derives its own month range, so resizing from desktop week/day mode does not leave mobile showing an inconsistent partial range.
+- Calendar event clicks now open a booking preview that loads the booking record, shows the selected event date/time/location, all scheduled booking events, status, total, retainer, balance, and an `Open full booking` route.
+- Month-grid overflow items are no longer hidden behind static `+n more` text; all event and payment items remain individually reachable.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed; existing sourcemap and bundle-size warnings remain non-blocking.
+- In-app Browser clean-tab QA passed at `430x932`, `1024x900`, `1221x1138`, and `1440x900`. Computer sizes retained the month controls and seven-column grid; mobile showed the agenda.
+- At `1221x1138`, the full month grid rendered without the prior unnecessary horizontal bar after reducing the minimum canvas width; the calendar remained visually complete.
+- Clicking the July 4 Jannatul ferdous event at desktop and mobile opened `Booking preview` with the selected event, booking schedule, financial metrics, and `Open full booking`. Following that link reached `/bookings/12` and rendered the booking detail page.
+- Clean-tab browser logs were empty at all tested sizes. The earlier hot-reload symbol error did not recur after a full reload.
+
+Remaining risk:
+- The preview currently fetches booking details when opened, so a slow API response briefly shows a loading state; no stale booking data is displayed as the preview's final state.
+
+Publish note:
+- The GitHub connector rejected draft PR creation with HTTP 403 (`Resource not accessible by integration`) after the branch push succeeded. The documented `gh` fallback will be used after verifying the same authenticated GitHub CLI session.

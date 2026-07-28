@@ -92,6 +92,63 @@ Run API and frontend together:
 pnpm dev
 ```
 
+## Safe Local Production-Data Sandbox
+
+When localhost needs current CRM data without writing to the hosted production database, use a local snapshot database. The hosted database is used only as the source for `pg_dump`; the app must never receive the hosted connection string as its local `DATABASE_URL`.
+
+Start the local PostgreSQL 17 service used by the snapshot runtime:
+
+```sh
+brew services start postgresql@17
+```
+
+Create a fresh temporary dump and restore only the application `public` schema. Supabase-managed schemas and extensions are intentionally excluded from the local restore:
+
+```sh
+snapshot_dir=$(mktemp -d /tmp/makeup-artist-hub-prod-snapshot.XXXXXX)
+remote_url=$(sed -n 's/^SUPABASE_DIRECT_DATABASE_URL=//p' .local/deployment-secrets.env)
+remote_url=$(printf '%s' "$remote_url" | sed 's/sslmode=no-verify/sslmode=require/g')
+local_db=makeup_artist_hub_prod_snapshot
+
+/opt/homebrew/opt/postgresql@17/bin/pg_dump \
+  --format=custom --no-owner --no-acl \
+  --file "$snapshot_dir/production.dump" "$remote_url"
+/opt/homebrew/opt/postgresql@17/bin/dropdb --maintenance-db=postgres --if-exists "$local_db"
+/opt/homebrew/opt/postgresql@17/bin/createdb --maintenance-db=postgres -O "$USER" "$local_db"
+/opt/homebrew/opt/postgresql@17/bin/psql "postgresql://$USER@127.0.0.1:5432/$local_db" \
+  -v ON_ERROR_STOP=1 \
+  -c 'create extension if not exists pgcrypto' \
+  -c 'create extension if not exists "uuid-ossp"'
+/opt/homebrew/opt/postgresql@17/bin/pg_restore \
+  --exit-on-error --no-owner --no-acl --schema=public \
+  --dbname "postgresql://$USER@127.0.0.1:5432/$local_db" \
+  "$snapshot_dir/production.dump"
+```
+
+Run the API against the local snapshot, with local authentication, scheduled work, and SMTP disabled for the session:
+
+```sh
+env NODE_ENV=development \
+  PORT=8787 \
+  DATABASE_URL=postgresql://$USER@127.0.0.1:5432/makeup_artist_hub_prod_snapshot \
+  GLAM_ADMIN_PASSWORD= \
+  GLAM_SESSION_SECRET= \
+  GLAM_GMAIL_USER= \
+  GLAM_GMAIL_APP_PASSWORD= \
+  GLAM_EMAIL_FROM= \
+  GLAM_DISABLE_RUNNER=true \
+  pnpm --filter @workspace/api-server run dev
+```
+
+Keep the frontend proxy pointed at `http://127.0.0.1:8787`. Confirm the runtime before using the browser:
+
+```sh
+curl http://127.0.0.1:8787/api/healthz
+curl http://127.0.0.1:8787/api/bookings
+```
+
+The snapshot restore can replace contents of the explicitly named local snapshot database. It does not write to Supabase; keep the hosted URL out of `DATABASE_URL` for the API process.
+
 ## GitHub Pages Frontend Deployment
 
 The frontend deploys from `.github/workflows/pages.yml`.
@@ -113,6 +170,8 @@ The deployed frontend calls the shared Render API at:
 ```text
 https://whisperflowserver.onrender.com/glam-api/api/*
 ```
+
+For Apple Calendar subscriptions, set `VITE_PUBLIC_CALENDAR_BASE_URL` when the feed should use a specific public or LAN-reachable origin. In production this should be the HTTPS API origin that serves `/api/public/calendar/:token.ics`; on a phone, `localhost` is the phone itself and will not reach the development computer.
 
 ## Shared Render API Setup
 

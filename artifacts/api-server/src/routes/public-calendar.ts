@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import crypto from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import {
   db,
@@ -79,8 +80,19 @@ function nextDay(ymd: string): string {
   return shiftDay(ymd, 1);
 }
 
+function icsStamp(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+}
+
+function bookingLocation(b: typeof bookingsTable.$inferSelect): string {
+  return b.locationDetail ? `${b.location} — ${b.locationDetail}` : b.location;
+}
+
 function buildIcsCalendar(events: Array<{
   uid: string;
+  sequence: number;
+  stamp: string;
+  status?: "CONFIRMED" | "CANCELLED";
   summary: string;
   location: string;
   description?: string;
@@ -88,8 +100,7 @@ function buildIcsCalendar(events: Array<{
   endDate?: string;
   startTime?: string | null;
   endTime?: string | null;
-}>, calendarName: string) {
-  const now = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+}>, calendarName: string, calendarId: string) {
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -97,6 +108,9 @@ function buildIcsCalendar(events: Array<{
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeIcs(calendarName)}`,
+    `X-WR-RELCALID:${escapeIcs(calendarId)}`,
+    "X-PUBLISHED-TTL:PT15M",
+    "REFRESH-INTERVAL;VALUE=DURATION:PT15M",
     "X-WR-TIMEZONE:America/New_York",
     "BEGIN:VTIMEZONE",
     "TZID:America/New_York",
@@ -123,8 +137,11 @@ function buildIcsCalendar(events: Array<{
 
     lines.push("BEGIN:VEVENT");
     lines.push(`UID:${evt.uid}`);
-    lines.push(`DTSTAMP:${now}`);
-    lines.push("SEQUENCE:0");
+    lines.push(`DTSTAMP:${evt.stamp}`);
+    lines.push(`SEQUENCE:${evt.sequence}`);
+    lines.push(`STATUS:${evt.status ?? "CONFIRMED"}`);
+    lines.push("TRANSP:OPAQUE");
+    lines.push("CLASS:PRIVATE");
 
     if (!startHms) {
       // No usable time → all-day event (DTEND is the exclusive next day).
@@ -147,6 +164,11 @@ function buildIcsCalendar(events: Array<{
 
   lines.push("END:VCALENDAR");
   return lines.join("\r\n");
+}
+
+function eventSequence(...parts: Array<unknown>): number {
+  const digest = crypto.createHash("sha1").update(JSON.stringify(parts)).digest("hex");
+  return Math.max(1, parseInt(digest.slice(0, 8), 16));
 }
 
 // Outstanding balance = grand total minus the retainer (only once it's been paid). Matches
@@ -229,8 +251,38 @@ router.get("/public/calendar/:token.ics", async (req, res): Promise<void> => {
 
   const serviceItems = eventRows.map((r) => ({
     uid: `event-${r.event.id}@glam-studio`,
-    summary: `${r.clientName} — ${r.event.eventName}`,
-    location: r.booking.location,
+    stamp: icsStamp(r.booking.createdAt),
+    status: r.booking.status === "cancelled" ? ("CANCELLED" as const) : ("CONFIRMED" as const),
+    sequence: eventSequence(
+      r.event.id,
+      r.event.eventName,
+      r.event.eventDate,
+      r.event.servicesBegin,
+      r.event.completionTarget,
+      r.event.sortOrder,
+      r.event.hairAndMakeupCount,
+      r.event.hairOnlyCount,
+      r.event.makeupOnlyCount,
+      r.event.makeupRate,
+      r.event.hairRate,
+      r.event.hairAndMakeupRate,
+      r.event.subtotal,
+      r.event.kind,
+      r.booking.id,
+      r.clientName,
+      r.booking.eventType,
+      r.booking.status,
+      r.booking.location,
+      r.booking.locationDetail,
+      r.booking.grandTotal,
+      r.booking.retainerAmount,
+      r.booking.retainerPaid,
+      r.booking.balancePaid,
+      r.booking.balanceDueDate,
+      r.booking.paymentMethod,
+    ),
+    summary: `${r.clientName} — ${r.event.eventName} · Booking #${r.booking.id}`,
+    location: bookingLocation(r.booking),
     description: serviceEventNotes(r.event, r.booking, r.clientName),
     startDate: r.event.eventDate,
     startTime: r.event.servicesBegin ?? null,
@@ -258,10 +310,29 @@ router.get("/public/calendar/:token.ics", async (req, res): Promise<void> => {
     } else {
       continue;
     }
+    const balanceDue = bookingBalanceDue(b);
+    if (balanceDue <= 0) continue;
     paymentItems.push({
       uid: `payment-${b.id}@glam-studio`,
-      summary: `💰 Balance due — ${clientName} (${money(bookingBalanceDue(b))})`,
-      location: "",
+      stamp: icsStamp(b.createdAt),
+      status: "CONFIRMED" as const,
+      sequence: eventSequence(
+        b.id,
+        clientName,
+        b.eventType,
+        b.balanceDueDate,
+        b.firstServiceDate,
+        b.grandTotal,
+        b.retainerAmount,
+        b.retainerPaid,
+        b.balancePaid,
+        b.status,
+        b.paymentMethod,
+        b.location,
+        b.locationDetail,
+      ),
+      summary: `💰 Balance due — ${clientName} · ${b.eventType} · Booking #${b.id} (${money(balanceDue)})`,
+      location: bookingLocation(b),
       description: paymentDueNotes(b, clientName, dueLabel),
       startDate: dueLabel,
       startTime: null,
@@ -269,10 +340,17 @@ router.get("/public/calendar/:token.ics", async (req, res): Promise<void> => {
     });
   }
 
-  const ics = buildIcsCalendar([...serviceItems, ...paymentItems], feedToken.label);
+  const ics = buildIcsCalendar(
+    [...serviceItems, ...paymentItems],
+    feedToken.label,
+    `glam-studio-calendar-${feedToken.token}@glam-studio`,
+  );
+  const etag = crypto.createHash("sha1").update(ics).digest("hex");
 
   res.set("Content-Type", "text/calendar; charset=utf-8");
-  res.set("Cache-Control", "public, max-age=300");
+  res.set("Content-Disposition", 'inline; filename="glam-calendar.ics"');
+  res.set("Cache-Control", "public, max-age=60, must-revalidate");
+  res.set("ETag", `"${etag}"`);
   res.send(ics);
 });
 
@@ -296,13 +374,37 @@ router.get("/public/portal/:token/booking.ics", async (req, res): Promise<void> 
   const events = await db.select().from(eventsTable).where(eq(eventsTable.bookingId, booking.id));
   const ics = buildIcsCalendar(events.map((e) => ({
     uid: `event-${e.id}@glam-studio`,
-    summary: `${client?.name ?? "Booking"} — ${e.eventName}`,
-    location: booking.location,
+    stamp: icsStamp(booking.createdAt),
+    status: booking.status === "cancelled" ? ("CANCELLED" as const) : ("CONFIRMED" as const),
+    sequence: eventSequence(
+      e.id,
+      e.eventName,
+      e.eventDate,
+      e.servicesBegin,
+      e.completionTarget,
+      e.sortOrder,
+      e.hairAndMakeupCount,
+      e.hairOnlyCount,
+      e.makeupOnlyCount,
+      e.makeupRate,
+      e.hairRate,
+      e.hairAndMakeupRate,
+      e.subtotal,
+      e.kind,
+      booking.id,
+      client?.name ?? "Booking",
+      booking.eventType,
+      booking.status,
+      booking.location,
+      booking.locationDetail,
+    ),
+    summary: `${client?.name ?? "Booking"} — ${e.eventName} · Booking #${booking.id}`,
+    location: bookingLocation(booking),
     description: `${booking.eventType}${e.servicesBegin ? ` · Start ${e.servicesBegin}` : ""}`,
     startDate: e.eventDate,
     startTime: e.servicesBegin ?? null,
     endTime: e.completionTarget ?? null,
-  })), `${client?.name ?? "Booking"} — ${booking.eventType}`);
+  })), `${client?.name ?? "Booking"} — ${booking.eventType}`, `glam-studio-booking-${booking.id}@glam-studio`);
 
   res.set("Content-Type", "text/calendar; charset=utf-8");
   res.send(ics);

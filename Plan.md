@@ -56,6 +56,78 @@ Validation commands:
 - `pnpm run typecheck`
 - Built-in Browser page identity, DOM, console, screenshot, and interaction checks.
 
+### Work Package 1.5: Production-Data Local Sandbox
+
+Status: Complete.
+
+Acceptance criteria:
+- A fresh production data dump can be read from Supabase without issuing production writes.
+- The dump restores into a distinct local Postgres database named `makeup_artist_hub_prod_snapshot`.
+- Local API writes target only the snapshot database, with the reminder runner and outbound Gmail settings disabled for the sandbox session.
+- The built-in Browser opens the snapshot-backed CRM and calendar.
+
+Validation commands:
+- PostgreSQL 17 `pg_dump` against `SUPABASE_DIRECT_DATABASE_URL` with no write statements.
+- `pg_restore --schema=public` into `makeup_artist_hub_prod_snapshot`.
+- `curl http://127.0.0.1:8787/api/healthz`.
+- `curl http://127.0.0.1:8787/api/bookings` and `/api/clients`.
+- Built-in Browser validation on `http://localhost:5173/calendar`.
+
+### Work Package 2.13: Apple Calendar Subscription Reliability
+
+Status: Complete.
+
+Acceptance criteria:
+- The existing tokenized feed remains read-only and keeps a stable calendar identity and event UIDs.
+- Event `SEQUENCE` values change when relevant booking/event/payment fields change so subscribed clients can reconcile updates.
+- The feed advertises a refresh interval, returns revalidation-friendly cache headers/ETag, and includes Apple-readable timezone, status, privacy, location, and notes fields.
+- The UI provides an Apple Calendar `webcal://` handoff, a copyable HTTPS feed URL, and clear local-host limitations.
+- A configurable `VITE_PUBLIC_CALENDAR_BASE_URL` supports a deployed HTTPS or reachable LAN feed origin.
+
+Validation commands:
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/api-server run build`
+- `pnpm --filter @workspace/glam-crm run build`
+- Fetch `/api/public/calendar/:token.ics` and inspect headers and RFC 5545 fields.
+- Browser validation of the subscription dialog and mobile event-detail interaction on `/calendar`.
+
+### Work Package 2.14: Multi-Event Calendar Fidelity
+
+Status: In progress.
+
+Acceptance criteria:
+- Every non-deleted booking event is represented as its own distinguishable calendar item, including multiple event dates under one booking.
+- Each unpaid booking's explicit balance due date (or documented day-before-service fallback) is represented once and is visually distinguishable from service events.
+- Changes to any field rendered into an event or due reminder change the subscription representation and the local calendar view on the next fetch.
+- Cancelled and paid booking state does not create misleading outstanding-balance reminders.
+- Local production-derived data remains isolated from the hosted production database during validation.
+
+Validation commands:
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/api-server run build`
+- `pnpm --filter @workspace/glam-crm run build`
+- Fetch the local tokenized feed and compare event UIDs, `SEQUENCE`, ETag, and descriptions before/after a reversible local booking update.
+- Browser validation of a booking with multiple event rows and its due reminder on `/calendar`.
+
+### Work Package 2.15: Responsive Desktop Calendar Preview
+
+Status: Complete.
+
+Acceptance criteria:
+- Mac/desktop widths retain the full seven-column month view plus the existing week/day modes.
+- Narrower computer/tablet widths preserve the full calendar canvas with controlled horizontal scrolling instead of collapsing into an agenda or squeezing day cells.
+- The mobile agenda is limited to the mobile breakpoint where the full grid is not usable.
+- Clicking any calendar event opens a booking preview with the selected event context, booking schedule, status, financial summary, and a route to the full booking.
+- The preview and responsive layout work without changing API or database contracts.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- Browser validation at `430x932`, `1024x900`, `1221x1138`, and `1440x900`.
+- Browser interaction validation: click an event, confirm the booking preview, and follow `Open full booking`.
+
 ## Metrics
 
 - Local install succeeds on macOS.
