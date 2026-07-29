@@ -6,6 +6,7 @@ import {
   useListBookings,
   getGetClientQueryKey,
   getListClientsQueryKey,
+  type ClientSocialLink,
 } from "@workspace/api-client-react";
 import { useRoute } from "wouter";
 import {
@@ -20,6 +21,7 @@ import {
   Trash2,
   Plus,
   MapPin,
+  Link2,
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookingStatusBadge } from "@/components/BookingStatusBadge";
 import { format, parseISO } from "date-fns";
 import { useLocation } from "wouter";
+import { cleanSocialLinks, SocialLinksField, SocialLinksList } from "@/components/client/SocialLinks";
 
 function monogramFrom(name: string) {
   const trimmed = name.trim();
@@ -57,7 +60,7 @@ export default function ClientDetail() {
   const [, setLocation] = useLocation();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", notes: "" });
+  const [formData, setFormData] = useState<{ name: string; email: string; phone: string; notes: string; socialLinks: ClientSocialLink[] }>({ name: "", email: "", phone: "", notes: "", socialLinks: [] });
 
   useEffect(() => {
     if (client && !isEditing) {
@@ -66,6 +69,7 @@ export default function ClientDetail() {
         email: client.email,
         phone: client.phone || "",
         notes: client.notes || "",
+        socialLinks: client.socialLinks || [],
       });
     }
   }, [client, isEditing]);
@@ -83,6 +87,7 @@ export default function ClientDetail() {
           email: formData.email,
           phone: formData.phone || null,
           notes: formData.notes || null,
+          socialLinks: cleanSocialLinks(formData.socialLinks),
         },
       },
       {
@@ -297,6 +302,21 @@ export default function ClientDetail() {
                       </a>
                     ) : (
                       <span className="italic text-muted-foreground">No phone provided</span>
+                    )
+                  }
+                />
+                <ContactRow
+                  icon={Link2}
+                  label="Social profiles"
+                  value={
+                    isEditing ? (
+                      <SocialLinksField
+                        value={formData.socialLinks}
+                        onChange={(socialLinks) => setFormData({ ...formData, socialLinks })}
+                        showLabel={false}
+                      />
+                    ) : (
+                      <SocialLinksList links={client.socialLinks} />
                     )
                   }
                 />

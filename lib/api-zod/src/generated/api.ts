@@ -20,12 +20,27 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary List all clients
  */
+export const listClientsResponseSocialLinksItemPlatformMax = 40;
+
+export const listClientsResponseSocialLinksItemHandleMax = 240;
+
+export const listClientsResponseSocialLinksItemUrlMax = 2048;
+
+export const listClientsResponseSocialLinksMax = 12;
+
+
+
 export const ListClientsResponseItem = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "socialLinks": zod.array(zod.object({
+  "platform": zod.string().min(1).max(listClientsResponseSocialLinksItemPlatformMax),
+  "handle": zod.string().min(1).max(listClientsResponseSocialLinksItemHandleMax),
+  "url": zod.string().max(listClientsResponseSocialLinksItemUrlMax).nullish()
+})).max(listClientsResponseSocialLinksMax),
   "createdAt": zod.string()
 })
 export const ListClientsResponse = zod.array(ListClientsResponseItem)
@@ -36,13 +51,26 @@ export const ListClientsResponse = zod.array(ListClientsResponseItem)
  */
 
 
+export const createClientBodySocialLinksItemPlatformMax = 40;
+
+export const createClientBodySocialLinksItemHandleMax = 240;
+
+export const createClientBodySocialLinksItemUrlMax = 2048;
+
+export const createClientBodySocialLinksMax = 12;
+
 
 
 export const CreateClientBody = zod.object({
   "name": zod.string().min(1),
   "email": zod.string().min(1),
   "phone": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "socialLinks": zod.array(zod.object({
+  "platform": zod.string().min(1).max(createClientBodySocialLinksItemPlatformMax),
+  "handle": zod.string().min(1).max(createClientBodySocialLinksItemHandleMax),
+  "url": zod.string().max(createClientBodySocialLinksItemUrlMax).nullish()
+})).max(createClientBodySocialLinksMax).optional()
 })
 
 
@@ -53,12 +81,27 @@ export const GetClientParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getClientResponseSocialLinksItemPlatformMax = 40;
+
+export const getClientResponseSocialLinksItemHandleMax = 240;
+
+export const getClientResponseSocialLinksItemUrlMax = 2048;
+
+export const getClientResponseSocialLinksMax = 12;
+
+
+
 export const GetClientResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "socialLinks": zod.array(zod.object({
+  "platform": zod.string().min(1).max(getClientResponseSocialLinksItemPlatformMax),
+  "handle": zod.string().min(1).max(getClientResponseSocialLinksItemHandleMax),
+  "url": zod.string().max(getClientResponseSocialLinksItemUrlMax).nullish()
+})).max(getClientResponseSocialLinksMax),
   "createdAt": zod.string()
 })
 
@@ -71,14 +114,37 @@ export const UpdateClientParams = zod.object({
 })
 
 
+export const updateClientBodySocialLinksItemPlatformMax = 40;
+
+export const updateClientBodySocialLinksItemHandleMax = 240;
+
+export const updateClientBodySocialLinksItemUrlMax = 2048;
+
+export const updateClientBodySocialLinksMax = 12;
+
 
 
 export const UpdateClientBody = zod.object({
   "name": zod.string().min(1).optional(),
   "email": zod.string().optional(),
   "phone": zod.string().nullish(),
-  "notes": zod.string().nullish()
+  "notes": zod.string().nullish(),
+  "socialLinks": zod.array(zod.object({
+  "platform": zod.string().min(1).max(updateClientBodySocialLinksItemPlatformMax),
+  "handle": zod.string().min(1).max(updateClientBodySocialLinksItemHandleMax),
+  "url": zod.string().max(updateClientBodySocialLinksItemUrlMax).nullish()
+})).max(updateClientBodySocialLinksMax).optional()
 })
+
+export const updateClientResponseSocialLinksItemPlatformMax = 40;
+
+export const updateClientResponseSocialLinksItemHandleMax = 240;
+
+export const updateClientResponseSocialLinksItemUrlMax = 2048;
+
+export const updateClientResponseSocialLinksMax = 12;
+
+
 
 export const UpdateClientResponse = zod.object({
   "id": zod.number(),
@@ -86,6 +152,11 @@ export const UpdateClientResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "socialLinks": zod.array(zod.object({
+  "platform": zod.string().min(1).max(updateClientResponseSocialLinksItemPlatformMax),
+  "handle": zod.string().min(1).max(updateClientResponseSocialLinksItemHandleMax),
+  "url": zod.string().max(updateClientResponseSocialLinksItemUrlMax).nullish()
+})).max(updateClientResponseSocialLinksMax),
   "createdAt": zod.string()
 })
 
@@ -843,6 +914,16 @@ export const GetContractParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getContractResponseClientSocialLinksItemPlatformMax = 40;
+
+export const getContractResponseClientSocialLinksItemHandleMax = 240;
+
+export const getContractResponseClientSocialLinksItemUrlMax = 2048;
+
+export const getContractResponseClientSocialLinksMax = 12;
+
+
+
 export const GetContractResponse = zod.object({
   "booking": zod.object({
   "id": zod.number(),
@@ -926,6 +1007,11 @@ export const GetContractResponse = zod.object({
   "email": zod.string(),
   "phone": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "socialLinks": zod.array(zod.object({
+  "platform": zod.string().min(1).max(getContractResponseClientSocialLinksItemPlatformMax),
+  "handle": zod.string().min(1).max(getContractResponseClientSocialLinksItemHandleMax),
+  "url": zod.string().max(getContractResponseClientSocialLinksItemUrlMax).nullish()
+})).max(getContractResponseClientSocialLinksMax),
   "createdAt": zod.string()
 }),
   "events": zod.array(zod.object({

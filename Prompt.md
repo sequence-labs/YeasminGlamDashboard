@@ -54,3 +54,7 @@ Milestone 2: service catalog, booking line items, and contract output.
 ## Current Calendar Subscription Intent
 
 The calendar subscription control must provide a real read-only iCalendar feed suitable for Apple Calendar. The feed should include useful event details such as client, event type, service time, completion time, location, booking totals, retainer/balance state, and payment reminders. A stable feed URL must update existing subscribed entries when underlying booking data changes; the local app must support a configurable reachable public/LAN origin because `localhost` is not reachable from a phone.
+
+## Current Client Social Profile Intent
+
+Client records should support zero or more internal social/profile entries, including an Instagram handle or direct URL and other social platforms. The artist should be able to add and edit those entries from client and booking workflows, see them on client information and booking details, and open a stored profile directly in a new browser tab. Social profile data is CRM-only and must not be added to public client portal or calendar feed output unless explicitly requested.

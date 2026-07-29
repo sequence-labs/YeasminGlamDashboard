@@ -30,6 +30,7 @@ import {
   type BookingDetail,
   type BookingEvent,
   type BookingLineItem,
+  type ClientSocialLink,
   type ServiceItem,
 } from "@workspace/api-client-react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +40,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { Link, useLocation, useRoute } from "wouter";
 import { z } from "zod";
+import { cleanSocialLinks, SocialLinksField } from "@/components/client/SocialLinks";
 
 const lineItemSchema = z.object({
   id: z.number().optional(),
@@ -69,6 +71,7 @@ const editBookingSchemaBase = z.object({
   clientEmail: z.string().min(1, "Client email is required").email("Enter a valid email"),
   clientPhone: z.string().optional().refine((value) => !value || isCompleteUSPhone(value), "Enter a full 10-digit phone number"),
   clientNotes: z.string().optional(),
+  clientSocialLinks: z.array(z.object({ platform: z.string(), handle: z.string(), url: z.string().nullable().optional() })).default([]),
   contractTemplateId: z.string().min(1, "Contract is required"),
   eventType: z.string().min(1, "Event type is required"),
   status: z.enum(["draft", "active", "completed", "cancelled"]).default("draft"),
@@ -195,7 +198,7 @@ function lineItemToForm(item: BookingLineItem): EditBookingFormValues["lineItems
 
 function buildInitialValues(
   booking: BookingDetail,
-  client: { email?: string | null; phone?: string | null; notes?: string | null } | undefined,
+  client: { email?: string | null; phone?: string | null; notes?: string | null; socialLinks?: ClientSocialLink[] } | undefined,
   fallbackContractTemplateId: number | null,
 ): EditBookingFormValues {
   const serviceEvents = [...booking.events].filter((event) => event.kind !== "trial").sort(bySortOrder);
@@ -209,6 +212,7 @@ function buildInitialValues(
     clientEmail: client?.email ?? booking.clientEmail ?? "",
     clientPhone: formatUSPhoneInput(client?.phone ?? booking.clientPhone ?? ""),
     clientNotes: client?.notes ?? "",
+    clientSocialLinks: client?.socialLinks ?? [],
     contractTemplateId: String(booking.contractTemplateId ?? fallbackContractTemplateId ?? ""),
     eventType: booking.eventType,
     status: booking.status,
@@ -418,6 +422,7 @@ export default function EditBooking() {
       clientEmail: "",
       clientPhone: "",
       clientNotes: "",
+      clientSocialLinks: [],
       contractTemplateId: "",
       eventType: "",
       status: "draft",
@@ -476,6 +481,7 @@ export default function EditBooking() {
         clientEmail: watchedValues.clientEmail,
         clientPhone: watchedValues.clientPhone,
         clientNotes: watchedValues.clientNotes,
+        clientSocialLinks: watchedValues.clientSocialLinks,
         eventType: watchedValues.eventType,
         contractTemplateId: watchedValues.contractTemplateId,
         status: watchedValues.status,
@@ -485,6 +491,7 @@ export default function EditBooking() {
         clientEmail: initialValues.clientEmail,
         clientPhone: initialValues.clientPhone,
         clientNotes: initialValues.clientNotes,
+        clientSocialLinks: initialValues.clientSocialLinks,
         eventType: initialValues.eventType,
         contractTemplateId: initialValues.contractTemplateId,
         status: initialValues.status,
@@ -542,6 +549,7 @@ export default function EditBooking() {
       form.setValue("clientEmail", initialValues.clientEmail);
       form.setValue("clientPhone", initialValues.clientPhone);
       form.setValue("clientNotes", initialValues.clientNotes);
+      form.setValue("clientSocialLinks", initialValues.clientSocialLinks);
       form.setValue("eventType", initialValues.eventType);
       form.setValue("contractTemplateId", initialValues.contractTemplateId);
       form.setValue("status", initialValues.status);
@@ -627,12 +635,14 @@ export default function EditBooking() {
         email: data.clientEmail.trim(),
         phone: clientPhone,
         notes: nullableText(data.clientNotes),
+        socialLinks: cleanSocialLinks(data.clientSocialLinks as ClientSocialLink[]),
       };
       const originalClientUpdate = {
         name: initialValues.clientName.trim(),
         email: initialValues.clientEmail.trim(),
         phone: nullableText(formatUSPhone(initialValues.clientPhone ?? "")),
         notes: nullableText(initialValues.clientNotes),
+        socialLinks: cleanSocialLinks(initialValues.clientSocialLinks as ClientSocialLink[]),
       };
 
       if (!isSameValue(clientUpdate, originalClientUpdate)) {
@@ -980,6 +990,13 @@ export default function EditBooking() {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  <div className="md:col-span-2">
+                    <SocialLinksField
+                      value={form.watch("clientSocialLinks") as ClientSocialLink[]}
+                      onChange={(clientSocialLinks) => form.setValue("clientSocialLinks", clientSocialLinks)}
+                      disabled={isLocked}
+                    />
+                  </div>
                 </div>
               </SectionShell>
 

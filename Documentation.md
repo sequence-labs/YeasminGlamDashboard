@@ -1,6 +1,36 @@
 # Makeup Artist Hub Documentation
 
 
+## 2026-07-29 - Client Social Profiles (Start)
+
+- User requested editable Instagram and other social/profile handles or direct links on client information and booking details.
+- Work Package 2.16 is in progress. The intended model is an extensible client-owned list of platform, handle, and optional URL values, kept out of public calendar and client-portal output.
+- Validation will use only the writable local `makeup_artist_hub_prod_snapshot` database; the hosted Supabase connection remains dump-only.
+
+Validation failure:
+- The first API typecheck rejected the generated OpenAPI input shape because `ClientSocialLink.url` is optional at the request boundary while the Drizzle JSON type required a present `url` key. The schema type will be aligned to the generated contract; no runtime or database data was changed.
+- The documented Drizzle push against the isolated snapshot stopped at an unrelated existing `addon_requests_token_unique` prompt because the non-TTY command could not answer whether to truncate seven existing rows. No schema change was applied; validation will use a scoped additive `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` on the same local snapshot instead of forcing or truncating unrelated data.
+
+Update:
+- Added `clients.social_links` as a defaulted JSONB list with platform, handle, and optional direct URL values. OpenAPI, generated Zod contracts, and the React client were regenerated from the source spec.
+- Added a reusable social-profile editor and safe link resolver covering Instagram, Facebook, TikTok, X/Twitter, LinkedIn, YouTube, websites, and other platforms. Handle-only entries resolve to platform profile URLs; explicit URLs are limited to HTTP(S) before rendering as links.
+- Added social-profile capture to new-client, new-booking, and edit-booking intake. Client detail shows and edits the links; booking detail loads the linked client record and shows the same current links with an `Open client profile` route.
+- Public portal serialization now uses a separate `PortalClient` shape and strips `socialLinks`, keeping this internal CRM data out of tokenized client-facing portal responses.
+- Applied only `ALTER TABLE clients ADD COLUMN IF NOT EXISTS social_links jsonb NOT NULL DEFAULT '[]'::jsonb` to `makeup_artist_hub_prod_snapshot`; the hosted production database was not used as the API target.
+
+Validation:
+- `pnpm --filter @workspace/api-spec run codegen` passed.
+- `pnpm run typecheck` passed after rebuilding workspace library declarations.
+- API typecheck and build passed; frontend typecheck and build passed. Existing sourcemap and bundle-size warnings remain non-blocking.
+- `git diff --check` passed.
+- Browser QA on local snapshot-backed app passed: `/clients` loaded 18 clients; `/clients/12` displayed a reversible Instagram handle-derived link and explicit website URL; client edit exposed add/remove/profile fields; `/bookings/new` exposed the social-profile editor; `/bookings/12` displayed the same client links and direct client-profile route. Browser warning/error logs were empty.
+- A reversible local PATCH populated client 12 for UI verification and was restored to `socialLinks: []`; the final API response and browser handoff were verified after restoration.
+- A read-only local tokenized portal probe returned HTTP 200 and confirmed the client payload keys exclude `socialLinks`.
+
+Remaining risk:
+- Direct-link opening was verified through rendered HTTP(S) hrefs, not by navigating to third-party profile pages. The stored profile data is intentionally internal and is not included in public calendar or portal payloads.
+
+
 ## 2026-05-19 - UI/UX Polish Pass (Start)
 
 Intent:

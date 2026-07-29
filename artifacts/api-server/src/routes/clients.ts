@@ -34,6 +34,7 @@ router.post("/clients", async (req, res): Promise<void> => {
     email: parsed.data.email,
     phone: parsed.data.phone ?? null,
     notes: parsed.data.notes ?? null,
+    socialLinks: parsed.data.socialLinks ?? [],
   }).returning();
   res.status(201).json(GetClientResponse.parse({ ...client, createdAt: client.createdAt.toISOString() }));
 });

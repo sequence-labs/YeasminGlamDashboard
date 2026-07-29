@@ -1639,9 +1639,25 @@ components:
 
     # ── Client ──────────────────────────────────────────────────────────────
 
+    ClientSocialLink:
+      type: object
+      required: [platform, handle]
+      properties:
+        platform:
+          type: string
+          minLength: 1
+          maxLength: 40
+        handle:
+          type: string
+          minLength: 1
+          maxLength: 240
+        url:
+          type: ["string", "null"]
+          maxLength: 2048
+
     Client:
       type: object
-      required: [id, name, email, createdAt]
+      required: [id, name, email, socialLinks, createdAt]
       properties:
         id:
           type: integer
@@ -1653,6 +1669,11 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        socialLinks:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/ClientSocialLink"
         createdAt:
           type: string
 
@@ -1670,6 +1691,11 @@ components:
           type: string
         notes:
           type: string
+        socialLinks:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/ClientSocialLink"
 
     ClientUpdate:
       type: object
@@ -1683,6 +1709,28 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        socialLinks:
+          type: array
+          maxItems: 12
+          items:
+            $ref: "#/components/schemas/ClientSocialLink"
+
+    PortalClient:
+      type: object
+      required: [id, name, email, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
 
     # ── Services ────────────────────────────────────────────────────────────
 
@@ -3083,7 +3131,7 @@ components:
         booking:
           $ref: "#/components/schemas/BookingDetail"
         client:
-          $ref: "#/components/schemas/Client"
+          $ref: "#/components/schemas/PortalClient"
         events:
           type: array
           items:

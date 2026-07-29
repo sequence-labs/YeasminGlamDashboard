@@ -9,6 +9,7 @@ import {
   useListContractTemplates,
   useListServiceItems,
   getListBookingsQueryKey,
+  type ClientSocialLink,
   type ServiceItem,
 } from "@workspace/api-client-react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -28,6 +29,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatUSPhone, formatUSPhoneInput, isCompleteUSPhone } from "@/lib/phone";
 import { useEffect, useState } from "react";
 import { TimePartsInput } from "@/components/TimePartsInput";
+import { cleanSocialLinks, SocialLinksField } from "@/components/client/SocialLinks";
 
 const lineItemSchema = z.object({
   serviceItemId: z.number().optional(),
@@ -46,6 +48,7 @@ const bookingSchema = z.object({
   clientEmail: z.string().min(1, "Client email is required").email("Enter a valid email"),
   clientPhone: z.string().optional().refine((value) => !value || isCompleteUSPhone(value), "Enter a full 10-digit phone number"),
   clientNotes: z.string().optional(),
+  clientSocialLinks: z.array(z.object({ platform: z.string(), handle: z.string(), url: z.string().nullable().optional() })).default([]),
   eventType: z.string().min(1, "Event type is required"),
   contractTemplateId: z.string().min(1, "Contract is required"),
   location: z.string().min(1, "Location is required"),
@@ -128,6 +131,7 @@ export default function NewBooking() {
       clientEmail: "",
       clientPhone: "",
       clientNotes: "",
+      clientSocialLinks: [],
       eventType: "",
       contractTemplateId: "",
       location: "",
@@ -224,6 +228,7 @@ export default function NewBooking() {
           email: data.clientEmail.trim(),
           ...(clientPhone ? { phone: clientPhone } : {}),
           notes: optionalText(data.clientNotes),
+          socialLinks: cleanSocialLinks(data.clientSocialLinks as ClientSocialLink[]),
         },
       });
 
@@ -392,6 +397,13 @@ export default function NewBooking() {
                     </FormItem>
                   )}
                 />
+
+                <div className="md:col-span-2">
+                  <SocialLinksField
+                    value={form.watch("clientSocialLinks") as ClientSocialLink[]}
+                    onChange={(clientSocialLinks) => form.setValue("clientSocialLinks", clientSocialLinks)}
+                  />
+                </div>
 
                 <FormField
                   control={form.control}

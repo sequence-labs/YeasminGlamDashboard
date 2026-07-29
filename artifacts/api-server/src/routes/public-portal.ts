@@ -116,6 +116,7 @@ async function loadPortalPayload(token: string) {
   const grandTotal = parseFloat(row.booking.grandTotal as unknown as string);
   const retainerAmount = parseFloat(row.booking.retainerAmount as unknown as string);
   const balanceDue = Math.max(0, grandTotal - (row.booking.retainerPaid ? retainerAmount : 0));
+  const { socialLinks: _socialLinks, ...publicClient } = row.client;
 
   return {
     link,
@@ -129,7 +130,7 @@ async function loadPortalPayload(token: string) {
         lineItems: lineItems.map(serializeLineItem),
         activity: activity.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
       },
-      client: { ...row.client, createdAt: row.client.createdAt.toISOString() },
+      client: { ...publicClient, createdAt: row.client.createdAt.toISOString() },
       events: events.map(serializeEvent),
       lineItems: lineItems.map(serializeLineItem),
       payments: payments.map(serializePayment),

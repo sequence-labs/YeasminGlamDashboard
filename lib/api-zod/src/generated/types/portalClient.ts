@@ -5,9 +5,8 @@
  * Glam CRM API for makeup artist business management
  * OpenAPI spec version: 0.1.0
  */
-import type { ClientSocialLink } from './clientSocialLink';
 
-export interface Client {
+export interface PortalClient {
   id: number;
   name: string;
   email: string;
@@ -15,7 +14,5 @@ export interface Client {
   phone?: string | null;
   /** @nullable */
   notes?: string | null;
-  /** @maxItems 12 */
-  socialLinks: ClientSocialLink[];
   createdAt: string;
 }

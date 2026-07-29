@@ -8,13 +8,13 @@
 import type { BookingDetail } from './bookingDetail';
 import type { BookingEvent } from './bookingEvent';
 import type { BookingLineItem } from './bookingLineItem';
-import type { Client } from './client';
 import type { ContractTemplate } from './contractTemplate';
 import type { Payment } from './payment';
+import type { PortalClient } from './portalClient';
 
 export interface PortalPayload {
   booking: BookingDetail;
-  client: Client;
+  client: PortalClient;
   events: BookingEvent[];
   lineItems: BookingLineItem[];
   payments: Payment[];
