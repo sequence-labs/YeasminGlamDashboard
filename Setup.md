@@ -149,6 +149,8 @@ curl http://127.0.0.1:8787/api/bookings
 
 The snapshot restore can replace contents of the explicitly named local snapshot database. It does not write to Supabase; keep the hosted URL out of `DATABASE_URL` for the API process.
 
+If Drizzle's non-interactive `push` stops at an unrelated data-loss prompt for an existing constraint, do not use `push-force` to truncate snapshot data. Review the exact additive change and apply a scoped SQL migration to the explicitly named snapshot database instead.
+
 ## GitHub Pages Frontend Deployment
 
 The frontend deploys from `.github/workflows/pages.yml`.

@@ -9,6 +9,24 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface ClientSocialLink {
+  /**
+     * @minLength 1
+     * @maxLength 40
+     */
+  platform: string;
+  /**
+     * @minLength 1
+     * @maxLength 240
+     */
+  handle: string;
+  /**
+     * @maxLength 2048
+     * @nullable
+     */
+  url?: string | null;
+}
+
 export interface Client {
   id: number;
   name: string;
@@ -17,6 +35,8 @@ export interface Client {
   phone?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @maxItems 12 */
+  socialLinks: ClientSocialLink[];
   createdAt: string;
 }
 
@@ -27,6 +47,8 @@ export interface ClientInput {
   email: string;
   phone?: string;
   notes?: string;
+  /** @maxItems 12 */
+  socialLinks?: ClientSocialLink[];
 }
 
 export interface ClientUpdate {
@@ -37,6 +59,19 @@ export interface ClientUpdate {
   phone?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @maxItems 12 */
+  socialLinks?: ClientSocialLink[];
+}
+
+export interface PortalClient {
+  id: number;
+  name: string;
+  email: string;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
 }
 
 export type ServiceItemKind = typeof ServiceItemKind[keyof typeof ServiceItemKind];
@@ -1186,7 +1221,7 @@ export interface LeadConversionResult {
 
 export interface PortalPayload {
   booking: BookingDetail;
-  client: Client;
+  client: PortalClient;
   events: BookingEvent[];
   lineItems: BookingLineItem[];
   payments: Payment[];

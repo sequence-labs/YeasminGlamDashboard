@@ -1,5 +1,5 @@
 import { Shell } from "@/components/layout/Shell";
-import { useCreateClient, getListClientsQueryKey } from "@workspace/api-client-react";
+import { useCreateClient, getListClientsQueryKey, type ClientSocialLink } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { formatUSPhone, isCompleteUSPhone } from "@/lib/phone";
+import { cleanSocialLinks, SocialLinksField } from "@/components/client/SocialLinks";
 
 const clientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -29,6 +30,7 @@ const clientSchema = z.object({
     .optional()
     .refine((value) => !value || isCompleteUSPhone(value), "Enter a full 10-digit phone number"),
   notes: z.string().optional(),
+  socialLinks: z.array(z.object({ platform: z.string(), handle: z.string(), url: z.string().nullable().optional() })).default([]),
 });
 
 type ClientFormValues = z.infer<typeof clientSchema>;
@@ -42,7 +44,7 @@ export default function NewClient() {
 
   const form = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
-    defaultValues: { name: "", email: "", phone: "", notes: "" },
+    defaultValues: { name: "", email: "", phone: "", notes: "", socialLinks: [] },
   });
 
   function onSubmit(data: ClientFormValues) {
@@ -51,6 +53,7 @@ export default function NewClient() {
         data: {
           ...data,
           phone: data.phone ? formatUSPhone(data.phone) : undefined,
+          socialLinks: cleanSocialLinks(data.socialLinks as ClientSocialLink[]),
         },
       },
       {
@@ -139,6 +142,13 @@ export default function NewClient() {
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+              </div>
+
+              <div>
+                <SocialLinksField
+                  value={form.watch("socialLinks") as ClientSocialLink[]}
+                  onChange={(socialLinks) => form.setValue("socialLinks", socialLinks)}
                 />
               </div>
 

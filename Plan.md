@@ -379,3 +379,24 @@ Validation commands:
 - `DATABASE_URL=<supabase-url> pnpm --filter @workspace/db run push`
 - `psql <supabase-url> < data/backups/makeup_artist_hub-20260519-030003.sql`
 - `curl https://whisperflowserver.onrender.com/glam-api/api/healthz`
+
+### Work Package 2.16: Client Social Profiles
+
+Status: Complete.
+
+Acceptance criteria:
+- Client records support zero or more social/profile entries with a platform name, display handle, and optional direct URL.
+- New-client intake and client detail editing can add, remove, and update social/profile entries.
+- Client detail displays saved entries as direct links that open safely in a new tab.
+- Booking detail loads the current linked client record and displays the same social/profile entries, with a route to edit the client when needed.
+- Social profile data remains internal CRM data and is not emitted by public calendar or client-portal responses.
+- The local production-derived snapshot is the only database write target during validation.
+
+Validation commands:
+- `pnpm --filter @workspace/api-spec run codegen`
+- `DATABASE_URL=postgresql://$USER@127.0.0.1:5432/makeup_artist_hub_prod_snapshot pnpm --filter @workspace/db run push`
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm run typecheck`
+- Browser validation on `/clients/new`, `/clients/:id`, and `/bookings/:id`.

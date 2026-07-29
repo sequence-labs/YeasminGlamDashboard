@@ -1,6 +1,7 @@
 import { Shell } from "@/components/layout/Shell";
 import {
   useGetBooking,
+  useGetClient,
   useUpdateBooking,
   useDeleteBooking,
   useCreateEvent,
@@ -46,6 +47,7 @@ import { BookingPortalShareDialog } from "@/components/booking/BookingPortalShar
 import { BookingPaymentLinksCard } from "@/components/booking/BookingPaymentLinksCard";
 import { BookingAddonsSection } from "@/components/booking/BookingAddonsSection";
 import { useAddonRequests } from "@/lib/addons-api";
+import { SocialLinksList } from "@/components/client/SocialLinks";
 
 function lineItemAmount(item: BookingLineItem) {
   return item.total ?? item.quantity * item.unitPrice;
@@ -87,6 +89,7 @@ export default function BookingDetail() {
   const [, setLocation] = useLocation();
 
   const { data: booking, isLoading } = useGetBooking(id, { query: { enabled: !!id, queryKey: getGetBookingQueryKey(id) } });
+  const { data: client } = useGetClient(booking?.clientId ?? 0, { query: { enabled: !!booking?.clientId, queryKey: getGetClientQueryKey(booking?.clientId ?? 0) } });
   const updateBooking = useUpdateBooking();
   const deleteBooking = useDeleteBooking();
   const updateEvent = useUpdateEvent();
@@ -531,6 +534,25 @@ export default function BookingDetail() {
             </div>
           </div>
         </header>
+
+        <section className="crm-section p-5 sm:p-6" data-testid="booking-client-profile">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <span className="crm-eyebrow">Client · Contact</span>
+              <h2 className="crm-section-title mt-1">{booking.clientName}</h2>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                {client?.email || booking.clientEmail ? <span>{client?.email || booking.clientEmail}</span> : null}
+                {client?.phone || booking.clientPhone ? <span>{client?.phone || booking.clientPhone}</span> : null}
+              </div>
+              <div className="mt-4">
+                <SocialLinksList links={client?.socialLinks} />
+              </div>
+            </div>
+            <Button asChild variant="outline" className="shrink-0">
+              <Link href={`/clients/${booking.clientId}`} data-testid="link-booking-client-profile">Open client profile</Link>
+            </Button>
+          </div>
+        </section>
 
         <Tabs defaultValue="events" className="w-full">
           <TabsList className="grid w-full grid-cols-3 md:w-[620px]">
