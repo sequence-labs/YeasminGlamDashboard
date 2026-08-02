@@ -13,6 +13,7 @@ import {
   Sun,
   ReceiptText,
   CalendarRange,
+  BookOpenText,
 } from "lucide-react";
 import {
   useGetArtistProfile,
@@ -31,6 +32,7 @@ const primaryLinks = [
 
 const secondaryLinks = [
   { href: "/services", label: "Services", icon: Sparkles },
+  { href: "/service-menus", label: "Service Menus", icon: BookOpenText },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/artist", label: "Artist", icon: UserRound },
   { href: "/contracts", label: "Contracts", icon: FileText },

@@ -152,6 +152,40 @@ Validation commands:
 - `pnpm run typecheck`
 - Browser validation at `430x932` and desktop dashboard/expenses widths, including period filter, category filter, row preview, and edit save.
 
+### Work Package 2.20: Shareable Bridal Services Menus
+
+Status: In progress - initial General and Florida visual direction generated and validated; awaiting user review before design approval.
+
+Visual thesis:
+- Present GLAMBYEASMIN as an elevated bridal beauty studio through warm ivory, restrained burgundy or plum, subtle champagne accents, refined editorial typography, and generous whitespace.
+- Keep the menus luxurious, calm, and highly legible, avoiding stock photography, crowded decoration, generic wedding clip art, or overly delicate text that fails on phones.
+- Build one coherent art direction across the PDF, share-image, and responsive CRM preview, then expose the first rendered preview for user direction before finalizing.
+
+Acceptance criteria:
+- A general services menu and a Florida services menu are generated as separate print-quality PDFs under stable, descriptive filenames in `output/pdf/`.
+- Matching high-resolution PNG share images are generated for both editions and remain crisp and legible when viewed on a phone or sent through a messaging app.
+- Both editions preserve the approved service descriptions, add-ons, requirements, offers, travel fees, early-morning fees, and full-glam specialty note without introducing unapproved pricing or claims.
+- The general edition lists Bridal Bundle at `$600 (each event)`; the Florida edition lists Bridal Bundle at `$675 (each event)`. All other supplied prices remain identical across editions.
+- The pricing hierarchy remains unambiguous, including Signature Bridal Package at `$700`, Special Bridal Offer at `$700 (each event)`, free `$150` Bridal Makeup Trial for 2 or more bridal events, and `$25 off each day` when booking 3 or more bridal services under the Bridal Bundle.
+- PDFs use embedded fonts, print-safe margins, sharp vector text, selectable/extractable copy, and no clipped, overlapping, missing, or substituted glyphs.
+- The CRM provides a prominent, easy-to-find, responsive services-menu surface with clear General and Florida selection, in-app preview, PDF download, PNG download, and native share when supported with a clear fallback when it is not.
+- The preview and controls work at mobile and desktop sizes, use accessible labels and touch targets, and do not require navigating into an obscure settings-only area.
+- Generated assets are static and public-safe and contain no client, booking, contract, payment, receipt, or other private CRM data.
+- No API contract or database change is required for the first static-asset implementation.
+- The user reviews the initial rendered preview before the visual direction is considered final.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm run typecheck`
+- `pdfinfo output/pdf/glambyeasmin-services-general.pdf` and `pdfinfo output/pdf/glambyeasmin-services-florida.pdf`.
+- `pdffonts` on both PDFs to confirm every production font is embedded.
+- `pdftotext -layout` on both PDFs, followed by a pricing/copy comparison confirming `$600` appears only in the general Bridal Bundle and `$675` appears only in the Florida Bridal Bundle.
+- `pdftoppm -png -r 180` for both PDFs, followed by visual inspection of every rendered page for spacing, hierarchy, clipping, legibility, and edition labeling.
+- Inspect the final PNG share images at original size and a phone-width preview; confirm readable type, expected dimensions, and no compression artifacts.
+- Browser validation of menu discovery, edition switching, preview, PDF download, PNG download, native-share support/fallback, and responsive behavior at `430x932`, `768x1024`, and `1440x900`.
+- `git diff --check`.
+
 ## Rollback Conditions
 
 - Local migration requires replacing generated source files wholesale.

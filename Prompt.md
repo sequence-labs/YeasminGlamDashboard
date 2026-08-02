@@ -26,6 +26,32 @@ Local OCR remains the immediate receipt path and safe fallback. When a server-si
 
 The Automations surface is no longer a desired visible CRM workflow. Do not show an Automations tab or command-palette entry unless the user explicitly asks to restore automation management.
 
+## Current Shareable Services Menu Intent
+
+GLAMBYEASMIN needs two polished, public-safe bridal services menus that the artist can quickly preview, download, and share with prospective clients: a general edition and a Florida edition. Each edition must be available as a print-quality PDF and as a high-resolution PNG suitable for messaging and social sharing. The CRM entry point must be prominent and responsive rather than hidden in a secondary settings surface.
+
+The visual direction is elevated bridal editorial: warm ivory, restrained burgundy or plum, subtle champagne accents, refined serif display typography, highly legible body copy, generous spacing, and tasteful beauty-inspired detail. The design should feel luxurious and personal without relying on stock photography, visual clutter, or novelty wedding motifs. The first implementation should provide a faithful preview for user review before treating the visual direction as final.
+
+Canonical menu content and pricing:
+- Bridal Makeup - $400. Includes luxury skin prep with under-eye patches, professional products, lashes, a flawless long-lasting finish, and a customized bridal look.
+- Bridal Hair - $300. Includes styling for the desired look, hair padding, bobby pins, and safety pins. The bride must arrive with clean, washed, completely dry hair and provide any hair extensions. Recommended extension brand: Bellami.
+- Synthetic bun extension add-on - $15.
+- Bridal Set Up - $50. Includes dupatta or veil placement and jewelry placement.
+- Bridal Hijab Set Up - $50. Includes secure bridal hijab styling with gel, hairspray, and strong-hold techniques. The client must bring a preferred hijab and under cap. Recommended fabrics: cotton or jersey.
+- Bridal Makeup Trial - $150. A personalized trial to perfect the bridal makeup look before the wedding day.
+- Signature Bridal Package - $700. Includes Bridal Makeup, Hairstyling, and Complete Bridal Setup.
+- Bridal Bundle, general edition - $600 per event. Book 3 or more bridal services and receive $25 off each day.
+- Bridal Bundle, Florida edition - $675 per event. This is the only regional price change from the general edition unless the user provides additional Florida-specific copy.
+- Special Bridal Offer - Bridal Makeup Package: $700 per event. Book 2 or more bridal events and receive a free Bridal Makeup Trial, a $150 value.
+- Travel fee, 10-15 miles - $50.
+- Travel fee, 20+ miles - $100.
+- Further-distance travel pricing is discussed during consultation; travel fees are confirmed at booking, and clients may travel to the artist to avoid a travel fee.
+- Early Morning Fee, 3:00-5:00 AM - $200.
+- Early Morning Fee, 6:00-7:00 AM - $75.
+- Specialty note: the artist specializes in full glam and may not be the right artist for clients seeking completely natural glam.
+
+The menu assets are static marketing materials. They must not contain client, booking, contract, payment, receipt, or other private CRM data.
+
 ## Non-Goals
 
 - Do not redesign the product UI for new functional behavior unless explicitly requested by the user for a UI/UX polishing pass.
@@ -35,6 +61,8 @@ The Automations surface is no longer a desired visible CRM workflow. Do not show
 - Do not introduce broad rewrites or full-file replacement edits.
 - Do not surface Leads navigation or public-inquiry entry points unless the user explicitly reintroduces that workflow.
 - Do not surface Automations navigation or automation-management entry points unless the user explicitly reintroduces that workflow.
+- Do not auto-publish a final visual design before the user has reviewed the preview.
+- Do not make the public services menu depend on authenticated CRM data or expose private CRM records.
 
 ## Constraints
 

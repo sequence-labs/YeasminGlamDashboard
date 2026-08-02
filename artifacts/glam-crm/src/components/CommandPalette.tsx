@@ -16,6 +16,7 @@ import {
   UserPlus,
   UserRound,
   Users,
+  BookOpenText,
 } from "lucide-react";
 import {
   getListBookingsQueryKey,
@@ -100,6 +101,7 @@ export function CommandPalette({ open, onOpenChange }: Props) {
             <PaletteItem onSelect={() => go("/calendar")} icon={CalendarDays} label="Calendar" />
             <PaletteItem onSelect={() => go("/clients")} icon={Users} label="Clients" />
             <PaletteItem onSelect={() => go("/services")} icon={Sparkles} label="Services" />
+            <PaletteItem onSelect={() => go("/service-menus")} icon={BookOpenText} label="Service menus" />
             <PaletteItem onSelect={() => go("/expenses")} icon={ReceiptText} label="Expenses" />
             <PaletteItem onSelect={() => go("/artist")} icon={UserRound} label="Artist profile" />
             <PaletteItem onSelect={() => go("/contracts")} icon={PenSquare} label="Contracts" />
