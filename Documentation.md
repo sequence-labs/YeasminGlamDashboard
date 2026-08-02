@@ -2690,3 +2690,8 @@ Revision validation:
 - Published as `Commit #34 - Improve menu readability and sharing` on `codex/service-menu-pdfs`; because PR #6 had already merged, the revision is tracked in follow-up ready PR #7.
 - Commit created: `41f545b` (`Commit #33 - Add shareable bridal service menus`).
 - Binary PDF internals produce expected `git diff --check` trailing-space diagnostics; the check excluding `**/*.pdf` passed for all source, documentation, script, and PNG changes.
+
+Final polish:
+- Constrained the enlarged package titles to their own text column so Signature Bridal Package and its `$700` price never overlap.
+- Re-rendered and visually inspected the corrected package card, page 1, and detail sections; the title now wraps cleanly and all prices remain separated.
+- Final focused frontend typecheck and build passed. Existing sourcemap, OpenCV browser-externalization, and chunk-size warnings remain unchanged.
