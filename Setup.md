@@ -294,4 +294,4 @@ The checked-in CRM assets can be regenerated from the scoped source script:
 python3 artifacts/glam-crm/scripts/generate-service-menus.py
 ```
 
-The generator requires Python 3 with `reportlab` and `Pillow`, macOS Arial and Georgia supplemental fonts, and Poppler's `pdftoppm`. It writes review copies to `output/pdf/` and refreshes the public PDFs and page/share PNGs under `artifacts/glam-crm/public/service-menus/`.
+The generator requires Python 3 with `reportlab` and `Pillow`, macOS Arial and Georgia supplemental fonts, and Poppler's `pdftoppm`. It writes review copies to `output/pdf/` and refreshes the public PDFs plus separate page-1/page-2 share PNGs under `artifacts/glam-crm/public/service-menus/`.

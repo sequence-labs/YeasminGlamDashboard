@@ -28,7 +28,7 @@ The Automations surface is no longer a desired visible CRM workflow. Do not show
 
 ## Current Shareable Services Menu Intent
 
-GLAMBYEASMIN needs two polished, public-safe bridal services menus that the artist can quickly preview, download, and share with prospective clients: a general edition and a Florida edition. Each edition must be available as a print-quality PDF and as a high-resolution PNG suitable for messaging and social sharing. The CRM entry point must be prominent and responsive rather than hidden in a secondary settings surface.
+GLAMBYEASMIN needs two polished, public-safe bridal services menus that the artist can quickly preview, download, and share with prospective clients: a general edition and a Florida edition. Each edition must be available as a print-quality PDF and as two page-level high-resolution PNGs suitable for messaging and social sharing, so the detail copy remains readable instead of being compressed into one extra-tall image. The CRM entry point must be prominent and responsive rather than hidden in a secondary settings surface.
 
 The visual direction is elevated bridal editorial: warm ivory, restrained burgundy or plum, subtle champagne accents, refined serif display typography, highly legible body copy, generous spacing, and tasteful beauty-inspired detail. The design should feel luxurious and personal without relying on stock photography, visual clutter, or novelty wedding motifs. The first implementation should provide a faithful preview for user review before treating the visual direction as final.
 

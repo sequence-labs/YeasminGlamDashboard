@@ -31,7 +31,6 @@ export default function ServiceMenusPage() {
   const assets = useMemo(
     () => ({
       pdf: publicAsset(`service-menus/${slug}.pdf`),
-      share: publicAsset(`service-menus/${slug}-share.png`),
       pages: [1, 2].map((page) => publicAsset(`service-menus/${slug}-page-${page}.png`)),
     }),
     [slug],
@@ -126,13 +125,15 @@ export default function ServiceMenusPage() {
                   <Download className="h-4 w-4 text-muted-foreground" />
                 </a>
               </Button>
-              <Button asChild variant="outline" className="min-h-12 w-full justify-start gap-3 px-4">
-                <a href={assets.share} download={`${slug}-share.png`}>
-                  <FileImage className="h-4 w-4 text-primary" />
-                  <span className="flex-1 text-left">Download share image</span>
-                  <Download className="h-4 w-4 text-muted-foreground" />
-                </a>
-              </Button>
+              {assets.pages.map((page, index) => (
+                <Button key={page} asChild variant="outline" className="min-h-12 w-full justify-start gap-3 px-4">
+                  <a href={page} download={`${slug}-page-${index + 1}.png`}>
+                    <FileImage className="h-4 w-4 text-primary" />
+                    <span className="flex-1 text-left">Share page {index + 1}</span>
+                    <Download className="h-4 w-4 text-muted-foreground" />
+                  </a>
+                </Button>
+              ))}
               <Button asChild variant="ghost" className="min-h-11 w-full justify-start gap-3 px-4 text-muted-foreground">
                 <a href={assets.pdf} target="_blank" rel="noreferrer">
                   <ExternalLink className="h-4 w-4" />
@@ -142,7 +143,7 @@ export default function ServiceMenusPage() {
             </section>
 
             <p className="px-1 text-xs leading-5 text-muted-foreground">
-              The PDF is best for email and printing. The full-length image is useful for text messages and social DMs.
+              The PDF is best for email and printing. Each page is sized separately for text messages and social DMs.
             </p>
           </aside>
 

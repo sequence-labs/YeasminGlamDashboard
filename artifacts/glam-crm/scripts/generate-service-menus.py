@@ -64,10 +64,10 @@ def paragraph_style(name: str, **overrides) -> ParagraphStyle:
     return ParagraphStyle(name, **values)
 
 
-BODY = paragraph_style("Body")
-BODY_SMALL = paragraph_style("BodySmall", fontSize=7.5, leading=10.1, textColor=TAUPE)
-BODY_LIGHT = paragraph_style("BodyLight", fontSize=8, leading=10.8, textColor=TAUPE)
-SERIF_NOTE = paragraph_style("SerifNote", fontName="GlamSerif-Italic", fontSize=9.5, leading=13, textColor=OXBLOOD_DARK)
+BODY = paragraph_style("Body", fontSize=8.8, leading=12, textColor=INK)
+BODY_SMALL = paragraph_style("BodySmall", fontSize=8.4, leading=11.6, textColor=TAUPE)
+BODY_LIGHT = paragraph_style("BodyLight", fontSize=8.5, leading=11.8, textColor=TAUPE)
+SERIF_NOTE = paragraph_style("SerifNote", fontName="GlamSerif-Italic", fontSize=10.2, leading=14, textColor=OXBLOOD_DARK)
 
 
 def draw_paragraph(c: canvas.Canvas, text: str, x: float, top: float, width: float, style: ParagraphStyle = BODY) -> float:
@@ -93,7 +93,7 @@ def crop_image(c: canvas.Canvas, image_path: Path, x: float, y: float, width: fl
 
 def draw_brand(c: canvas.Canvas, edition: str, page_number: int) -> None:
     c.setFillColor(OXBLOOD)
-    c.setFont("GlamSans-Bold", 8)
+    c.setFont("GlamSans-Bold", 8.5)
     c.drawString(44, PAGE_H - 32, "G L A M B Y E A S M I N")
     c.setFillColor(TAUPE)
     c.setFont("GlamSans", 6.8)
@@ -166,7 +166,7 @@ def draw_page_one(c: canvas.Canvas, edition: str) -> None:
     c.setFont("GlamSans-Bold", 7.3)
     c.drawString(44, top, "THE BRIDAL ESSENTIALS")
     top -= 29
-    gap = 28
+    gap = 24
     column_w = (PAGE_W - 88 - gap) / 2
     left_x = 44
     right_x = left_x + column_w + gap
@@ -372,12 +372,6 @@ def render_share_assets(slug: str, pdf_path: Path) -> None:
         page.save(PUBLIC_DIR / f"{slug}-page-{index}.png", quality=95)
 
     gap = 28
-    composite = Image.new("RGB", (pages[0].width, sum(page.height for page in pages) + gap), "#F5F0E8")
-    y = 0
-    for page in pages:
-        composite.paste(page, (0, y))
-        y += page.height + gap
-    composite.save(PUBLIC_DIR / f"{slug}-share.png", optimize=True)
     for page in pages:
         page.close()
 
