@@ -682,9 +682,63 @@ function PreviewMetric({ label, value }: { label: string; value: string }) {
 function buildFeedUrls(token: string) {
   const configuredBase = import.meta.env.VITE_PUBLIC_CALENDAR_BASE_URL as string | undefined;
   const base = (configuredBase || apiBaseUrl || (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/+$/, "");
-  const httpUrl = `${base}/api/public/calendar/${token}.ics`;
-  const webcalUrl = httpUrl.replace(/^https?:\/\//i, "webcal://");
-  return { httpUrl, webcalUrl };
+  const bookingsHttpUrl = `${base}/api/public/calendar/${token}/bookings.ics`;
+  const remindersHttpUrl = `${base}/api/public/calendar/${token}/reminders.ics`;
+  return {
+    bookingsHttpUrl,
+    bookingsWebcalUrl: bookingsHttpUrl.replace(/^https?:\/\//i, "webcal://"),
+    remindersHttpUrl,
+    remindersWebcalUrl: remindersHttpUrl.replace(/^https?:\/\//i, "webcal://"),
+  };
+}
+
+function SubscriptionOption({
+  eyebrow,
+  title,
+  description,
+  httpUrl,
+  webcalUrl,
+  downloadName,
+  onCopy,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  httpUrl: string;
+  webcalUrl: string;
+  downloadName: string;
+  onCopy: () => void;
+}) {
+  return (
+    <section className="space-y-3 rounded-xl border border-card-border/70 bg-card/70 p-4">
+      <div>
+        <span className="crm-eyebrow !text-[10px]">{eyebrow}</span>
+        <h3 className="mt-1 font-serif text-xl text-foreground" style={{ fontVariationSettings: "'opsz' 72" }}>
+          {title}
+        </h3>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
+      </div>
+      <Button asChild className="w-full">
+        <a href={webcalUrl}>
+          <CalendarPlus className="h-4 w-4" /> Add {title.toLowerCase()} to Apple Calendar
+        </a>
+      </Button>
+      <div className="space-y-2">
+        <span className="crm-eyebrow !text-[10px]">Or paste this subscription link into any calendar app</span>
+        <code className="block break-all rounded-lg border border-card-border bg-muted/40 p-3 text-xs">{httpUrl}</code>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={onCopy}>
+            <Copy className="h-4 w-4" /> Copy URL
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <a href={httpUrl} target="_blank" rel="noreferrer" download={downloadName}>
+              <Download className="h-4 w-4" /> Download .ics
+            </a>
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function FeedDialog({ open, onOpenChange, toast }: { open: boolean; onOpenChange: (v: boolean) => void; toast: ReturnType<typeof useToast>["toast"] }) {
@@ -696,68 +750,70 @@ function FeedDialog({ open, onOpenChange, toast }: { open: boolean; onOpenChange
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <DialogHeader>
           <span className="crm-eyebrow">Calendar · Subscribe</span>
           <DialogTitle className="font-serif text-2xl" style={{ fontVariationSettings: "'opsz' 72" }}>
-            Add the studio calendar
+            Add the studio calendars
           </DialogTitle>
           <DialogDescription>
-            Subscribe once to see bookings, trials, locations, service times, and payment reminders in Apple Calendar.
-            The feed refreshes automatically as the studio schedule changes.
+            Keep scheduled work and payment reminders separate. Subscribe to either calendar—or both—and each one
+            will update automatically as the studio schedule changes.
           </DialogDescription>
         </DialogHeader>
         {urls && (
           <div className="space-y-4">
-            <Button asChild className="w-full">
-              <a href={urls.webcalUrl}>
-                <CalendarPlus className="h-4 w-4" /> Add to Apple Calendar
-              </a>
-            </Button>
+            <SubscriptionOption
+              eyebrow="Bookings · Events"
+              title="Bookings & events"
+              description="Scheduled trials and services, with client, event type, time window, location, and booking details."
+              httpUrl={urls.bookingsHttpUrl}
+              webcalUrl={urls.bookingsWebcalUrl}
+              downloadName="glam-bookings.ics"
+              onCopy={async () => {
+                await navigator.clipboard.writeText(urls.bookingsHttpUrl);
+                toast({ title: "Bookings calendar URL copied" });
+              }}
+            />
 
-            <div className="space-y-2">
-              <span className="crm-eyebrow !text-[10px]">Or paste this subscription link into any calendar app</span>
-              <code className="block break-all rounded-lg border border-card-border bg-muted/40 p-3 text-xs">{urls.httpUrl}</code>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(urls.httpUrl);
-                    toast({ title: "Feed URL copied" });
-                  }}
-                >
-                  <Copy className="h-4 w-4" /> Copy URL
-                </Button>
-                <Button asChild variant="outline" size="sm">
-                  <a href={urls.httpUrl} target="_blank" rel="noreferrer" download="glam-calendar.ics">
-                    <Download className="h-4 w-4" /> Download .ics
-                  </a>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={rotate.isPending}
-                  onClick={() =>
-                    rotate.mutate(undefined, {
-                      onSuccess: () => {
-                        refetch();
-                        toast({ title: "Feed link reset", description: "The old link no longer works." });
-                      },
-                    })
-                  }
-                >
-                  <RotateCw className="h-4 w-4" /> Reset link
-                </Button>
-              </div>
+            <SubscriptionOption
+              eyebrow="Payments · Reminders"
+              title="Payment reminders"
+              description="Balance-due dates only, clearly separated from the actual appointment schedule."
+              httpUrl={urls.remindersHttpUrl}
+              webcalUrl={urls.remindersWebcalUrl}
+              downloadName="glam-payment-reminders.ics"
+              onCopy={async () => {
+                await navigator.clipboard.writeText(urls.remindersHttpUrl);
+                toast({ title: "Payment reminders URL copied" });
+              }}
+            />
+
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-card-border/70 bg-muted/30 px-3 py-2">
+              <p className="text-xs leading-relaxed text-muted-foreground">Resetting the link resets both subscriptions.</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={rotate.isPending}
+                onClick={() =>
+                  rotate.mutate(undefined, {
+                    onSuccess: () => {
+                      refetch();
+                      toast({ title: "Feed links reset", description: "The old booking and reminder links no longer work." });
+                    },
+                  })
+                }
+              >
+                <RotateCw className="h-4 w-4" /> Reset both
+              </Button>
             </div>
 
             <div className="rounded-lg border border-card-border/70 bg-accent/20 p-3 text-xs leading-relaxed text-muted-foreground">
-              <span className="font-medium text-foreground/80">On iPhone:</span> tap “Add to Apple Calendar,” or go
-              to Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar and paste the link.
-              Apple Calendar subscriptions are read-only and refresh on Apple’s schedule. For a phone, use the
-              deployed HTTPS link or set the local public calendar URL to a reachable HTTPS/LAN address; a
-              localhost link only works on the computer running this app.
+              <span className="font-medium text-foreground/80">On iPhone:</span> tap either “Add to Apple Calendar”
+              button, or go to Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar and
+              paste that calendar’s link. Apple Calendar subscriptions are read-only and refresh on Apple’s schedule.
+              For a phone, use the deployed HTTPS link or set the local public calendar URL to a reachable HTTPS/LAN
+              address; a localhost link only works on the computer running this app.
             </div>
           </div>
         )}

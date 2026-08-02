@@ -265,7 +265,10 @@ export const ListExpensesResponseItem = zod.object({
   "vendor": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "receiptDataUrl": zod.string().nullish().describe('Data URL for an uploaded receipt image, scan, or PDF.'),
+  "receiptId": zod.number().nullish(),
+  "productCode": zod.string().nullish(),
+  "quantity": zod.number().nullish(),
+  "receiptDataUrl": zod.string().nullish().describe('Data URL or authenticated attachment path for an uploaded receipt image, scan, or PDF.'),
   "receiptFileName": zod.string().nullish(),
   "businessUse": zod.boolean(),
   "reimbursable": zod.boolean(),
@@ -283,6 +286,8 @@ export const ListExpensesResponse = zod.array(ListExpensesResponseItem)
 export const createExpenseBodyAmountMin = 0;
 
 
+export const createExpenseBodyQuantityMin = 0;
+
 
 
 export const CreateExpenseBody = zod.object({
@@ -293,6 +298,9 @@ export const CreateExpenseBody = zod.object({
   "vendor": zod.string().optional(),
   "paymentMethod": zod.string().optional(),
   "notes": zod.string().optional(),
+  "receiptId": zod.number().optional(),
+  "productCode": zod.string().optional(),
+  "quantity": zod.number().min(createExpenseBodyQuantityMin).optional(),
   "receiptDataUrl": zod.string().optional(),
   "receiptFileName": zod.string().optional(),
   "businessUse": zod.boolean().optional(),
@@ -311,6 +319,8 @@ export const UpdateExpenseParams = zod.object({
 
 export const updateExpenseBodyAmountMin = 0;
 
+export const updateExpenseBodyQuantityMin = 0;
+
 
 
 export const UpdateExpenseBody = zod.object({
@@ -321,6 +331,9 @@ export const UpdateExpenseBody = zod.object({
   "vendor": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "notes": zod.string().nullish(),
+  "receiptId": zod.number().nullish(),
+  "productCode": zod.string().nullish(),
+  "quantity": zod.number().min(updateExpenseBodyQuantityMin).nullish(),
   "receiptDataUrl": zod.string().nullish(),
   "receiptFileName": zod.string().nullish(),
   "businessUse": zod.boolean().optional(),
@@ -337,7 +350,10 @@ export const UpdateExpenseResponse = zod.object({
   "vendor": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "receiptDataUrl": zod.string().nullish().describe('Data URL for an uploaded receipt image, scan, or PDF.'),
+  "receiptId": zod.number().nullish(),
+  "productCode": zod.string().nullish(),
+  "quantity": zod.number().nullish(),
+  "receiptDataUrl": zod.string().nullish().describe('Data URL or authenticated attachment path for an uploaded receipt image, scan, or PDF.'),
   "receiptFileName": zod.string().nullish(),
   "businessUse": zod.boolean(),
   "reimbursable": zod.boolean(),
@@ -351,6 +367,107 @@ export const UpdateExpenseResponse = zod.object({
  * @summary Archive a business expense
  */
 export const DeleteExpenseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Save a reviewed receipt and its expense lines atomically
+ */
+
+export const importExpenseReceiptBodySubtotalMin = 0;
+
+export const importExpenseReceiptBodyTaxMin = 0;
+
+export const importExpenseReceiptBodyTotalMin = 0.01;
+
+
+
+export const importExpenseReceiptBodyOcrConfidenceMin = 0;
+export const importExpenseReceiptBodyOcrConfidenceMax = 100;
+
+
+export const importExpenseReceiptBodyItemsItemAmountMin = 0.01;
+
+export const importExpenseReceiptBodyItemsItemQuantityMin = 0.01;
+
+
+
+
+export const ImportExpenseReceiptBody = zod.object({
+  "vendor": zod.string().optional(),
+  "expenseDate": zod.string().min(1),
+  "paymentMethod": zod.string().optional(),
+  "subtotal": zod.number().min(importExpenseReceiptBodySubtotalMin).optional(),
+  "tax": zod.number().min(importExpenseReceiptBodyTaxMin).optional(),
+  "total": zod.number().min(importExpenseReceiptBodyTotalMin),
+  "receiptDataUrl": zod.string().min(1),
+  "receiptFileName": zod.string().min(1),
+  "rawText": zod.string().optional(),
+  "ocrConfidence": zod.number().min(importExpenseReceiptBodyOcrConfidenceMin).max(importExpenseReceiptBodyOcrConfidenceMax).optional(),
+  "businessUse": zod.boolean().optional(),
+  "reimbursable": zod.boolean().optional(),
+  "items": zod.array(zod.object({
+  "itemName": zod.string().min(1),
+  "category": zod.enum(['makeup_products', 'hair_products', 'tools_equipment', 'disposables', 'travel', 'education', 'marketing', 'software', 'studio_supplies', 'other']),
+  "amount": zod.number().min(importExpenseReceiptBodyItemsItemAmountMin),
+  "productCode": zod.string().optional(),
+  "quantity": zod.number().min(importExpenseReceiptBodyItemsItemQuantityMin).optional(),
+  "notes": zod.string().optional()
+})).min(1)
+})
+
+
+/**
+ * @summary Analyze user-approved redacted receipt images with the configured Gemini model
+ */
+
+export const analyzeExpenseReceiptBodyRedactedImagesMax = 8;
+
+
+
+export const AnalyzeExpenseReceiptBody = zod.object({
+  "redactedImages": zod.array(zod.string().min(1)).min(1).max(analyzeExpenseReceiptBodyRedactedImagesMax)
+})
+
+export const analyzeExpenseReceiptResponseSubtotalMin = 0;
+
+export const analyzeExpenseReceiptResponseTaxMin = 0;
+
+export const analyzeExpenseReceiptResponseTotalMin = 0;
+
+export const analyzeExpenseReceiptResponseItemsItemAmountMin = 0;
+
+export const analyzeExpenseReceiptResponseItemsItemQuantityMin = 0.01;
+
+export const analyzeExpenseReceiptResponseItemsMax = 100;
+
+
+
+export const AnalyzeExpenseReceiptResponse = zod.object({
+  "model": zod.string(),
+  "vendor": zod.string(),
+  "expenseDate": zod.string().describe('Purchase date as YYYY-MM-DD, or an empty string when not visible.'),
+  "purchaseTime": zod.string().describe('Local purchase time as HH:MM, or an empty string when not visible.'),
+  "paymentMethod": zod.string().describe('Normalized payment method such as Credit\/debit card, Cash, Venmo, or an empty string when not visible.'),
+  "subtotal": zod.number().min(analyzeExpenseReceiptResponseSubtotalMin),
+  "tax": zod.number().min(analyzeExpenseReceiptResponseTaxMin),
+  "total": zod.number().min(analyzeExpenseReceiptResponseTotalMin),
+  "items": zod.array(zod.object({
+  "itemName": zod.string().describe('Standardized searchable product name with brand, product family, and important variant details.'),
+  "receiptLabel": zod.string().describe('Original printed product wording without price or payment metadata.'),
+  "category": zod.enum(['makeup_products', 'hair_products', 'tools_equipment', 'disposables', 'travel', 'education', 'marketing', 'software', 'studio_supplies', 'other']),
+  "amount": zod.number().min(analyzeExpenseReceiptResponseItemsItemAmountMin),
+  "quantity": zod.number().min(analyzeExpenseReceiptResponseItemsItemQuantityMin),
+  "productCode": zod.string()
+})).max(analyzeExpenseReceiptResponseItemsMax)
+})
+
+
+/**
+ * @summary Open a stored receipt attachment
+ */
+export const GetExpenseReceiptFileParams = zod.object({
   "id": zod.coerce.number()
 })
 

@@ -18,6 +18,12 @@ The Leads intake/admin surface is no longer a desired visible CRM workflow. Keep
 
 Expense tracking is now an intended CRM workflow. The app should help the artist track business costs such as makeup, hair products, tools, disposables, travel-related supplies, and other operating expenses, then reflect those costs in dashboard financial trackers.
 
+Expense entry should be receipt-first on mobile. The artist must be able to photograph a receipt or choose a screenshot, run OCR locally without a paid subscription, review and correct the detected merchant/date/totals/product lines, and save either itemized expenses or one combined expense. OCR must never silently post to the ledger, and uncertain or unreconciled values must remain visibly editable before saving.
+
+Expense reporting should be useful at a glance: summary cards should support time/category filtering, and mobile ledger rows should stay compact while opening a complete preview/edit surface on tap. Itemized receipt names should remain standardized and searchable while preserving the original receipt wording, SKU, payment, and review details.
+
+Local OCR remains the immediate receipt path and safe fallback. When a server-side Gemini key is configured, the app automatically sends only the locally redacted receipt copy for the smart review pass; it must use the lowest-cost stable image-capable model, keep the key off the client, avoid retaining the analysis request, and return editable suggestions without writing to the ledger. The user reviews highlighted exceptions before saving.
+
 The Automations surface is no longer a desired visible CRM workflow. Do not show an Automations tab or command-palette entry unless the user explicitly asks to restore automation management.
 
 ## Non-Goals
@@ -54,6 +60,8 @@ Milestone 2: service catalog, booking line items, and contract output.
 ## Current Calendar Subscription Intent
 
 The calendar subscription control must provide a real read-only iCalendar feed suitable for Apple Calendar. The feed should include useful event details such as client, event type, service time, completion time, location, booking totals, retainer/balance state, and payment reminders. A stable feed URL must update existing subscribed entries when underlying booking data changes; the local app must support a configurable reachable public/LAN origin because `localhost` is not reachable from a phone.
+
+The calendar subscription UI must offer two clearly separated subscriptions: a bookings/events calendar for scheduled trials and services, and a payment-reminders calendar for due dates. Each feed must remain read-only, independently subscribable, and update from the same underlying booking data without mixing reminders into the schedule feed.
 
 ## Current Client Social Profile Intent
 

@@ -1,6 +1,99 @@
 # Makeup Artist Hub Documentation
 
 
+## 2026-08-01 - Mobile Receipt Capture and Itemization (Start)
+
+- User identified manual expense entry as a high-friction workflow and requested photo/screenshot receipt ingestion, automatic itemization, product-code support when available, and a mobile-friendly experience without a paid subscription.
+- Scope: Work Package 2.18. Use on-device Tesseract.js OCR, deterministic receipt parsing, explicit confidence/reconciliation warnings, mandatory user review, and an atomic receipt-plus-expenses API so one stored receipt can back multiple ledger items.
+- Privacy/cost boundary: receipt pixels remain in the browser during extraction. Tesseract.js is open source and has no per-use fee; its language/runtime assets may download and cache on first use. No paid AI/OCR service or production database is used for local validation.
+- Target flow: `/expenses` -> take photo or choose image -> local OCR progress -> editable receipt review -> save itemized expenses or one combined expense -> refreshed ledger and summaries.
+- Visual concept: `/Users/iftatbhuiyan/.codex/generated_images/019f9ce3-995c-75c0-938c-46a35433fb5f/exec-ccd8a26a-8469-4631-b074-46f1325ef2c4.png`, preserving the existing editorial cream/oxblood CRM language while making receipt capture the primary one-thumb action.
+
+Validation failure:
+- The first OpenAPI codegen attempt stopped before generation because pnpm blocked Tesseract.js 7's dependency build script under the workspace's ignored-build policy. No generated files or database state changed. The package's build script and workspace dependency policy will be inspected before allowing only the specific required dependency.
+- The first root typecheck after parser-fixture validation failed only in `@workspace/scripts`: the fixture imported the browser-oriented parser from outside that package's `rootDir`, so DOM globals and the cross-package source path were invalid in the scripts TypeScript project. API/frontend typechecks and both production builds had already passed. The fixture runner will move into the frontend package, which owns the parser and DOM types.
+
+Update:
+- Added Tesseract.js 7 as an allowed, on-demand frontend dependency. The OCR engine is dynamically imported only after image selection; the normal Expenses page does not initialize it.
+- Added image preparation that downsizes receipts to a bounded 2,000-pixel edge, converts them to high-contrast grayscale, and stores a compressed JPEG. Camera capture uses the phone's environment-facing camera hint; the library action accepts photos and screenshots.
+- Added deterministic receipt parsing for merchant/date, subtotal, sales tax, total, product lines, quantity, category suggestions, and printed SKU/UPC/item codes. Low-confidence or unreconciled results stay visibly editable, and an unrecognized amount can be added as a review line.
+- Replaced manual-first expense entry with a receipt-first capture surface. The full manual form remains available behind a clear secondary disclosure for no-receipt cases.
+- Added a full-screen mobile receipt review with receipt preview, OCR confidence, warnings, editable merchant/date/payment/item/category/quantity/SKU/amount fields, live total reconciliation, business/reimbursable controls, and explicit itemized/combined save actions. Nothing writes before the user presses one of those save actions.
+- Added `expense_receipts` as shared receipt storage and nullable `receipt_id`, `product_code`, and `quantity` expense fields. Reviewed imports use one database transaction, so partial itemized receipts cannot be created. A protected attachment route streams one shared stored image instead of duplicating its data in every expense API response.
+- Legacy direct receipt attachments, expense search/category summaries, dashboard totals, archive behavior, and the manual-entry form remain compatible. Ledger rows now show quantity and SKU when available.
+- Applied only the additive receipt table, columns, foreign key, and index to `makeup_artist_hub_prod_snapshot`. The API/frontend continue to target the local snapshot with runner and SMTP disabled; production was not used as a write target.
+
+Validation:
+- `pnpm --filter @workspace/api-spec run codegen` passed and regenerated the Zod/client artifacts from `lib/api-spec/openapi.yaml`.
+- `pnpm --filter @workspace/glam-crm run test:receipt-parser` passed fixtures for itemized SKU extraction, named/numeric dates, category inference, total reconciliation, unmatched-amount review, and low-confidence combined fallback.
+- API and frontend focused typechecks passed. API and frontend production builds passed; existing component sourcemap and main-bundle size warnings remain non-blocking.
+- Root `pnpm run typecheck` passed after moving the fixture runner into the frontend package. `git diff --check` passed.
+- Atomic API probe created two itemized expenses with SKU/quantity values, one shared receipt, and a ledger total matching the receipt total. The attachment path returned HTTP 200 with private cache headers and the stored filename/content type. Temporary API probe rows were deleted from the local snapshot.
+- In-app Browser QA at `430x932` found no horizontal overflow, no framework overlay, and no warning/error logs. Camera and screenshot actions were present; the manual fallback opened and closed correctly.
+- Browser OCR on a synthetic receipt completed at 94% image confidence and detected the 2026-05-08 date, three product lines, a numeric SKU, categories, $88.00 subtotal, $7.04 tax, and $95.04 total. A live parser defect that treated `BRUSH` as a product code was fixed and revalidated as `Brush Cleaner` / `Tools & equipment` with no SKU.
+- Browser itemized save created three expenses totaling exactly $95.04 with one shared receipt; combined save created one $95.04 expense with one shared receipt. Both success messages rendered. All synthetic browser QA receipts and expenses were then deleted from the local snapshot.
+- Desktop Browser QA at `1499x1324` retained the sidebar, summary metrics, receipt-first capture panel, secondary manual entry, category breakdown, and expense ledger without horizontal overflow or console warnings/errors.
+- Image inspection compared the generated two-state mobile concept with final mobile and desktop screenshots. Copy, capture hierarchy, editorial typography, oxblood/cream palette, touch target sizing, review controls, sticky save intent, and responsive container behavior were checked; no material implementation mismatch remains for the existing CRM shell.
+
+Remaining risk:
+- Tesseract OCR is intentionally local and free, but receipt formats, glare, folds, faint thermal paper, and retailer abbreviations can reduce accuracy. Mandatory review and reconciliation are the safety boundary; the app must not treat OCR as bookkeeping truth.
+- The first scan needs network access to download/cache Tesseract's English language/runtime assets and can take noticeably longer than later scans. No receipt pixels are sent to a paid OCR provider.
+- OCR capture currently accepts images and screenshots. PDF receipts can still be attached through manual entry, but automatic PDF page rendering/OCR is not included.
+- Real iPhone camera capture and Safari memory behavior were not exercised in this desktop Browser environment. Test one physical-device photo before production rollout.
+- Production deployment must apply the additive database schema before publishing the new API/frontend bundle, then rebuild and sync the shared Render bundle. This turn changed only the local snapshot schema and did not deploy or push Git changes.
+
+
+## 2026-08-01 - Split Apple Calendar Subscriptions (Start)
+
+- User requested two separate Apple Calendar subscriptions: one for scheduled bookings/events and one for payment reminders, because a combined calendar is confusing.
+- Scope: Work Package 2.17. Keep the existing tokenized, read-only feed identity and reset behavior, add separate stable booking/reminder feed paths, and replace the single combined subscription UI with two clearly labeled Apple Calendar actions.
+- Validation target: each feed contains only its intended event class, both update from the same booking source, and the local snapshot remains the only database write target.
+
+Validation failure:
+- In-app Browser navigation reached `/calendar` and rendered the production-derived schedule, but click actions on the existing `Next` and `Subscribe (.ics)` controls did not change state after a fresh tab reload and a Vite restart. Console warnings/errors remained empty, so this is recorded as an interaction-harness limitation rather than an application error.
+
+Update:
+- Added separate tokenized routes for `/api/public/calendar/:token/bookings.ics` and `/api/public/calendar/:token/reminders.ics`. The original combined `:token.ics` route remains available for existing subscribers, while new UI links use the separated routes.
+- Booking feeds now publish service/trial events only under `Studio bookings & events`; reminder feeds publish balance-due entries only under `Studio payment reminders`. Each feed has its own stable `X-WR-RELCALID`, ETag, filename, Apple `webcal://` link, copyable URL, and download action.
+- The subscription dialog now clearly explains the two calendars, labels the reminder feed separately, and uses a bounded scroll surface so both options remain usable on a phone. Resetting the token explicitly resets both new subscriptions together.
+
+Validation:
+- `pnpm --filter @workspace/api-server run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/api-server run build` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with existing sourcemap and bundle-size warnings.
+- Root `pnpm run typecheck` passed across libraries, API, CRM, scripts, and mockup sandbox.
+- Local feed probe returned HTTP 200 for both separated URLs. The bookings feed contained 21 service/trial events and zero `Balance due` summaries; the reminders feed contained 10 balance-due events and zero mixed service summaries. Both feeds ended with valid `END:VCALENDAR` records and had distinct calendar names and ETags.
+- Conditional requests returned HTTP 304 for both feeds with matching `If-None-Match` values.
+- Local-only reset probe revoked both old URLs (404) and issued new working booking/reminder URLs (200). No hosted production write path was used.
+- Browser QA verified `/calendar` page identity, rendered schedule content, screenshot evidence, and empty warning/error logs. The two-button dialog interaction remains unverified because the in-app Browser click harness did not dispatch state changes even after a Vite restart and fresh reload.
+
+Remaining risk:
+- The new split dialog and its two Apple actions should receive one manual click check in a normal browser session before publishing. The server routes, feed separation, cache behavior, reset behavior, static typechecks, and builds are verified.
+
+
+## 2026-08-01 - Refresh Local Production Snapshot (Start)
+
+- User requested a fresh local clone of the hosted production database for localhost viewing and safe local testing.
+- Scope: dump production read-only, replace only the explicitly named `makeup_artist_hub_prod_snapshot` database, restore the application `public` schema, apply the current local-only `clients.social_links` compatibility column if the hosted schema does not yet contain it, then restart API/frontend against the snapshot.
+- Safety boundary: the hosted connection will be used only by `pg_dump`; `DATABASE_URL` for the API will point only to `postgresql://$USER@127.0.0.1:5432/makeup_artist_hub_prod_snapshot`.
+
+## 2026-08-01 - Refresh Local Production Snapshot (Validation)
+
+- PostgreSQL 17 was already running and accepting connections on `127.0.0.1:5432`.
+- A fresh custom-format dump was taken from `SUPABASE_DIRECT_DATABASE_URL` with `pg_dump --no-owner --no-acl`; the hosted database was not used by the application process.
+- The explicitly named local database `makeup_artist_hub_prod_snapshot` was recreated and restored with `pg_restore --schema=public --no-owner --no-acl`. The local compatibility column `clients.social_links` exists after restore.
+- Local snapshot inventory: 18 clients and 18 database booking rows. The API's `/api/bookings` response currently exposes 13 records after application filtering.
+- API restarted on port 8787 with `DATABASE_URL=postgresql://$USER@127.0.0.1:5432/makeup_artist_hub_prod_snapshot` and `GLAM_DISABLE_RUNNER=true`; frontend restarted on port 5173.
+- Focused checks passed: `/api/healthz` returned `{"status":"ok"}`, `/api/clients` returned 18 records, and `/api/bookings` returned 13 records.
+
+Validation failure:
+- The existing in-app browser tab remained on its prior `This site can't be reached` state. Refreshing that localhost tab was rejected by the browser URL policy after the servers were restarted, so browser refresh could not be used as evidence for this environment handoff.
+
+Remaining risk:
+- Local validation uses production-derived CRM data. Keep the API pointed at the local snapshot and keep `GLAM_DISABLE_RUNNER=true`; do not run database push/migration commands against this restored copy without a separate, scoped plan.
+
+
 ## 2026-07-29 - Client Social Profiles (Start)
 
 - User requested editable Instagram and other social/profile handles or direct links on client information and booking details.
@@ -2252,3 +2345,210 @@ Remaining risk:
 
 Publish note:
 - The GitHub connector rejected draft PR creation with HTTP 403 (`Resource not accessible by integration`) after the branch push succeeded. The documented `gh` fallback will be used after verifying the same authenticated GitHub CLI session.
+## 2026-08-01 - Real Receipt Scanner Follow-Up (Start)
+
+User evidence:
+- A real iPhone capture of `/expenses` showed `0 detected lines`, `32% image confidence`, an unreadable merchant guess, no purchase date, and disabled save actions for `/Users/iftatbhuiyan/Downloads/IMG_5832.JPG`.
+- The supplied Home Depot receipt is long and narrow, fills only part of a wider phone photo, sits on a patterned background, and uses a three-line SKU/description/quantity format. Its visible ground truth includes Home Depot, `07/17/26`, multiple 12-digit product codes, a `$223.41` subtotal/total, `$0.00` sales tax, and AMEX.
+
+Work package:
+- Reopened Work Package 2.18 for a real-receipt scanner follow-up.
+- Target flow: mobile `/expenses` -> take or choose a full-frame receipt photo -> automatically isolate and enhance the paper -> locally extract editable merchant/date/SKU/item/total proposals -> save only after explicit review.
+- Acceptance focus: no paid OCR service, no production writes, preserve the original review step, and make the exact supplied photo materially useful rather than returning an empty review.
+
+Initial diagnosis:
+- The existing preprocessing scales the entire photo to a 2,000-pixel maximum edge. On this photo that leaves the narrow receipt text too small while retaining the patterned background as OCR noise.
+- The parser expects item descriptions and prices on one line, but Home Depot prints each item as a SKU/header line, a description line, then a quantity-at-unit-price/line-total line.
+
+Implementation:
+- Added local document isolation that finds the largest light paper region, crops away the capture background, preserves a compressed color review image, and produces separate high-resolution grayscale and adaptive-threshold OCR inputs.
+- Long receipts are scanned in readable sections instead of one tall low-resolution page. A second OCR treatment runs only when the first result is incomplete, and a focused numeric header pass attempts to recover difficult dates.
+- Added Home Depot-aware merchant aliases and resilient multi-line retail parsing for SKU/header, description, quantity-at-unit-price, amount-only, OCR-collapsed, discount, tax-exempt, and loyalty-statement lines.
+- Product discounts are folded into their positive item line so imports remain compatible with the API's non-negative expense invariant. Duplicated OCR lines are removed by product code or normalized item/amount identity.
+- The review UI reports when receipt edges were cleaned and explains that photos and screenshots are accepted. The heavy OCR dependency remains dynamically loaded only after capture.
+
+Exact-photo validation:
+- The original implementation reproduced the user's failure: `0 detected lines`, `32% image confidence`, an unreadable merchant, and no usable totals/date.
+- The final local pass on `/Users/iftatbhuiyan/Downloads/IMG_5832.JPG` produced `Home Depot`, `66% image confidence`, the correct `$223.41` total, `$0.00` tax, seven separately identified product/SKU lines, and one balanced `$89.92` review remainder. The item total reconciles exactly to `$223.41` and the incorrect `$7,599.48` Pro Xtra loyalty-spend value is excluded.
+- OCR read the printed `07/17/26` as invalid `07/41/26`. The app correctly left the date blank instead of silently inventing bookkeeping data; entering `2026-07-17` remains the required manual correction for this crumpled test image.
+- No Home Depot test expense was saved and no production database was touched. Browser warning/error logs were empty.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm run test:receipt-parser` passed, including an 11-item Home Depot fixture with SKUs, quantities, the `$6.30` discount, zero tax, and exact `$223.41` reconciliation.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the existing component sourcemap and main-bundle-size warnings.
+- Root `pnpm run typecheck` and `git diff --check` passed.
+
+Optional AI fallback research:
+- Cloudflare Workers AI is the recommended optional cleanup service: the current free allocation is 10,000 neurons per day, JSON mode is supported, and Cloudflare states that Workers AI customer content is not used to train or improve models without explicit consent.
+- The privacy-preserving design is local image crop/OCR first, local redaction of card/auth identifiers, then an explicit user-approved server-side request containing only scrubbed OCR text. The model would structure uncertain text into JSON; it would not write ledger data or receive the receipt image by default.
+- Gemini's unpaid API tier was rejected for receipt data because its current terms permit submitted content to be used for product improvement and human review. Hugging Face's free inference credit is currently only `$0.10` per month and is not a dependable production allowance.
+- External AI integration remains a pending product decision because it requires a provider account, server-side credentials, explicit consent UI, rate-limit handling, and privacy documentation. Work Package 2.18 remains in progress until that direction is chosen or the local-only residual is accepted.
+## 2026-08-01 - Six-Receipt OCR Corpus (Start)
+
+User evidence:
+- The user supplied six non-production receipt images for broader OCR validation instead of tuning against only the Home Depot photograph.
+- The corpus covers: a clean high-resolution Superstore receipt; a 240x400 Grocery Depot thermal receipt; a 345x576 Walmart receipt with barcode and two tax lines; an angled Texas Roadhouse receipt on a wood background with no visible date; a zero-dollar Grocery Mart receipt; and a 3024x4032 Circle K photograph with quantities, deposits, recycling fees, parenthesized discounts, GST/PST, and a long item list.
+
+Expected safety behavior:
+- No corpus image will be saved to the expense ledger.
+- Missing dates must remain explicit rather than fabricated, a zero-dollar receipt must remain non-saveable under the current positive-expense contract, and tax/discount parsing must reconcile without turning summary or card metadata into products.
+
+Target flow:
+- `/expenses` -> choose each supplied receipt image -> local edge cleanup/OCR -> editable review -> compare merchant/date/items/tax/total against visible ground truth -> close without saving.
+
+Baseline failures:
+- Superstore: date, product amount, tax, and `$11,852.49` total were recognized, but the merchant was misspelled `Supersiore` and `Entry EMV $11,852.49` was incorrectly added as a second product, breaking reconciliation.
+- Grocery Depot (240x400): `01/07/2019` became the plausible-looking future date `2088-03-09`; `$29.82` became `$529.82`; item text was not usable. The pipeline was not enlarging low-resolution input before OCR.
+- Walmart (345x576): the date was correct, but `$27.27` became an inferred `$3.37` and the product lines were unusable. This shares the low-resolution upscaling defect and also requires two tax lines to be summed.
+- Texas Roadhouse angled photo: merchant and `$1,826.00` total were recognized, and the missing date stayed blank as required, but three clear products collapsed into one combined line. The current axis-aligned crop does not deskew the receipt.
+- Grocery Mart zero-dollar receipt: the correct date was recognized, but `$0.00` became a saveable `$8.00 Amount Paid` item. This is a safety failure: explicit zero totals and payment-summary lines must not be conflated with positive expenses.
+- Circle K 3024x4032 photo: processing returned to the capture screen without a review. The broad receipt crop exceeded the practical image/memory budget used successfully by the narrower Home Depot photo.
+
+Validation failure:
+- `pnpm --filter @workspace/glam-crm run test:receipt-parser` failed after adding the corpus fixtures because `WALL-MART-SUPERSTORE` matched the generic `Superstore` alias before the Walmart alias. The fix is intentionally limited to vendor precedence; the fixture remains as the regression guard.
+- `pnpm --filter @workspace/glam-crm run typecheck` then exposed an upstream declaration mismatch in `@techstark/opencv-js@4.11.0-release.1`: its documented runtime default is a ready promise, but its declaration file only re-exports the OpenCV namespace. The integration keeps strict project settings and adapts that one dynamic-import boundary.
+- Browser rerun identified the large Circle K rejection as an upload guard, not an OCR crash: the supplied PNG is `13,894,430` bytes, above the old 12 MiB ceiling. Because image preparation now immediately downsamples to explicit pixel budgets, the ceiling is raised to 25 MiB for current phone photos while processed canvases remain bounded.
+
+## 2026-08-01 - Optional Gemini Receipt Fallback (Start)
+
+User decision:
+- The user has a Gemini free-tier API key and explicitly requested the least-expensive image-capable model as a fallback for receipt extraction.
+
+Initial provider choice and live correction:
+- The initial implementation selected `gemini-2.5-flash-lite` from the pricing page, but the user's newly configured key returned provider `404 NOT_FOUND`: that model is unavailable to new users. The current key successfully accepts `gemini-3.1-flash-lite`, Google's current lowest-cost stable multimodal model at `$0.25` per million text/image/video input tokens and `$1.50` per million output tokens on paid standard, with input/output free on the free tier.
+- Google's unpaid-service terms say submitted content and responses may be used to improve products, may be processed by human reviewers, and should not contain sensitive, confidential, or personal information.
+- Therefore Gemini will never run automatically. The review UI must disclose the free-tier risk and require an explicit user action; the key remains server-only, the endpoint performs analysis only, and no response enters the expense ledger until ordinary review and save.
+
+Acceptance and validation:
+- Add a no-write authenticated receipt-analysis endpoint with bounded inline image input and validated structured output.
+- Preserve local OCR as the default and merge Gemini suggestions only into the open editable review.
+- Validate missing configuration and provider failures without leaking key or receipt content to logs.
+- Run API/frontend typechecks and builds, focused parser tests, and browser QA with the supplied non-production corpus. Live provider validation waits for `GEMINI_API_KEY` to be configured locally.
+
+Validation failure:
+- Initial API code generation stopped because pnpm required an explicit lifecycle-script policy for `@google/genai` and transitive `protobufjs`. Their published runtime files are already built and the blocked consumer-time scripts are unnecessary, so both are explicitly denied under `allowBuilds`; no supply-chain override or script approval was granted.
+- The first isolated API launch used the repository fallback PostgreSQL role and failed during startup because local role `makeup_artist_hub` does not exist. Validation was redirected to the documented `makeup_artist_hub_prod_snapshot` URL owned by the local macOS user; no schema or data mutation command was run.
+
+## 2026-08-01 - Redaction-First Gemini Receipt Fallback (Implementation)
+
+Implementation:
+- Added `POST /api/expense-receipts/analyze` to the generated API contract and server. It accepts only bounded JPEG, PNG, or WebP data URLs, uses fixed model `gemini-3.1-flash-lite`, requests schema-constrained JSON through the supported `generateContent` image/JSON format, validates the response again with generated Zod, and performs no database operation.
+- Added local pre-upload redaction to the browser OCR path. Tesseract line boxes matching card/account, payment brand, authorization, terminal, membership/loyalty, masked-number, or checksum-valid payment-card-number patterns are covered with opaque black rectangles. Product UPC/SKU numbers remain readable. The original receipt preview remains unchanged; Gemini receives only the prepared redacted JPEG sections.
+- Added an explicit review panel that shows the redacted copy, reports the number of covered lines, discloses the Gemini free-tier product-improvement/human-review risk, and keeps **Analyze redacted copy** disabled until the user checks consent.
+- Gemini suggestions populate only the open editable draft. The post-request update uses functional React state so edits made while the request is in flight are not overwritten wholesale. The existing itemized/combined save controls remain the only database-write path.
+- Added setup instructions for server-only `GEMINI_API_KEY` in the ignored `.local/deployment-secrets.env` file and as a Render secret. No key was present or printed during this work; the user clarified that it has not yet been provided to the local runtime.
+- Selected the MIT-licensed `opencv-document-scanner` wrapper with pinned `@techstark/opencv-js` for lazy perspective correction. The OpenCV bundle is dynamically loaded only after a receipt image is selected. Candidate paper bounds and perspective contours are quality-gated; uncertain crops fall back safely.
+
+Corpus results after fixes:
+- Superstore: merchant/date, one `$10,999.99` line, `$852.50` tax, and `$11,852.49` total are correct; four payment-sensitive lines are locally blacked out before consent.
+- Walmart: merchant/date, `$23.09` combined item amount, two taxes summed to `$4.18`, and `$27.27` total are correct; four sensitive payment/account lines are locally blacked out while product codes remain visible. Low-resolution product names still require Gemini or manual review.
+- Grocery Depot: merchant and `2019-01-07` are now correct, but the low-resolution image still yields a combined `$28.00` inference instead of the printed `$29.82`; the explicit warning remains and Gemini/manual review is required.
+- Texas Roadhouse: perspective correction yields three separate `$420`, `$1,337`, and `$69` lines and exact `$1,826` reconciliation. The receipt has no printed date, so the date correctly remains blank and saving stays disabled.
+- Grocery Mart: the zero-dollar receipt now produces zero lines, `$0.00`, a clear warning, and disabled save controls. A browser rerun found a contradictory `$8` reconciliation branch; a new regression fixture and parser guard ensure an explicit zero total cannot be turned back into a positive expense.
+- Circle K: the 13.9 MB phone image now reaches review within the bounded image budget instead of being rejected. Local OCR remains unusable on that partial, high-resolution capture (`0 detected lines`), so the review stays non-saveable and is a primary Gemini-fallback case. No payment/card line is visible in the supplied partial image, so the UI reports that no automatic redaction was found and requires visual inspection before consent.
+- Every corpus dialog was closed without saving an expense.
+
+Validation evidence:
+- `pnpm --filter @workspace/api-spec run codegen` passed.
+- `pnpm --filter @workspace/glam-crm run test:receipt-parser` passed with retail, Home Depot, multiple-tax, discount, date-bound, explicit-zero, noisy-zero, and contradictory-zero fixtures.
+- `pnpm run typecheck` passed across generated libraries, API server, frontend, scripts, and mockup sandbox.
+- API and frontend production builds passed. The frontend still reports existing component sourcemap/main-chunk warnings; OpenCV is emitted as a separate lazy chunk.
+- `git diff --check` passed.
+- Live snapshot-backed API probes returned health `200`, invalid image `400`, and valid-image-without-key `503`. After the key was configured and the model/request format were corrected, a real Texas receipt returned `200` with structured merchant, date, tax, total, and item data. Browser QA confirmed the consent-gated live request applied `gemini-3.1-flash-lite` suggestions while retaining the editable review.
+- Responsive implementation inspection confirmed the full-screen mobile dialog rules (`100dvh`, independently scrollable review body, vertically stacked 48px save controls) remain below the desktop breakpoint; desktop browser review rendered the redaction/consent panel without overflow. A fresh physical/mobile-viewport pass remains part of the live-key follow-up.
+
+Remaining validation:
+- The live provider success path is now verified locally. A deployed Render success path remains pending until the same server-only secret is configured in Render and the API bundle is deployed.
+- Gemini improves extraction but does not make receipt data authoritative. The user must inspect the redacted preview before consent and review every suggested accounting field before either save action.
+
+Final validation failure:
+- After refining numeric redaction to preserve UPC/SKU values, the workspace typecheck reported that TypeScript inferred a regular-expression match callback value as `never` in `containsLikelyCardNumber`. Runtime corpus QA had succeeded; the scoped fix is an explicit `string[]` annotation at that regex boundary, followed by a full typecheck rerun.
+
+Final validation resolution:
+- Added the scoped regex-match type annotation. `pnpm run typecheck`, the receipt parser suite, the frontend production build, and `git diff --check` all passed on the final source. The browser redaction rerun still covered four Superstore payment lines and four Walmart payment/account lines while preserving Walmart product-code lines.
+
+## 2026-08-02 - Local Gemini Key End-to-End Validation
+
+## 2026-08-02 - Gemini-First Receipt Review Refinement (Start)
+
+Scope:
+- Make the approved Gemini pass the clearly identified source for final receipt metadata and itemized lines, while keeping local OCR as the immediate preliminary draft and safe fallback.
+- Add payment-method extraction and purchase-time recognition without transmitting unredacted payment data or changing the ledger before explicit save.
+- Validate the Home Depot browser flow at the point where the user sees the date, payment method, and itemized results.
+
+Acceptance checks:
+- After the user approves the redacted upload, Gemini suggestions fill merchant, purchase date, payment method, optional purchase time, totals, categories, quantities, and product codes in the editable review.
+- The UI labels pre-Gemini rows as preliminary and post-Gemini rows as the smart itemization to review, with flagged exceptions remaining visible.
+- Missing Gemini metadata never fabricates a date or payment method; local values remain unchanged when the provider omits a field.
+
+Automatic-review correction:
+- The user clarified that Gemini should not be a separate review section or an extra action. Removed the consent panel and Analyze button from the receipt dialog. Once local OCR and local payment redaction finish, the configured server-side Gemini pass now runs automatically against only the redacted image copy.
+- The review dialog keeps only a compact status line, labels local OCR rows as `Preliminary local read` while the request is pending, then switches to `Gemini itemized expenses` after the response. The normal editable exception review and save controls remain unchanged.
+- The Home Depot browser rerun confirmed the automatic path: no old Gemini panel or Analyze button, Gemini status applied, merchant `The Home Depot`, purchase date `2026-07-17`, purchase time `11:28`, normalized payment `Credit/debit card`, and `11` Gemini itemized rows with quantity/SKU data. The `$47.38` unmatched-line warning remains visible for deliberate review.
+- Browser console warnings/errors were empty. The local snapshot remained at `2` expenses and `0` receipt records; API health remained HTTP `200`.
+
+Standardized item naming refinement (start):
+- Receipt item names will use a readable, broadly searchable display form while preserving the exact printed receipt label and product/SKU code as searchable details.
+- Search will include canonical item name, original receipt wording, product code, category, vendor, payment method, and notes so both general terms such as `primer` and exact store codes can find a line.
+
+Validation:
+- Confirmed `.local/deployment-secrets.env` contains a non-empty `GEMINI_API_KEY` without printing the secret. Restarted the API on port `8787` with `DATABASE_URL=...makeup_artist_hub_prod_snapshot`, blank local auth/SMTP settings, and `GLAM_DISABLE_RUNNER=true`; the frontend remained on `http://localhost:5173`.
+- The first live request safely returned `503` when no key was loaded, proving the configuration guard. After loading the key, `gemini-2.5-flash-lite` returned provider `404 NOT_FOUND` because it is unavailable to new users. A direct provider check confirmed both `gemini-3.1-flash-lite` and `gemini-3.5-flash-lite` are accepted; `gemini-3.1-flash-lite` is cheaper and is now the fixed model.
+- The endpoint was moved from the Interactions request shape to the current `generateContent` inline-image plus structured-JSON format. A real Texas Roadhouse image then returned HTTP 200 with structured merchant, date, tax, total, and three item fields. Unsupported numeric schema constraints were removed from the provider schema; server-side generated Zod remains authoritative.
+- Browser flow `/expenses` -> choose Texas receipt -> inspect review -> check redaction consent -> Analyze redacted copy completed successfully. The toast said `Gemini suggestions applied`, the model warning was recorded in the editable draft, and the dialog remained open for review.
+- Browser privacy flow with fake Superstore card receipt showed `4 sensitive payment lines were blacked out locally before upload`, preserved product code `EG1C0043323511`, completed the live Gemini request, and applied suggestions without saving.
+- Browser page identity was `Glam CRM` at `http://localhost:5173/expenses`; the page was non-blank, had no framework overlay, and browser warning/error logs were empty. The review screenshot showed the consent panel, redacted-copy thumbnail, applied-suggestions warning, editable item fields, and save controls.
+- The isolated snapshot `expenses` count remained `2` after all direct and browser tests. No receipt was saved and no hosted production database was used for writes.
+- Final `pnpm run typecheck`, receipt parser tests, frontend build, API typecheck/build, and `git diff --check` passed. Build output retains existing sourcemap/OpenCV chunk-size warnings only.
+
+Deployment handoff:
+- Local Gemini is fully validated. Before production, add the same `GEMINI_API_KEY` as a secret environment variable on the Render API service, deploy the rebuilt API bundle, and repeat one redacted non-production receipt test against the deployed API. Do not add the key to GitHub Pages frontend variables.
+
+Home Depot follow-up failure:
+- The first full browser run with `/Users/iftatbhuiyan/Downloads/IMG_5832.JPG` completed local OCR, detected `Home Depot`, prepared four local payment redactions, and showed the consent gate, but the live Gemini action returned the generic provider-failure toast. No receipt was saved. The next fix adds only sanitized provider status diagnostics to the local API log so the request can be corrected without logging the key or receipt contents.
+
+Home Depot follow-up resolution and full-flow evidence:
+- Sanitized local diagnostics identified the provider response issue without exposing the API key or receipt data: Gemini returned a negative value at `items.11.amount`, representing a non-expense adjustment/discount line that the accounting schema correctly rejects. The server now filters non-positive model item amounts before generated Zod validation, while the editable review still requires the user to reconcile any remaining mismatch.
+- Re-ran the complete local browser flow with `/Users/iftatbhuiyan/Downloads/IMG_5832.JPG`: upload -> bounded image preparation and perspective cleanup -> local OCR -> four local payment redactions -> explicit free-tier consent -> live `gemini-3.1-flash-lite` request -> editable review. The review completed successfully with `THE HOME DEPOT`, purchase date `2026-07-17`, `11 detected lines`, and Gemini-applied suggestions.
+- The editable result preserved item detail, categories, quantities, and product numbers: Mason Mix, nitrile gloves, silicone, screw-holding bit holder, chip brushes, contractor bags, impact bit set, pivot holder, PaintCare fee, and Cover Stain primer. Product SKUs remained available for review while payment/account lines stayed redacted before upload.
+- The review correctly surfaced an unresolved `$6.30` difference between the suggested item sum (`$229.71`) and printed receipt total (`$223.41`), alongside the local `$47.38 could not be matched` warning and low-confidence notice. Itemized save remained disabled; the combined save option remained available for deliberate review. No save action was clicked because this was a real test receipt.
+- After closing the review, the isolated snapshot `expenses` count was still `2`, API health returned HTTP `200`, and browser console warning/error logs were empty. Production was not queried for writes and was not modified.
+
+Final validation after the normalization fix:
+- `pnpm run typecheck` passed across libraries, API server, frontend, scripts, and mockup sandbox.
+- `pnpm --filter @workspace/glam-crm run test:receipt-parser` passed with retail, tax, discount, date-bound, zero-total, and Home Depot multi-line fixtures.
+- `pnpm --filter @workspace/api-server run build`, `pnpm --filter @workspace/glam-crm run build`, and `git diff --check` passed. Build output retained only known sourcemap, OpenCV browser-externalization, and chunk-size warnings.
+- The local Home Depot flow is complete and validated. Remaining work is deployment-only: configure the server-only key on Render, deploy the API bundle, and repeat a redacted non-production receipt test before enabling production use.
+
+Write-path and automation confirmation:
+- Re-ran the Home Depot flow through the actual combined-save control after the successful Gemini review. The local ledger displayed `The Home Depot receipt`, `The Home Depot`, `2026-07-17`, and `$223.41`, and the UI showed `Receipt recorded as one expense`; this confirmed the browser-to-API-to-transaction path, not only the analysis path.
+- The test row and its receipt record were identified by exact vendor, date, amount, item name, receipt id, and filename, deleted inside one local snapshot transaction, and verified absent. The snapshot returned to its baseline of `2` expense rows and `0` receipt rows. No hosted production write was made.
+- The intended workflow is now automation-first: local preparation and OCR run automatically, approved Gemini analysis supplies merchant/date/tax/total/items/categories/quantities/SKUs, and the person only reviews highlighted exceptions and final values before choosing itemized or combined recording. The Home Depot `$6.30` mismatch correctly remained a review exception rather than being silently adjusted.
+
+## 2026-08-02 - Dashboard and Compact Expense Ledger (Start)
+
+Scope:
+- Make dashboard summary cards actionable and add a week/month financial pulse without changing API contracts.
+- Add month/year/all-time expense filtering to the summary cards while retaining category and text search.
+- Replace tall mobile expense rows with compact tap-to-preview rows and an editable detail dialog; retain the full desktop ledger layout.
+
+Milestone:
+- Work Package 2.19 in `Plan.md`.
+
+Implementation and validation notes:
+- Dashboard stat tiles now route to bookings, clients, or expenses, and the new Studio Pulse card switches between week and month with scheduled count, booked value, period expenses, and net outlook.
+- Expense month/year/all-time cards now filter the ledger; the category filter and standardized product/SKU search remain available. The search prompt now names product and SKU lookup directly.
+- Mobile expense rows are compact tap targets at the `sm` breakpoint and expose a detail dialog with an edit mode; desktop retains the multi-column ledger and archive action.
+- Snapshot QA added one reversible `QA Compact Primer` row, confirmed the filtered expense page and preview control rendered, then the row was removed through the local API. Production was not used.
+- A second reversible local snapshot probe patched `QA Edit Primer` to `QA Edited Primer` and `$19.50`, verified the returned values, and deleted the exact row afterward.
+- `node -e "require('playwright')"` could not run because the standalone Playwright package is not installed in this workspace; in-app browser validation remains the available UI path.
+- One wrapper attempt used the zsh-reserved variable name `status`; it was immediately rerun with `rc` and passed with exit status 0.
+
+Completion evidence:
+- In-app browser dashboard validation confirmed the week/month toggle, period labels, scheduled/booked-value/expense/net metrics, and expense-linked summary tile navigation.
+- In-app browser expense validation confirmed the month/year/all-time stat buttons render with counts, the compact preview control exists for each expense, and the desktop multi-column row remains the visible layout at the desktop viewport.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with only known sourcemap, OpenCV browser-externalization, and chunk-size warnings.
+- `pnpm run typecheck` passed across libraries, API server, frontend, scripts, and mockup sandbox.
+- `curl http://127.0.0.1:8787/api/healthz` returned HTTP 200; `git diff --check` passed. The local snapshot was left with zero QA expense rows, and production was not modified.

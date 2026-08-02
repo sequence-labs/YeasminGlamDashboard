@@ -20,8 +20,14 @@ export interface Expense {
   paymentMethod?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  receiptId?: number | null;
+  /** @nullable */
+  productCode?: string | null;
+  /** @nullable */
+  quantity?: number | null;
   /**
-     * Data URL for an uploaded receipt image, scan, or PDF.
+     * Data URL or authenticated attachment path for an uploaded receipt image, scan, or PDF.
      * @nullable
      */
   receiptDataUrl?: string | null;

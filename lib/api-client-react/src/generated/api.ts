@@ -56,6 +56,10 @@ import type {
   EventUpdate,
   Expense,
   ExpenseInput,
+  ExpenseReceiptAnalysisInput,
+  ExpenseReceiptAnalysisResult,
+  ExpenseReceiptImportInput,
+  ExpenseReceiptImportResult,
   ExpenseUpdate,
   HealthStatus,
   Lead,
@@ -1131,6 +1135,225 @@ export const useDeleteExpense = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getDeleteExpenseMutationOptions(options));
     }
+
+export const getImportExpenseReceiptUrl = () => {
+
+
+
+
+  return `/api/expense-receipts/import`
+}
+
+/**
+ * @summary Save a reviewed receipt and its expense lines atomically
+ */
+export const importExpenseReceipt = async (expenseReceiptImportInput: ExpenseReceiptImportInput, options?: RequestInit): Promise<ExpenseReceiptImportResult> => {
+
+  return customFetch<ExpenseReceiptImportResult>(getImportExpenseReceiptUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      expenseReceiptImportInput,)
+  }
+);}
+
+
+
+
+export const getImportExpenseReceiptMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importExpenseReceipt>>, TError,{data: BodyType<ExpenseReceiptImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof importExpenseReceipt>>, TError,{data: BodyType<ExpenseReceiptImportInput>}, TContext> => {
+
+const mutationKey = ['importExpenseReceipt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importExpenseReceipt>>, {data: BodyType<ExpenseReceiptImportInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importExpenseReceipt(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportExpenseReceiptMutationResult = NonNullable<Awaited<ReturnType<typeof importExpenseReceipt>>>
+    export type ImportExpenseReceiptMutationBody = BodyType<ExpenseReceiptImportInput>
+    export type ImportExpenseReceiptMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save a reviewed receipt and its expense lines atomically
+ */
+export const useImportExpenseReceipt = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importExpenseReceipt>>, TError,{data: BodyType<ExpenseReceiptImportInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof importExpenseReceipt>>,
+        TError,
+        {data: BodyType<ExpenseReceiptImportInput>},
+        TContext
+      > => {
+      return useMutation(getImportExpenseReceiptMutationOptions(options));
+    }
+
+export const getAnalyzeExpenseReceiptUrl = () => {
+
+
+
+
+  return `/api/expense-receipts/analyze`
+}
+
+/**
+ * @summary Analyze user-approved redacted receipt images with the configured Gemini model
+ */
+export const analyzeExpenseReceipt = async (expenseReceiptAnalysisInput: ExpenseReceiptAnalysisInput, options?: RequestInit): Promise<ExpenseReceiptAnalysisResult> => {
+
+  return customFetch<ExpenseReceiptAnalysisResult>(getAnalyzeExpenseReceiptUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      expenseReceiptAnalysisInput,)
+  }
+);}
+
+
+
+
+export const getAnalyzeExpenseReceiptMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeExpenseReceipt>>, TError,{data: BodyType<ExpenseReceiptAnalysisInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeExpenseReceipt>>, TError,{data: BodyType<ExpenseReceiptAnalysisInput>}, TContext> => {
+
+const mutationKey = ['analyzeExpenseReceipt'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeExpenseReceipt>>, {data: BodyType<ExpenseReceiptAnalysisInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  analyzeExpenseReceipt(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeExpenseReceiptMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeExpenseReceipt>>>
+    export type AnalyzeExpenseReceiptMutationBody = BodyType<ExpenseReceiptAnalysisInput>
+    export type AnalyzeExpenseReceiptMutationError = ErrorType<void>
+
+    /**
+ * @summary Analyze user-approved redacted receipt images with the configured Gemini model
+ */
+export const useAnalyzeExpenseReceipt = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeExpenseReceipt>>, TError,{data: BodyType<ExpenseReceiptAnalysisInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeExpenseReceipt>>,
+        TError,
+        {data: BodyType<ExpenseReceiptAnalysisInput>},
+        TContext
+      > => {
+      return useMutation(getAnalyzeExpenseReceiptMutationOptions(options));
+    }
+
+export const getGetExpenseReceiptFileUrl = (id: number,) => {
+
+
+
+
+  return `/api/expense-receipts/${id}/file`
+}
+
+/**
+ * @summary Open a stored receipt attachment
+ */
+export const getExpenseReceiptFile = async (id: number, options?: RequestInit): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetExpenseReceiptFileUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetExpenseReceiptFileQueryKey = (id: number,) => {
+    return [
+    `/api/expense-receipts/${id}/file`
+    ] as const;
+    }
+
+
+export const getGetExpenseReceiptFileQueryOptions = <TData = Awaited<ReturnType<typeof getExpenseReceiptFile>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExpenseReceiptFile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExpenseReceiptFileQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExpenseReceiptFile>>> = ({ signal }) => getExpenseReceiptFile(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExpenseReceiptFile>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetExpenseReceiptFileQueryResult = NonNullable<Awaited<ReturnType<typeof getExpenseReceiptFile>>>
+export type GetExpenseReceiptFileQueryError = ErrorType<void>
+
+
+/**
+ * @summary Open a stored receipt attachment
+ */
+
+export function useGetExpenseReceiptFile<TData = Awaited<ReturnType<typeof getExpenseReceiptFile>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getExpenseReceiptFile>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetExpenseReceiptFileQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetArtistProfileUrl = () => {
 
