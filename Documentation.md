@@ -2552,3 +2552,35 @@ Completion evidence:
 - `pnpm --filter @workspace/glam-crm run build` passed with only known sourcemap, OpenCV browser-externalization, and chunk-size warnings.
 - `pnpm run typecheck` passed across libraries, API server, frontend, scripts, and mockup sandbox.
 - `curl http://127.0.0.1:8787/api/healthz` returned HTTP 200; `git diff --check` passed. The local snapshot was left with zero QA expense rows, and production was not modified.
+
+## 2026-08-02 - Apple Calendar Production Subscription Fix (Start)
+
+Milestone:
+- Work Package 2.17, Separate Apple Calendar Subscriptions.
+
+Failure evidence:
+- The production HTTPS certificate for `whisperflowserver.onrender.com` validates successfully, and the shared API health endpoint returns HTTP 200.
+- The deployed legacy combined calendar route is present, but the newer tokenized `/bookings.ics` and `/reminders.ics` routes return HTTP 401 without a CRM session. Apple Calendar cannot provide that private CRM session, so iOS rejects both subscription URLs.
+- The merged API source already mounts all public routes before session authentication. The production response therefore identifies a stale embedded CRM API bundle in `WhisperSpeechServer`, not a TLS certificate failure or a need to expose authenticated CRM routes.
+
+Scope and validation plan:
+- Rebuild the merged API source, sync the generated bundle into the shared Render service repository, and run its test suite plus local snapshot-backed feed probes with CRM authentication enabled.
+- Publish the documentation/validation guard in a new ready pull request because the prior feature PR is already merged.
+- Publish the generated shared-server bundle, wait for Render, then verify both production HTTPS feeds return `text/calendar` without a CRM session while authenticated CRM routes still return 401.
+
+Validation issue:
+- API typecheck, API build, and the 12-file bundle sync passed. The first `npm test` invocation ran from the CRM repository because the chained command retained its original working directory, so npm reported that this workspace has no root `test` script. The shared-server test is being rerun with an explicit `/Users/iftatbhuiyan/WhisperSpeechServer` working directory.
+- The corrected shared-server test passed all 6 tests. Its first snapshot-backed HTTP smoke returned 503 before route handling because the newly synced bundle imports `@google/genai`, while the deployment repository did not yet declare that server dependency. No production endpoint or database was modified; the deployment manifest must pin the same SDK version as the API workspace before publishing this bundle.
+
+Validation resolution:
+- Added the already-pinned `@google/genai@2.13.0` runtime dependency to the shared Render service repository. Its 6-test Node suite passed again.
+- Started the shared server on port 8799 with CRM authentication enabled and the isolated `makeup_artist_hub_prod_snapshot` database. The tokenized bookings feed returned HTTP 200, `text/calendar`, calendar name `Studio bookings & events`, and 21 events; the reminders feed returned HTTP 200, `text/calendar`, calendar name `Studio payment reminders`, and 10 events.
+- The same smoke confirmed an invalid feed token returns 404 and unauthenticated `/clients` remains 401. The local server was stopped after validation, and no production database write occurred.
+- `npm audit --omit=dev` on the existing shared service dependency tree reports 18 advisories (1 low, 10 moderate, 5 high, 2 critical). Automated force upgrades were not applied because they are unrelated, potentially breaking changes; this remains a separate deployment-repository security maintenance item.
+- The first production polling wrapper stopped before authentication because zsh cannot safely `source` the dotenv-formatted secrets file when a value contains shell-significant text. The retry loads only `GLAM_ADMIN_PASSWORD` through the repository's dotenv parser; no secret or feed token is printed.
+
+Production deployment evidence:
+- Published `/Users/iftatbhuiyan/WhisperSpeechServer` commit `a8cd133` (`Commit #23 - Deploy split calendar feeds and Gemini runtime`) to `main`, which triggered the shared Render deployment.
+- The first live poll after deployment returned health 200, bookings 200, and reminders 200. A second content inspection confirmed both production responses use `text/calendar; charset=utf-8`; bookings publishes `Studio bookings & events` with 22 current events, while reminders publishes `Studio payment reminders` with 10 current events.
+- The production `/clients` route still returns 401 without a session. TLS verification remains valid, and the calendar URLs are HTTPS; Apple Calendar can now fetch the read-only tokenized feeds without a CRM login.
+- Work Package 2.17 is complete. The user should remove any failed calendar entries from iOS and subscribe again so Apple validates the newly deployed routes.

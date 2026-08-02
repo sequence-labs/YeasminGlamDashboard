@@ -420,7 +420,7 @@ Validation commands:
 
 ### Work Package 2.17: Separate Apple Calendar Subscriptions
 
-Status: In progress.
+Status: Complete — split feeds deployed and verified on the production HTTPS API.
 
 Acceptance criteria:
 - The calendar subscription dialog presents separate bookings/events and payment-reminders subscriptions with distinct labels and descriptions.
@@ -429,6 +429,7 @@ Acceptance criteria:
 - Resetting the calendar feed token invalidates both subscription URLs together and generates fresh URLs.
 - Both feeds preserve the existing Apple Calendar refresh, ETag, timezone, privacy, status, and sequence behavior.
 - Public calendar output remains CRM-safe and does not expose client social profile data.
+- The deployed shared API serves both split feed routes without a CRM session; the unguessable feed token remains the authorization boundary.
 
 Validation commands:
 - `pnpm --filter @workspace/api-server run typecheck`
@@ -436,6 +437,7 @@ Validation commands:
 - `pnpm --filter @workspace/api-server run build`
 - `pnpm --filter @workspace/glam-crm run build`
 - Fetch both local tokenized feeds and verify their event classes, distinct calendar identities, ETags, and update behavior.
+- Fetch both deployed HTTPS feed URLs without a session and verify HTTP 200 plus `text/calendar` after syncing the embedded Render bundle.
 - Browser validation of the split subscription dialog and both Apple Calendar actions on `/calendar`.
 
 ### Work Package 2.18: Mobile Receipt Capture and Itemization
