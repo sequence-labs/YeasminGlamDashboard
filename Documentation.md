@@ -2584,3 +2584,89 @@ Production deployment evidence:
 - The first live poll after deployment returned health 200, bookings 200, and reminders 200. A second content inspection confirmed both production responses use `text/calendar; charset=utf-8`; bookings publishes `Studio bookings & events` with 22 current events, while reminders publishes `Studio payment reminders` with 10 current events.
 - The production `/clients` route still returns 401 without a session. TLS verification remains valid, and the calendar URLs are HTTPS; Apple Calendar can now fetch the read-only tokenized feeds without a CRM login.
 - Work Package 2.17 is complete. The user should remove any failed calendar entries from iOS and subscribe again so Apple validates the newly deployed routes.
+
+## 2026-08-02 - Shareable Bridal Services Menus (Start)
+
+Milestone and work package:
+- Milestone 2, Work Package 2.20: Shareable Bridal Services Menus.
+- This entry starts the requirements/design phase only. No PDF, PNG, frontend source, database, API, or deployment file is changed in this documentation subtask.
+
+Scope:
+- Create two public-facing GLAMBYEASMIN services menus: one general edition and one Florida edition.
+- Deliver each edition as a print-quality PDF plus a high-resolution PNG that can be shared through text, email, or social messaging.
+- Add a prominent responsive CRM surface where the artist can select an edition, preview it, download either format, and use native sharing when available with a clear fallback.
+- Produce an initial rendered preview for user direction before treating the visual design as final.
+
+Canonical pricing guard:
+- Bridal Makeup: `$400`.
+- Bridal Hair: `$300`.
+- Synthetic bun extension add-on: `$15`.
+- Bridal Set Up: `$50`.
+- Bridal Hijab Set Up: `$50`.
+- Bridal Makeup Trial: `$150`.
+- Signature Bridal Package: `$700`.
+- Bridal Bundle, general edition: `$600 (each event)` with `$25 off each day` when booking 3 or more bridal services.
+- Bridal Bundle, Florida edition: `$675 (each event)` with the same bundle terms. This is the only Florida-specific price change currently approved.
+- Special Bridal Offer: Bridal Makeup Package at `$700 (each event)` with a free `$150` Bridal Makeup Trial when booking 2 or more bridal events.
+- Travel: `$50` for 10-15 miles; `$100` for 20+ miles; further distances are quoted during consultation.
+- Early Morning Fee: `$200` for 3:00-5:00 AM; `$75` for 6:00-7:00 AM.
+
+Visual thesis:
+- Elevated bridal editorial rather than a generic price sheet: warm ivory foundation, restrained burgundy or plum, subtle champagne accents, refined serif display type, crisp body typography, and generous whitespace.
+- Use beauty-oriented detail and composition without stock photography, clip art, crowded ornament, or low-contrast text.
+- Preserve a coherent visual identity across PDF, PNG, and the CRM preview while keeping the service descriptions easy to scan on a phone.
+
+Acceptance criteria:
+- Two distinct, correctly labeled PDFs and two matching share PNGs preserve every supplied price and service requirement.
+- Only the Bridal Bundle price differs by region: `$600` general and `$675` Florida.
+- PDF fonts are embedded, text remains selectable, margins are print-safe, and rendered pages have no clipping, overlap, missing glyphs, or illegible copy.
+- PNG assets remain sharp and legible at original size and phone width.
+- The responsive CRM surface makes the menus easy to discover and supports preview, edition selection, PDF download, PNG download, and share/fallback behavior.
+- The user receives a visual preview before final design approval.
+
+Validation plan:
+- Run frontend typecheck/build and root typecheck after implementation.
+- Use `pdfinfo`, `pdffonts`, and `pdftotext -layout` to validate both PDFs structurally and compare edition pricing.
+- Render every PDF page with `pdftoppm -png -r 180` and visually inspect layout, hierarchy, typography, margins, and legibility.
+- Inspect both final share PNGs at original resolution and phone width.
+- Validate menu discovery, edition switching, preview, downloads, and native-share fallback in the browser at `430x932`, `768x1024`, and `1440x900`.
+- Run `git diff --check` and review the final scoped diff.
+
+Privacy and non-goals:
+- These are static, public-safe marketing assets. They must contain no client, booking, contract, payment, receipt, or other private CRM data.
+- Do not add a database model, authenticated API dependency, paid image service, or dynamic pricing system for the first version.
+- Do not invent new prices, regional differences, contact details, booking policies, or marketing claims.
+- Do not publish the first visual direction as final before user review.
+
+## 2026-08-02 - Shareable Bridal Services Menus (Initial Preview Evidence)
+
+Implementation:
+- Generated original bridal editorial artwork with the built-in image-generation tool: warm ivory stone, bridal veil, makeup brushes, ivory rose, and an oxblood ribbon with no people, logos, or text.
+- Added `artifacts/glam-crm/scripts/generate-service-menus.py`, which produces two-page, letter-size General and Florida PDFs plus 180-DPI page previews and one full-length share PNG per edition.
+- Added the static public-safe assets under `artifacts/glam-crm/public/service-menus/` and review PDF copies under `output/pdf/`.
+- Added `/service-menus` with a General/Florida switch, two-page live preview, PDF and PNG downloads, full-PDF opening, and native sharing with copied-link fallback.
+- Added prominent discovery from the desktop/mobile navigation, command palette, and the Services page header.
+- No database, API, authentication, client, booking, receipt, or other private-data surface changed.
+
+Pricing and PDF validation:
+- `pdftotext -layout` comparison confirmed the editions differ only in edition labels and Bridal Bundle price: General is `$600 / event`; Florida is `$675 / event`.
+- Both editions retain Bridal Makeup `$400`, Bridal Hair `$300`, Bridal Set Up `$50`, Bridal Hijab Set Up `$50`, Synthetic Bun Extension `$15`, Makeup Trial `$150`, Signature Bridal Package `$700`, Special Bridal Offer `$700 / event`, travel fees `$50` and `$100`, and early fees `$200` and `$75`.
+- `pdfinfo` reports two unencrypted US Letter pages for each PDF with no JavaScript or forms.
+- `pdffonts` reports every Arial and Georgia production font embedded and subset with Unicode mapping.
+- Every rendered page was visually inspected at 180 DPI. Page PNGs are `1530x1980`; full share PNGs are `1530x3988`. No clipping, overlap, missing glyphs, or illegible text was found.
+
+Frontend validation:
+- `pnpm --filter @workspace/glam-crm run build` passed. Existing sourcemap, OpenCV browser-externalization, and chunk-size warnings remain unchanged.
+- `pnpm run typecheck` passed across libraries, API server, frontend, scripts, and mockup sandbox.
+- The in-app browser confirmed the menu route and Services-page entry point, General/Florida switching, correct region-specific price and asset URLs, loaded `1530x1980` previews, and no horizontal overflow at `430x932` and `768x1024`. Desktop validation at the default app viewport also passed.
+- All four public download assets returned HTTP 200 from localhost with the expected `application/pdf` or `image/png` content type and nonzero byte size.
+- Browser warning/error logs were empty. The share control was exercised without a console error; final iPhone native-share-sheet acceptance remains part of user review.
+- `git diff --check` passed before the final documentation update and is rerun in the final scoped-diff review.
+
+Current status:
+- The initial visual direction is ready for user review. Work Package 2.20 remains in progress until the user approves the visual direction or requests revisions.
+
+Publication preparation:
+- Scoped files were staged on `codex/service-menu-pdfs`; no unrelated worktree changes were included.
+- Commit created: `41f545b` (`Commit #33 - Add shareable bridal service menus`).
+- Binary PDF internals produce expected `git diff --check` trailing-space diagnostics; the check excluding `**/*.pdf` passed for all source, documentation, script, and PNG changes.

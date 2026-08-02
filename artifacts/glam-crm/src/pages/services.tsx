@@ -18,10 +18,11 @@ import {
 } from "@workspace/api-client-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { Archive, CircleDollarSign, Plus, Save } from "lucide-react";
+import { Archive, BookOpenText, CircleDollarSign, Plus, Save } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Link } from "wouter";
 
 const serviceFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -159,10 +160,18 @@ export default function Services() {
             </p>
             <div className="crm-gold-rule mt-6 w-24" />
           </div>
-          <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-card-border bg-card text-sm shadow-[0_1px_0_0_hsl(var(--card-border)/0.4),0_10px_28px_-22px_var(--elevate-3)]">
-            <CatalogStat label="Active" value={activeItems.length} />
-            <CatalogStat label="Archived" value={inactiveItems.length} muted />
-            <CatalogStat label="Total" value={serviceItems?.length ?? 0} muted last />
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <Button asChild variant="outline" className="min-h-11 w-full gap-2 sm:w-auto">
+              <Link href="/service-menus" data-testid="button-open-service-menus">
+                <BookOpenText className="h-4 w-4 text-primary" />
+                Preview &amp; share menus
+              </Link>
+            </Button>
+            <div className="grid grid-cols-3 overflow-hidden rounded-xl border border-card-border bg-card text-sm shadow-[0_1px_0_0_hsl(var(--card-border)/0.4),0_10px_28px_-22px_var(--elevate-3)]">
+              <CatalogStat label="Active" value={activeItems.length} />
+              <CatalogStat label="Archived" value={inactiveItems.length} muted />
+              <CatalogStat label="Total" value={serviceItems?.length ?? 0} muted last />
+            </div>
           </div>
         </header>
 
