@@ -2617,7 +2617,7 @@ Visual thesis:
 - Preserve a coherent visual identity across PDF, PNG, and the CRM preview while keeping the service descriptions easy to scan on a phone.
 
 Acceptance criteria:
-- Two distinct, correctly labeled PDFs and two matching share PNGs preserve every supplied price and service requirement.
+- Two distinct, correctly labeled PDFs and four matching page-level share PNGs preserve every supplied price and service requirement without forcing details into one extra-tall image.
 - Only the Bridal Bundle price differs by region: `$600` general and `$675` Florida.
 - PDF fonts are embedded, text remains selectable, margins are print-safe, and rendered pages have no clipping, overlap, missing glyphs, or illegible copy.
 - PNG assets remain sharp and legible at original size and phone width.
@@ -2628,7 +2628,7 @@ Validation plan:
 - Run frontend typecheck/build and root typecheck after implementation.
 - Use `pdfinfo`, `pdffonts`, and `pdftotext -layout` to validate both PDFs structurally and compare edition pricing.
 - Render every PDF page with `pdftoppm -png -r 180` and visually inspect layout, hierarchy, typography, margins, and legibility.
-- Inspect both final share PNGs at original resolution and phone width.
+- Inspect all four final page-level share PNGs at original resolution and phone width.
 - Validate menu discovery, edition switching, preview, downloads, and native-share fallback in the browser at `430x932`, `768x1024`, and `1440x900`.
 - Run `git diff --check` and review the final scoped diff.
 
@@ -2642,7 +2642,7 @@ Privacy and non-goals:
 
 Implementation:
 - Generated original bridal editorial artwork with the built-in image-generation tool: warm ivory stone, bridal veil, makeup brushes, ivory rose, and an oxblood ribbon with no people, logos, or text.
-- Added `artifacts/glam-crm/scripts/generate-service-menus.py`, which produces two-page, letter-size General and Florida PDFs plus 180-DPI page previews and one full-length share PNG per edition.
+- Added `artifacts/glam-crm/scripts/generate-service-menus.py`, which produces two-page, letter-size General and Florida PDFs plus 180-DPI page-level share PNGs for each edition.
 - Added the static public-safe assets under `artifacts/glam-crm/public/service-menus/` and review PDF copies under `output/pdf/`.
 - Added `/service-menus` with a General/Florida switch, two-page live preview, PDF and PNG downloads, full-PDF opening, and native sharing with copied-link fallback.
 - Added prominent discovery from the desktop/mobile navigation, command palette, and the Services page header.
@@ -2653,7 +2653,7 @@ Pricing and PDF validation:
 - Both editions retain Bridal Makeup `$400`, Bridal Hair `$300`, Bridal Set Up `$50`, Bridal Hijab Set Up `$50`, Synthetic Bun Extension `$15`, Makeup Trial `$150`, Signature Bridal Package `$700`, Special Bridal Offer `$700 / event`, travel fees `$50` and `$100`, and early fees `$200` and `$75`.
 - `pdfinfo` reports two unencrypted US Letter pages for each PDF with no JavaScript or forms.
 - `pdffonts` reports every Arial and Georgia production font embedded and subset with Unicode mapping.
-- Every rendered page was visually inspected at 180 DPI. Page PNGs are `1530x1980`; full share PNGs are `1530x3988`. No clipping, overlap, missing glyphs, or illegible text was found.
+- Increased the PDF body/detail typography to improve readability, then visually inspected every rendered page at 180 DPI. Each page-level share PNG is `1530x1980`; no extra-tall composite is generated. No clipping, overlap, missing glyphs, or illegible text was found.
 
 Frontend validation:
 - `pnpm --filter @workspace/glam-crm run build` passed. Existing sourcemap, OpenCV browser-externalization, and chunk-size warnings remain unchanged.
@@ -2668,5 +2668,24 @@ Current status:
 
 Publication preparation:
 - Scoped files were staged on `codex/service-menu-pdfs`; no unrelated worktree changes were included.
+
+## 2026-08-02 - Shareable Bridal Services Menus (Readability Revision)
+
+User feedback:
+- The original detail copy was too small, and one extra-tall share image was difficult to use in messages.
+
+Revision:
+- Increased PDF body, supporting-detail, package, travel/timing, and style-note typography while preserving the two-page editorial composition and all canonical pricing.
+- Removed the extra-tall composite share PNGs. Each edition now exposes its rendered PDF page 1 and page 2 as separate `1530x1980` share-ready PNG downloads.
+- Updated the CRM copy and controls from one `Download share image` action to `Share page 1` and `Share page 2` actions.
+- Removed the obsolete composite assets from the public asset directory and updated Prompt, Plan, Setup, and Documentation to describe the page-level format.
+
+Revision validation:
+- Regenerated both PDFs and all four page-level PNGs with the scoped generator.
+- `pnpm --filter @workspace/glam-crm run typecheck` passed.
+- `pnpm --filter @workspace/glam-crm run build` passed with the same existing sourcemap, OpenCV browser-externalization, and chunk-size warnings.
+- `pdfinfo`, `pdffonts`, and `pdftotext -layout` passed for both two-page Letter PDFs; the only edition content difference remains the General `$600` versus Florida `$675` Bridal Bundle price.
+- Visual inspection confirmed larger detail copy, clean spacing, no clipping/overlap, and page-level PNG dimensions of `1530x1980`.
+- Local HTTP checks returned 200 with the expected PDF/PNG content types for both PDFs and all four page-level images. No composite share image is generated or linked.
 - Commit created: `41f545b` (`Commit #33 - Add shareable bridal service menus`).
 - Binary PDF internals produce expected `git diff --check` trailing-space diagnostics; the check excluding `**/*.pdf` passed for all source, documentation, script, and PNG changes.

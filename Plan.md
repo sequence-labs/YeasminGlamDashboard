@@ -163,7 +163,7 @@ Visual thesis:
 
 Acceptance criteria:
 - A general services menu and a Florida services menu are generated as separate print-quality PDFs under stable, descriptive filenames in `output/pdf/`.
-- Matching high-resolution PNG share images are generated for both editions and remain crisp and legible when viewed on a phone or sent through a messaging app.
+- Each edition provides two high-resolution PNG share images, one per PDF page, so details remain readable in messages and social DMs instead of being compressed into one tall image.
 - Both editions preserve the approved service descriptions, add-ons, requirements, offers, travel fees, early-morning fees, and full-glam specialty note without introducing unapproved pricing or claims.
 - The general edition lists Bridal Bundle at `$600 (each event)`; the Florida edition lists Bridal Bundle at `$675 (each event)`. All other supplied prices remain identical across editions.
 - The pricing hierarchy remains unambiguous, including Signature Bridal Package at `$700`, Special Bridal Offer at `$700 (each event)`, free `$150` Bridal Makeup Trial for 2 or more bridal events, and `$25 off each day` when booking 3 or more bridal services under the Bridal Bundle.
@@ -182,7 +182,7 @@ Validation commands:
 - `pdffonts` on both PDFs to confirm every production font is embedded.
 - `pdftotext -layout` on both PDFs, followed by a pricing/copy comparison confirming `$600` appears only in the general Bridal Bundle and `$675` appears only in the Florida Bridal Bundle.
 - `pdftoppm -png -r 180` for both PDFs, followed by visual inspection of every rendered page for spacing, hierarchy, clipping, legibility, and edition labeling.
-- Inspect the final PNG share images at original size and a phone-width preview; confirm readable type, expected dimensions, and no compression artifacts.
+- Inspect all four final PNG share images at original size and a phone-width preview; confirm readable type, expected dimensions, and no compression artifacts.
 - Browser validation of menu discovery, edition switching, preview, PDF download, PNG download, native-share support/fallback, and responsive behavior at `430x932`, `768x1024`, and `1440x900`.
 - `git diff --check`.
 
