@@ -64,10 +64,10 @@ def paragraph_style(name: str, **overrides) -> ParagraphStyle:
     return ParagraphStyle(name, **values)
 
 
-BODY = paragraph_style("Body", fontSize=8.8, leading=12, textColor=INK)
-BODY_SMALL = paragraph_style("BodySmall", fontSize=8.4, leading=11.6, textColor=TAUPE)
-BODY_LIGHT = paragraph_style("BodyLight", fontSize=8.5, leading=11.8, textColor=TAUPE)
-SERIF_NOTE = paragraph_style("SerifNote", fontName="GlamSerif-Italic", fontSize=10.2, leading=14, textColor=OXBLOOD_DARK)
+BODY = paragraph_style("Body", fontSize=12.2, leading=15.5, textColor=INK)
+BODY_SMALL = paragraph_style("BodySmall", fontSize=11, leading=14, textColor=TAUPE)
+BODY_LIGHT = paragraph_style("BodyLight", fontSize=11.2, leading=14.5, textColor=TAUPE)
+SERIF_NOTE = paragraph_style("SerifNote", fontName="GlamSerif-Italic", fontSize=12, leading=16, textColor=OXBLOOD_DARK)
 
 
 def draw_paragraph(c: canvas.Canvas, text: str, x: float, top: float, width: float, style: ParagraphStyle = BODY) -> float:
@@ -124,9 +124,9 @@ def draw_service_block(
     note: str | None = None,
 ) -> float:
     c.setFillColor(OXBLOOD_DARK)
-    c.setFont("GlamSerif-Bold", 11.6)
+    c.setFont("GlamSerif-Bold", 14.5)
     c.drawString(x, top, title)
-    draw_price(c, price, x + width, top - 1, 15)
+    draw_price(c, price, x + width, top - 1, 17)
     c.setStrokeColor(CHAMPAGNE)
     c.setLineWidth(0.7)
     c.line(x, top - 8, x + 30, top - 8)
@@ -178,7 +178,7 @@ def draw_page_one(c: canvas.Canvas, edition: str) -> None:
         column_w,
         "Bridal Makeup",
         "$400",
-        "Luxury skin prep with under-eye patches and professional products for a flawless, long-lasting finish. Lashes are included. Every look is customized to enhance your features and create your dream bridal look.",
+        "Luxury skin prep, under-eye patches, professional products, and lashes for a flawless, long-lasting finish. Every look is customized to enhance your features and create your dream bridal look.",
     )
     left = draw_service_block(
         c,
@@ -206,8 +206,8 @@ def draw_page_one(c: canvas.Canvas, edition: str) -> None:
         column_w,
         "Bridal Hair",
         "$300",
-        "Hairstyling based on your desired look, from a polished bun to romantic waves. Hair padding, bobby pins, and safety pins are included for a secure finish.",
-        "Please arrive with clean, washed, completely dry hair. Hair extensions must be provided by the bride. Recommended brand: Bellami.",
+        "Hairstyling for your desired look, from a polished bun to romantic waves. Hair padding, bobby pins, and safety pins are included.",
+        "Please arrive with clean, washed, completely dry hair. Bride-provided extensions only. Recommended brand: Bellami.",
     )
     right = draw_service_block(
         c,
@@ -225,30 +225,37 @@ def draw_page_one(c: canvas.Canvas, edition: str) -> None:
         column_w,
         "Bridal Hijab Set Up",
         "$50",
-        "Secure, elegant hijab styling customized to your bridal look. Gel, hairspray, and strong-hold techniques keep everything beautifully in place throughout the day.",
-        "Please bring your preferred hijab and under cap. Cotton or jersey fabrics are recommended for the best hold.",
+        "Secure, elegant hijab styling customized to your bridal look. Gel, hairspray, and strong-hold techniques keep everything in place all day.",
+        "Please bring your preferred hijab and under cap. Cotton or jersey is recommended for the best hold.",
     )
 
 
 def draw_package_panel(c: canvas.Canvas, x: float, top: float, width: float, title: str, price: str, kicker: str, body: str) -> float:
+    panel_height = 130
     c.setFillColor(PAPER)
     c.setStrokeColor(HAIRLINE)
     c.setLineWidth(0.7)
-    c.roundRect(x, top - 112, width, 112, 8, stroke=1, fill=1)
+    c.roundRect(x, top - panel_height, width, panel_height, 8, stroke=1, fill=1)
     c.setFillColor(CHAMPAGNE)
-    c.setFont("GlamSans-Bold", 6.5)
+    c.setFont("GlamSans-Bold", 8)
     c.drawString(x + 16, top - 19, kicker.upper())
     c.setFillColor(OXBLOOD_DARK)
-    c.setFont("GlamSerif-Bold", 12.2)
-    c.drawString(x + 16, top - 40, title)
-    draw_price(c, price, x + width - 16, top - 40, 17)
-    draw_paragraph(c, body, x + 16, top - 56, width - 32, BODY_LIGHT)
-    return top - 112
+    package_title_style = paragraph_style(
+        "PackageTitle",
+        fontName="GlamSerif-Bold",
+        fontSize=11.2,
+        leading=12.8,
+        textColor=OXBLOOD_DARK,
+    )
+    draw_paragraph(c, title, x + 16, top - 31, width - 112, package_title_style)
+    draw_price(c, price, x + width - 16, top - 40, 19)
+    draw_paragraph(c, body, x + 16, top - 70, width - 32, BODY_LIGHT)
+    return top - panel_height
 
 
 def draw_detail_row(c: canvas.Canvas, x: float, top: float, width: float, label: str, value: str, body: str) -> float:
     c.setFillColor(OXBLOOD_DARK)
-    c.setFont("GlamSans-Bold", 8)
+    c.setFont("GlamSans-Bold", 9.5)
     c.drawString(x, top, label.upper())
     c.setFillColor(OXBLOOD)
     c.setFont("GlamSerif-Bold", 11.5)
@@ -299,28 +306,28 @@ def draw_page_two(c: canvas.Canvas, edition: str, bundle_price: int) -> None:
         "Bundle your bridal events and save. Book 3 or more bridal services and enjoy $25 off each day.",
     )
 
-    offer_top = top - 136
+    offer_top = top - 154
     c.setFillColor(OXBLOOD)
-    c.roundRect(44, offer_top - 91, PAGE_W - 88, 91, 8, stroke=0, fill=1)
+    c.roundRect(44, offer_top - 112, PAGE_W - 88, 112, 8, stroke=0, fill=1)
     c.setFillColor(HexColor("#E8D6BA"))
-    c.setFont("GlamSans-Bold", 6.8)
+    c.setFont("GlamSans-Bold", 8)
     c.drawString(60, offer_top - 20, "SPECIAL BRIDAL OFFER")
     c.setFillColor(PAPER)
     c.setFont("GlamSerif-Bold", 13)
     c.drawString(60, offer_top - 42, "Bridal Makeup Package")
     c.setFont("GlamSerif", 17)
     c.drawRightString(PAGE_W - 60, offer_top - 42, "$700 / event")
-    offer_style = paragraph_style("Offer", fontSize=8.1, leading=10.8, textColor=PAPER)
+    offer_style = paragraph_style("Offer", fontSize=11.2, leading=14.5, textColor=PAPER)
     draw_paragraph(
         c,
         "Book 2 or more bridal events and receive a <b>free Bridal Makeup Trial</b> - a $150 value. Your trial gives us the opportunity to perfect your dream look before the big day.",
         60,
-        offer_top - 55,
+        offer_top - 58,
         PAGE_W - 120,
         offer_style,
     )
 
-    details_top = offer_top - 122
+    details_top = offer_top - 142
     c.setFillColor(OXBLOOD)
     c.setFont("GlamSans-Bold", 7.3)
     c.drawString(44, details_top, "TRAVEL & TIMING")
@@ -335,7 +342,7 @@ def draw_page_two(c: canvas.Canvas, edition: str, bundle_price: int) -> None:
 
     note_y = min(left, right) - 4
     c.setFillColor(HexColor("#EEE4D8"))
-    c.roundRect(44, note_y - 58, PAGE_W - 88, 58, 8, stroke=0, fill=1)
+    c.roundRect(44, note_y - 72, PAGE_W - 88, 72, 8, stroke=0, fill=1)
     c.setFillColor(OXBLOOD)
     c.setFont("GlamSans-Bold", 6.8)
     c.drawString(60, note_y - 18, "A NOTE ON STYLE")
