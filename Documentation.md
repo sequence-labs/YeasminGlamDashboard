@@ -2687,5 +2687,6 @@ Revision validation:
 - `pdfinfo`, `pdffonts`, and `pdftotext -layout` passed for both two-page Letter PDFs; the only edition content difference remains the General `$600` versus Florida `$675` Bridal Bundle price.
 - Visual inspection confirmed larger detail copy, clean spacing, no clipping/overlap, and page-level PNG dimensions of `1530x1980`.
 - Local HTTP checks returned 200 with the expected PDF/PNG content types for both PDFs and all four page-level images. No composite share image is generated or linked.
+- Published as `Commit #34 - Improve menu readability and sharing` on `codex/service-menu-pdfs`; because PR #6 had already merged, the revision is tracked in follow-up ready PR #7.
 - Commit created: `41f545b` (`Commit #33 - Add shareable bridal service menus`).
 - Binary PDF internals produce expected `git diff --check` trailing-space diagnostics; the check excluding `**/*.pdf` passed for all source, documentation, script, and PNG changes.
