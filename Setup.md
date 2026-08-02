@@ -232,6 +232,8 @@ npm test
 
 The sync command copies `artifacts/api-server/dist/*.mjs` and `*.mjs.map` into `/Users/iftatbhuiyan/WhisperSpeechServer/glam-api` by default. Override the destination with `GLAM_API_BUNDLE_TARGET` if the Render service checkout lives somewhere else.
 
+After Render finishes deploying a calendar-route change, probe the tokenized bookings and reminders HTTPS URLs without a CRM session. Both must return HTTP `200` with `Content-Type: text/calendar`; a `401` means the shared service is still running a stale embedded bundle rather than a public feed route.
+
 ## Supabase Postgres Setup
 
 Supabase is used as hosted Postgres for Makeup Artist Hub. The app still uses the current Drizzle/Postgres schema; this is not a rewrite to Supabase client APIs.
