@@ -86,6 +86,31 @@ Expected default frontend URL: `http://localhost:5173/`.
 
 The frontend dev server proxies `/api` to `API_TARGET`, defaulting to `http://127.0.0.1:8787`.
 
+Receipt image OCR uses open-source Tesseract.js in the browser. It does not require an API key or paid subscription. The OCR module is loaded only after the user chooses an image; on first use, Tesseract.js may download and cache its English language/runtime assets, so an internet connection is required for that initial scan.
+
+### Optional automatic Gemini receipt review
+
+Gemini is an optional automatic smart-review pass after local scanning. It is not required for ordinary local scanning. Put the key in the ignored local secret file; never add it to a `VITE_` variable or commit it to the repository:
+
+```text
+# .local/deployment-secrets.env
+GEMINI_API_KEY=<your Google AI Studio key>
+```
+
+Restart the API after adding or rotating the key. In non-production mode the API automatically loads `.local/deployment-secrets.env`; an environment value already supplied to the process takes precedence. The endpoint uses the currently available low-cost stable model `gemini-3.1-flash-lite`.
+
+The browser first runs local OCR and paints opaque black rectangles over detected card, account, authorization, terminal, membership, masked-number, and checksum-valid payment-card-number lines. Product UPC/SKU lines remain readable. When the key is configured, the prepared redacted copy is sent automatically to Gemini; the UI shows a compact progress/result status, and the editable review remains the only save path. Gemini does not save an expense or retain the analysis request in the application database.
+
+For the deployed Render API, add `GEMINI_API_KEY` as a secret environment variable on the server service. Do not expose it in the GitHub Pages frontend build.
+
+The receipt workflow adds the `expense_receipts` table plus nullable `expenses.receipt_id`, `expenses.product_code`, and `expenses.quantity` columns. A normal schema push applies these additive fields for a standard local database:
+
+```sh
+DATABASE_URL=postgres://makeup_artist_hub:makeup_artist_hub@localhost:5432/makeup_artist_hub pnpm --filter @workspace/db run push
+```
+
+For the production-derived local snapshot, keep using the explicitly named snapshot `DATABASE_URL` and do not use `push-force`; the Work Package 2.18 validation applied only the additive table, columns, foreign key, and index.
+
 Run API and frontend together:
 
 ```sh

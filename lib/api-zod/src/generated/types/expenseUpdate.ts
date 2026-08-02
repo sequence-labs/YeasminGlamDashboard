@@ -21,6 +21,15 @@ export interface ExpenseUpdate {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  receiptId?: number | null;
+  /** @nullable */
+  productCode?: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  quantity?: number | null;
+  /** @nullable */
   receiptDataUrl?: string | null;
   /** @nullable */
   receiptFileName?: string | null;

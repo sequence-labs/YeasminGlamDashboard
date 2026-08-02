@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Response } from "express";
 import crypto from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import {
@@ -166,6 +166,8 @@ function buildIcsCalendar(events: Array<{
   return lines.join("\r\n");
 }
 
+type CalendarItem = Parameters<typeof buildIcsCalendar>[0][number];
+
 function eventSequence(...parts: Array<unknown>): number {
   const digest = crypto.createHash("sha1").update(JSON.stringify(parts)).digest("hex");
   return Math.max(1, parseInt(digest.slice(0, 8), 16));
@@ -227,20 +229,11 @@ function paymentDueNotes(b: typeof bookingsTable.$inferSelect, clientName: strin
 }
 
 const YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
+type CalendarFeedKind = "all" | "bookings" | "reminders";
 
-router.get("/public/calendar/:token.ics", async (req, res): Promise<void> => {
-  const token = req.params.token;
-  const [feedToken] = await db
-    .select()
-    .from(calendarFeedTokensTable)
-    .where(and(eq(calendarFeedTokensTable.token, token), isNull(calendarFeedTokensTable.revokedAt)))
-    .limit(1);
-  if (!feedToken) {
-    res.status(404).send("Calendar feed not found");
-    return;
-  }
-
-  // Service events (one per booking event) with rich notes.
+async function loadPublicCalendarItems(): Promise<{ serviceItems: CalendarItem[]; paymentItems: CalendarItem[] }> {
+  // Service events (one per booking event) with rich notes. The caller validates the
+  // requested token before loading these shared items.
   const eventRows = await db
     .select({ event: eventsTable, booking: bookingsTable, clientName: clientsTable.name })
     .from(eventsTable)
@@ -296,7 +289,7 @@ router.get("/public/calendar/:token.ics", async (req, res): Promise<void> => {
     .innerJoin(clientsTable, eq(bookingsTable.clientId, clientsTable.id))
     .where(isNull(bookingsTable.deletedAt));
 
-  const paymentItems: typeof serviceItems = [];
+  const paymentItems: CalendarItem[] = [];
   for (const { booking: b, clientName } of bookingRows) {
     if (b.status === "cancelled" || b.balancePaid) continue;
     // Prefer an explicit balance due date; otherwise the contract default (day before the
@@ -340,18 +333,72 @@ router.get("/public/calendar/:token.ics", async (req, res): Promise<void> => {
     });
   }
 
-  const ics = buildIcsCalendar(
-    [...serviceItems, ...paymentItems],
-    feedToken.label,
-    `glam-studio-calendar-${feedToken.token}@glam-studio`,
-  );
+  return { serviceItems, paymentItems };
+}
+
+async function sendPublicCalendarFeed(
+  token: string,
+  res: Response,
+  kind: CalendarFeedKind,
+  calendarName: string,
+  filename: string,
+  calendarId: string,
+): Promise<void> {
+  const [feedToken] = await db
+    .select()
+    .from(calendarFeedTokensTable)
+    .where(and(eq(calendarFeedTokensTable.token, token), isNull(calendarFeedTokensTable.revokedAt)))
+    .limit(1);
+  if (!feedToken) {
+    res.status(404).send("Calendar feed not found");
+    return;
+  }
+
+  const { serviceItems, paymentItems } = await loadPublicCalendarItems();
+  const items = kind === "bookings" ? serviceItems : kind === "reminders" ? paymentItems : [...serviceItems, ...paymentItems];
+  const ics = buildIcsCalendar(items, calendarName, calendarId);
   const etag = crypto.createHash("sha1").update(ics).digest("hex");
 
   res.set("Content-Type", "text/calendar; charset=utf-8");
-  res.set("Content-Disposition", 'inline; filename="glam-calendar.ics"');
+  res.set("Content-Disposition", `inline; filename="${filename}"`);
   res.set("Cache-Control", "public, max-age=60, must-revalidate");
   res.set("ETag", `"${etag}"`);
   res.send(ics);
+}
+
+// Keep the original combined route working for existing subscribers. New UI links use
+// the separated bookings and reminders routes below so the two calendars stay distinct.
+router.get("/public/calendar/:token.ics", async (req, res): Promise<void> => {
+  await sendPublicCalendarFeed(
+    req.params.token,
+    res,
+    "all",
+    "Studio calendar (bookings + reminders)",
+    "glam-calendar.ics",
+    `glam-studio-calendar-${req.params.token}@glam-studio`,
+  );
+});
+
+router.get("/public/calendar/:token/bookings.ics", async (req, res): Promise<void> => {
+  await sendPublicCalendarFeed(
+    req.params.token,
+    res,
+    "bookings",
+    "Studio bookings & events",
+    "glam-bookings.ics",
+    `glam-studio-bookings-${req.params.token}@glam-studio`,
+  );
+});
+
+router.get("/public/calendar/:token/reminders.ics", async (req, res): Promise<void> => {
+  await sendPublicCalendarFeed(
+    req.params.token,
+    res,
+    "reminders",
+    "Studio payment reminders",
+    "glam-payment-reminders.ics",
+    `glam-studio-reminders-${req.params.token}@glam-studio`,
+  );
 });
 
 router.get("/public/portal/:token/booking.ics", async (req, res): Promise<void> => {

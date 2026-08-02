@@ -169,8 +169,14 @@ export interface Expense {
   paymentMethod?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  receiptId?: number | null;
+  /** @nullable */
+  productCode?: string | null;
+  /** @nullable */
+  quantity?: number | null;
   /**
-     * Data URL for an uploaded receipt image, scan, or PDF.
+     * Data URL or authenticated attachment path for an uploaded receipt image, scan, or PDF.
      * @nullable
      */
   receiptDataUrl?: string | null;
@@ -194,6 +200,10 @@ export interface ExpenseInput {
   vendor?: string;
   paymentMethod?: string;
   notes?: string;
+  receiptId?: number;
+  productCode?: string;
+  /** @minimum 0 */
+  quantity?: number;
   receiptDataUrl?: string;
   receiptFileName?: string;
   businessUse?: boolean;
@@ -215,12 +225,121 @@ export interface ExpenseUpdate {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  receiptId?: number | null;
+  /** @nullable */
+  productCode?: string | null;
+  /**
+     * @minimum 0
+     * @nullable
+     */
+  quantity?: number | null;
+  /** @nullable */
   receiptDataUrl?: string | null;
   /** @nullable */
   receiptFileName?: string | null;
   businessUse?: boolean;
   reimbursable?: boolean;
   active?: boolean;
+}
+
+export interface ExpenseReceiptLineInput {
+  /** @minLength 1 */
+  itemName: string;
+  category: ExpenseCategory;
+  /** @minimum 0.01 */
+  amount: number;
+  productCode?: string;
+  /** @minimum 0.01 */
+  quantity?: number;
+  notes?: string;
+}
+
+export interface ExpenseReceiptImportInput {
+  vendor?: string;
+  /** @minLength 1 */
+  expenseDate: string;
+  paymentMethod?: string;
+  /** @minimum 0 */
+  subtotal?: number;
+  /** @minimum 0 */
+  tax?: number;
+  /** @minimum 0.01 */
+  total: number;
+  /** @minLength 1 */
+  receiptDataUrl: string;
+  /** @minLength 1 */
+  receiptFileName: string;
+  rawText?: string;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  ocrConfidence?: number;
+  businessUse?: boolean;
+  reimbursable?: boolean;
+  /** @minItems 1 */
+  items: ExpenseReceiptLineInput[];
+}
+
+export interface ExpenseReceiptImportResult {
+  receiptId: number;
+  expenses: Expense[];
+}
+
+export interface ExpenseReceiptAnalysisInput {
+  /**
+     * @minItems 1
+     * @maxItems 8
+     */
+  redactedImages: string[];
+}
+
+export type ExpenseReceiptAnalysisLineCategory = typeof ExpenseReceiptAnalysisLineCategory[keyof typeof ExpenseReceiptAnalysisLineCategory];
+
+
+export const ExpenseReceiptAnalysisLineCategory = {
+  makeup_products: 'makeup_products',
+  hair_products: 'hair_products',
+  tools_equipment: 'tools_equipment',
+  disposables: 'disposables',
+  travel: 'travel',
+  education: 'education',
+  marketing: 'marketing',
+  software: 'software',
+  studio_supplies: 'studio_supplies',
+  other: 'other',
+} as const;
+
+export interface ExpenseReceiptAnalysisLine {
+  /** Standardized searchable product name with brand, product family, and important variant details. */
+  itemName: string;
+  /** Original printed product wording without price or payment metadata. */
+  receiptLabel: string;
+  category: ExpenseReceiptAnalysisLineCategory;
+  /** @minimum 0 */
+  amount: number;
+  /** @minimum 0.01 */
+  quantity: number;
+  productCode: string;
+}
+
+export interface ExpenseReceiptAnalysisResult {
+  model: string;
+  vendor: string;
+  /** Purchase date as YYYY-MM-DD, or an empty string when not visible. */
+  expenseDate: string;
+  /** Local purchase time as HH:MM, or an empty string when not visible. */
+  purchaseTime: string;
+  /** Normalized payment method such as Credit/debit card, Cash, Venmo, or an empty string when not visible. */
+  paymentMethod: string;
+  /** @minimum 0 */
+  subtotal: number;
+  /** @minimum 0 */
+  tax: number;
+  /** @minimum 0 */
+  total: number;
+  /** @maxItems 100 */
+  items: ExpenseReceiptAnalysisLine[];
 }
 
 export interface ArtistProfile {

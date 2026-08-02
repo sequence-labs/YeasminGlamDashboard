@@ -135,6 +135,23 @@ Validation commands:
 - Frontend startup succeeds without Replit environment variables.
 - Browser smoke test reaches the dashboard route.
 
+### Work Package 2.19: Dashboard Period Insights and Compact Expense Ledger
+
+Status: In progress — desktop and responsive source validation passed; a dedicated 430x932 browser run remains pending because the available in-app browser session cannot resize its viewport.
+
+Acceptance criteria:
+- Dashboard financial summary tiles explain their scope and link to the relevant workflow.
+- Dashboard provides a week/month pulse with scheduled booking count, booked value, expenses, and net outlook.
+- Expense summary cards can filter the ledger by month, year, or all time, while category filtering remains available.
+- Mobile expense rows are compact 44px-target tap surfaces that open a detail preview and an edit path; desktop keeps the dense ledger layout.
+- Expense preview/edit preserves receipt label, SKU, payment, business-use, and review notes without writing until the user saves an edit.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm run typecheck`
+- Browser validation at `430x932` and desktop dashboard/expenses widths, including period filter, category filter, row preview, and edit save.
+
 ## Rollback Conditions
 
 - Local migration requires replacing generated source files wholesale.
@@ -400,3 +417,53 @@ Validation commands:
 - `pnpm --filter @workspace/glam-crm run build`
 - `pnpm run typecheck`
 - Browser validation on `/clients/new`, `/clients/:id`, and `/bookings/:id`.
+
+### Work Package 2.17: Separate Apple Calendar Subscriptions
+
+Status: In progress.
+
+Acceptance criteria:
+- The calendar subscription dialog presents separate bookings/events and payment-reminders subscriptions with distinct labels and descriptions.
+- The bookings feed includes service/trial events only; the reminders feed includes payment-due reminders only.
+- Each feed has a stable tokenized URL, distinct calendar identity/name, Apple `webcal://` handoff, copyable HTTPS URL, and downloadable `.ics` file.
+- Resetting the calendar feed token invalidates both subscription URLs together and generates fresh URLs.
+- Both feeds preserve the existing Apple Calendar refresh, ETag, timezone, privacy, status, and sequence behavior.
+- Public calendar output remains CRM-safe and does not expose client social profile data.
+
+Validation commands:
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/api-server run build`
+- `pnpm --filter @workspace/glam-crm run build`
+- Fetch both local tokenized feeds and verify their event classes, distinct calendar identities, ETags, and update behavior.
+- Browser validation of the split subscription dialog and both Apple Calendar actions on `/calendar`.
+
+### Work Package 2.18: Mobile Receipt Capture and Itemization
+
+Status: In progress — local OCR, Gemini, review, and isolated write path validated; deployed Render validation remains.
+
+Acceptance criteria:
+- Expenses presents receipt capture as the primary mobile entry path while preserving a secondary manual-entry path.
+- The user can take a receipt photo or choose an image/screenshot and run OCR locally without a paid API or subscription.
+- Full-frame phone photos automatically isolate and reconstruct the receipt paper before OCR, while preserving a reviewable image and a safe fallback when edges are uncertain.
+- Validation covers a mixed receipt corpus: clean digital layouts, very low-resolution thermal receipts, photographed/angled paper, barcodes, multiple tax lines, discounts, zero-dollar receipts, and long item lists.
+- Extraction proposes merchant, purchase date, total, tax, line items, quantities, product/SKU codes when printed, categories, and confidence/reconciliation warnings.
+- No OCR result is written automatically; every proposed value is editable and requires explicit review before saving.
+- Gemini is optional and runs automatically after local receipt preparation when a server key is configured. The prepared receipt is locally redacted before upload; the user reviews highlighted exceptions and final values before saving.
+- Before any Gemini request, detected card, account, authorization, terminal, membership, masked-number, and checksum-valid payment-card-number lines are painted over locally with opaque black rectangles; product UPC/SKU lines remain readable. The user is shown a compact automatic-review status while only the redacted copy is uploaded.
+- Gemini uses the currently available low-cost `gemini-3.1-flash-lite` model, keeps `GEMINI_API_KEY` server-side, validates structured output, retains no analysis request in the application, and still requires the ordinary editable review/save step.
+- The reviewed receipt can be saved atomically as itemized expenses or as one combined expense, with one shared receipt record instead of duplicating the image per line item.
+- The capture, progress, review, correction, save, and fallback/manual states work at a 430x932 mobile viewport and remain usable on desktop.
+- Existing expense history, search, summaries, dashboard totals, archival behavior, and legacy receipt attachments remain compatible.
+
+Validation commands:
+- `pnpm --filter @workspace/api-spec run codegen`
+- Apply only the scoped additive expense-receipt schema changes to `makeup_artist_hub_prod_snapshot`.
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/api-server run build`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm run typecheck`
+- Parser fixtures covering common receipt totals, dates, SKU codes, uncertain lines, reconciliation, multiple tax lines, discounts, zero-dollar receipts, and multi-line retail formats such as Home Depot quantity/unit-price receipts.
+- Browser validation on `/expenses` for capture, OCR progress/review, item editing, itemized save, combined save, and mobile/desktop layouts.
+- API validation for missing-key, invalid-image, provider-error, and valid structured Gemini responses without database writes.

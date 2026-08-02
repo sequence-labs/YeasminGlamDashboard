@@ -28,8 +28,8 @@ import {
   ReceiptText,
 } from "lucide-react";
 import { Link } from "wouter";
-import { format, parseISO } from "date-fns";
-import { useMemo } from "react";
+import { endOfMonth, endOfWeek, format, isWithinInterval, parseISO, startOfMonth, startOfWeek } from "date-fns";
+import { useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -73,12 +73,15 @@ function paymentLabel(booking: { retainerPaid: boolean; balancePaid: boolean }) 
   return "Retainer due";
 }
 
+type DashboardPeriod = "week" | "month";
+
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: upcomingEvents, isLoading: upcomingLoading } = useGetUpcomingEvents();
   const { data: bookings, isLoading: bookingsLoading } = useListBookings();
   const { data: expenses = [] } = useListExpenses();
   const { data: nextActions = [] } = useGetNextActions();
+  const [pulsePeriod, setPulsePeriod] = useState<DashboardPeriod>("month");
 
   const statusChartData = useMemo(() => {
     if (!bookings) return [];
@@ -114,6 +117,26 @@ export default function Dashboard() {
   const activeExpenses = expenses.filter((expense) => expense.active && expense.businessUse);
   const recentExpenseCount = activeExpenses.slice(0, 3).length;
   const maxStatusCount = Math.max(...statusChartData.map((entry) => entry.value), 1);
+  const pulse = useMemo(() => {
+    const now = new Date();
+    const interval = pulsePeriod === "month"
+      ? { start: startOfMonth(now), end: endOfMonth(now) }
+      : { start: startOfWeek(now), end: endOfWeek(now) };
+    const inWindow = (value?: string | null) => Boolean(value && isWithinInterval(parseISO(value), interval));
+    const scheduledBookings = bookingRows.filter((booking) => inWindow(booking.firstServiceDate));
+    const scheduledValue = scheduledBookings.reduce((sum, booking) => sum + booking.grandTotal, 0);
+    const periodExpenses = activeExpenses.filter((expense) => inWindow(expense.expenseDate));
+    const costs = periodExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+    return {
+      scheduledBookings,
+      scheduledValue,
+      costs,
+      netOutlook: scheduledValue - costs,
+      periodExpenses,
+      rangeLabel: `${format(interval.start, "MMM d")}–${format(interval.end, "MMM d, yyyy")}`,
+    };
+  }, [activeExpenses, bookingRows, pulsePeriod]);
 
   return (
     <Shell>
@@ -216,6 +239,7 @@ export default function Dashboard() {
               detail={`${stats.activeBookings} active booking${stats.activeBookings === 1 ? "" : "s"}`}
               icon={HandCoins}
               testId="stat-pending-revenue"
+              href="/bookings"
               emphasis
             />
             <MetricTile
@@ -224,6 +248,7 @@ export default function Dashboard() {
               detail={`${stats.balancesPending} balance${stats.balancesPending === 1 ? "" : "s"} pending`}
               icon={AlertCircle}
               testId="stat-active-bookings"
+              href="/bookings"
             />
             <MetricTile
               eyebrow="Clients"
@@ -231,6 +256,7 @@ export default function Dashboard() {
               detail="Current roster"
               icon={Users}
               testId="stat-total-clients"
+              href="/clients"
             />
             <MetricTile
               eyebrow="Earned"
@@ -238,6 +264,7 @@ export default function Dashboard() {
               detail={`${completedBookingCount} completed job${completedBookingCount === 1 ? "" : "s"}`}
               icon={Wallet}
               testId="stat-total-revenue"
+              href="/bookings"
             />
             <MetricTile
               eyebrow="Costs · month"
@@ -245,6 +272,7 @@ export default function Dashboard() {
               detail={`${recentExpenseCount} recent expense${recentExpenseCount === 1 ? "" : "s"}`}
               icon={ReceiptText}
               testId="stat-month-expenses"
+              href="/expenses"
             />
             <MetricTile
               eyebrow="Net"
@@ -252,9 +280,41 @@ export default function Dashboard() {
               detail={`${formatMoney(stats.yearToDateExpenses)} costs YTD`}
               icon={TrendingUp}
               testId="stat-net-revenue"
+              href="/expenses"
             />
           </div>
         ) : null}
+
+        {/* -------- Period pulse -------- */}
+        <section className="crm-section overflow-hidden">
+          <div className="flex flex-col gap-4 border-b border-card-border/70 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+            <div>
+              <span className="crm-eyebrow">Studio · Pulse</span>
+              <h2 className="crm-section-title mt-1">What the next {pulsePeriod === "month" ? "month" : "week"} looks like</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Booked value and business costs for {pulse.rangeLabel}.</p>
+            </div>
+            <div className="grid grid-cols-2 rounded-lg border border-card-border bg-accent/30 p-1" role="group" aria-label="Dashboard period">
+              {(["week", "month"] as const).map((period) => (
+                <button
+                  key={period}
+                  type="button"
+                  onClick={() => setPulsePeriod(period)}
+                  aria-pressed={pulsePeriod === period}
+                  className={`min-h-10 rounded-md px-4 text-[11px] font-semibold uppercase tracking-[0.14em] transition-[background-color,color,box-shadow] active:scale-[0.96] ${pulsePeriod === period ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  data-testid={`button-dashboard-period-${period}`}
+                >
+                  {period}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-y divide-card-border/60 sm:grid-cols-4 sm:divide-y-0">
+            <PulseMetric label="Scheduled" value={String(pulse.scheduledBookings.length)} detail="bookings" href="/calendar" />
+            <PulseMetric label="Booked value" value={formatMoney(pulse.scheduledValue)} detail="before payments" href="/bookings" />
+            <PulseMetric label="Expenses" value={formatMoney(pulse.costs)} detail={`${pulse.periodExpenses.length} ledger line${pulse.periodExpenses.length === 1 ? "" : "s"}`} href="/expenses" />
+            <PulseMetric label="Net outlook" value={formatMoney(pulse.netOutlook)} detail="booked value less costs" href="/expenses" />
+          </div>
+        </section>
 
         {/* -------- Next event + payment attention -------- */}
         <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
@@ -601,6 +661,7 @@ function MetricTile({
   detail,
   icon: Icon,
   testId,
+  href,
   emphasis = false,
 }: {
   eyebrow: string;
@@ -608,9 +669,10 @@ function MetricTile({
   detail: string;
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   testId: string;
+  href?: string;
   emphasis?: boolean;
 }) {
-  return (
+  const tile = (
     <div
       data-testid={testId}
       className={`relative flex h-full flex-col overflow-hidden rounded-2xl border p-5 transition-all duration-300 ease-out
@@ -646,6 +708,23 @@ function MetricTile({
         />
       )}
     </div>
+  );
+
+  return href ? <Link href={href} className="block h-full">{tile}</Link> : tile;
+}
+
+function PulseMetric({ label, value, detail, href }: { label: string; value: string; detail: string; href: string }) {
+  return (
+    <Link
+      href={href}
+      className="group min-h-[112px] p-4 transition-[background-color,transform] hover:bg-accent/25 active:scale-[0.98] sm:p-5"
+    >
+      <div className="crm-eyebrow !text-[10px]">{label}</div>
+      <div className="mt-3 font-serif text-[1.8rem] leading-none text-foreground tabular-nums transition-colors group-hover:text-primary" style={{ fontVariationSettings: "'opsz' 96" }}>
+        {value}
+      </div>
+      <div className="mt-2 text-xs text-muted-foreground">{detail}</div>
+    </Link>
   );
 }
 

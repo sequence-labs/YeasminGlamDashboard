@@ -7,24 +7,14 @@
  */
 import type { ExpenseCategory } from './expenseCategory';
 
-export interface ExpenseInput {
+export interface ExpenseReceiptLineInput {
   /** @minLength 1 */
   itemName: string;
   category: ExpenseCategory;
-  /** @minimum 0 */
+  /** @minimum 0.01 */
   amount: number;
-  /** @minLength 1 */
-  expenseDate: string;
-  vendor?: string;
-  paymentMethod?: string;
-  notes?: string;
-  receiptId?: number;
   productCode?: string;
-  /** @minimum 0 */
+  /** @minimum 0.01 */
   quantity?: number;
-  receiptDataUrl?: string;
-  receiptFileName?: string;
-  businessUse?: boolean;
-  reimbursable?: boolean;
-  active?: boolean;
+  notes?: string;
 }
