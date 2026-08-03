@@ -21,6 +21,7 @@ jobs:
     env:
       BASE_PATH: /YeasminGlamDashboard/
       VITE_API_BASE_URL: https://whisperflowserver.onrender.com/glam-api
+      VITE_YEASMIN_WEBSITE_URL: https://sequence-labs.github.io/YeasminWebsite/
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

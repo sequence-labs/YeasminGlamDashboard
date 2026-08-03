@@ -387,7 +387,7 @@ Validation commands:
 
 ### Work Package 3.4: Authenticated GLAMBYEASMIN Website Studio
 
-Status: In progress — protected dashboard route and preview inventory added 2026-08-03; authenticated persistence/publish remains the next slice.
+Status: In progress — full browser-local editor parity and standalone workspace completed 2026-08-03; authenticated server persistence/publish remains the following slice.
 
 Objective:
 - Move the website editor into the authenticated Glam CRM dashboard.
@@ -396,7 +396,9 @@ Objective:
 
 Acceptance criteria:
 - The dashboard exposes a clearly named Website Studio route behind the existing authentication boundary and sidebar/mobile navigation.
+- Opening Website Studio presents a dedicated full-screen editor workspace without the standard CRM shell or sidebar and provides a clear route back to the dashboard.
 - The route provides Homepage/Services preview selection, desktop/tablet/mobile frame controls, and a source-file inventory for replaceable image slots.
+- The dashboard editor matches the former local Studio controls: 16 image slots, search/filter, menu field editing, live preview application, import/export, per-item reset, reset-all, and browser-local persistence.
 - The editor previews the public website and services menu without exposing a public `/studio/` route.
 - Image, copy, price, draft, reset, and publish controls have server-authorized boundaries; no service-role or database credential reaches browser code.
 - Draft content is isolated from published content and can be previewed, published, and rolled back deliberately.
