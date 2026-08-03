@@ -2715,3 +2715,8 @@ Final polish:
 Validation:
 - `pnpm --filter @workspace/glam-crm typecheck` passed.
 - Remaining validation: frontend production build, deployed-like auth smoke test, API-backed draft/media model, and removal/verification of the public site's dev-only Studio route after dashboard persistence is ready.
+
+## 2026-08-03 — Dashboard home Studio shortcut
+
+- Added a prominent `Website Studio` button to the dashboard command-center header, so the protected editor is reachable without typing `/website-studio`.
+- Kept the shortcut inside the dashboard; no public-site navigation or unauthenticated editor link was added.
