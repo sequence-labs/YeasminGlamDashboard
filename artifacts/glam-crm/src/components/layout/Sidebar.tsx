@@ -14,6 +14,7 @@ import {
   ReceiptText,
   CalendarRange,
   BookOpenText,
+  PanelsTopLeft,
 } from "lucide-react";
 import {
   useGetArtistProfile,
@@ -33,6 +34,7 @@ const primaryLinks = [
 const secondaryLinks = [
   { href: "/services", label: "Services", icon: Sparkles },
   { href: "/service-menus", label: "Service Menus", icon: BookOpenText },
+  { href: "/website-studio", label: "Website Studio", icon: PanelsTopLeft },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
   { href: "/artist", label: "Artist", icon: UserRound },
   { href: "/contracts", label: "Contracts", icon: FileText },

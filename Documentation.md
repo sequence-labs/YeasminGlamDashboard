@@ -2695,3 +2695,23 @@ Final polish:
 - Constrained the enlarged package titles to their own text column so Signature Bridal Package and its `$700` price never overlap.
 - Re-rendered and visually inspected the corrected package card, page 1, and detail sections; the title now wraps cleanly and all prices remain separated.
 - Final focused frontend typecheck and build passed. Existing sourcemap, OpenCV browser-externalization, and chunk-size warnings remain unchanged.
+
+## 2026-08-03 — Authenticated Website Studio migration (started)
+
+- **User direction:** move the GLAMBYEASMIN Website Studio out of the public website and into Yeasmin's existing authenticated Makeup Artist Hub dashboard so GitHub Pages never exposes editor controls.
+- **Architecture decision:** the dashboard will own authentication, drafts, image/media authorization, preview, publish, and rollback. The public website will receive only a sanitized published snapshot; it will not query private CRM rows or expose dashboard credentials.
+- **Initial audit:** the dashboard already has an `AuthGate`, session-protected API middleware, a `/service-menus` page, a Vite/Wouter route structure, and the existing service catalog/API boundary. The current YeasminWebsite Studio remains a development-only reference implementation until the dashboard route is integrated.
+- **Security constraints:** do not rely on a hidden frontend route as authorization; protect reads and writes in the API/session boundary, keep service-role/database secrets server-side, validate uploads, and review storage/RLS policies before adding persistence.
+- **Work scope:** audit and port the Studio preview/editor seam, add the authenticated dashboard route, add only the minimum public-site preview bridge required for exact cross-origin previews, and validate production exclusion plus authenticated/unauthenticated behavior before publication.
+
+## 2026-08-03 — Dashboard Studio route vertical slice
+
+- Added `artifacts/glam-crm/src/pages/website-studio.tsx` and routed it at `/website-studio`.
+- Added `Website Studio` to the authenticated dashboard Sidebar and Command Palette; the existing mobile More sheet consumes the same secondary-link list.
+- The page provides Homepage/Services menu preview selection, desktop/tablet/mobile frame controls, an exact public-site iframe preview URL, a source-file inventory for known portfolio/service/ornament slots, and browser-local replacement staging/reset controls.
+- The route is inside `AuthGate`; the local development bypass is unchanged and must not be treated as production authentication.
+- Deliberately did not copy the public site's dev-only Astro Studio or claim durable publishing: these controls use browser-local drafts until the authenticated website-content/media schema and server-side publish workflow are implemented.
+
+Validation:
+- `pnpm --filter @workspace/glam-crm typecheck` passed.
+- Remaining validation: frontend production build, deployed-like auth smoke test, API-backed draft/media model, and removal/verification of the public site's dev-only Studio route after dashboard persistence is ready.

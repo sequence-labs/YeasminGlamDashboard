@@ -385,6 +385,33 @@ Validation commands:
 
 ## Milestone 3: Low-Cost Production Deployment
 
+### Work Package 3.4: Authenticated GLAMBYEASMIN Website Studio
+
+Status: In progress — protected dashboard route and preview inventory added 2026-08-03; authenticated persistence/publish remains the next slice.
+
+Objective:
+- Move the website editor into the authenticated Glam CRM dashboard.
+- Keep GitHub Pages limited to the published public website and `/services/` route.
+- Preserve the exact public-site preview while ensuring drafts, images, and menu changes are controlled by the dashboard session.
+
+Acceptance criteria:
+- The dashboard exposes a clearly named Website Studio route behind the existing authentication boundary and sidebar/mobile navigation.
+- The route provides Homepage/Services preview selection, desktop/tablet/mobile frame controls, and a source-file inventory for replaceable image slots.
+- The editor previews the public website and services menu without exposing a public `/studio/` route.
+- Image, copy, price, draft, reset, and publish controls have server-authorized boundaries; no service-role or database credential reaches browser code.
+- Draft content is isolated from published content and can be previewed, published, and rolled back deliberately.
+- Uploaded images use validated storage paths and authorization policies; replacing an image requires the storage permissions needed for insert/select/update.
+- The public GitHub Pages build contains only sanitized published content and no dashboard editor code or private CRM data.
+- Authenticated and unauthenticated dashboard/API tests prove that editor reads and writes are protected, while public website reads contain only published fields.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/api-server run build`
+- Browser validation of authenticated and unauthenticated `/website-studio` access.
+- Storage/RLS policy review and a published-snapshot boundary test.
+
 ### Work Package 3.1: GitHub Pages Frontend
 
 Status: In progress.
