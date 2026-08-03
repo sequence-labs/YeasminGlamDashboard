@@ -54,7 +54,7 @@ The menu assets are static marketing materials. They must not contain client, bo
 
 ## Current Website Studio Intent
 
-The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Website Studio. Yeasmin must reach image, service-copy, pricing, preview, draft, and publish controls from inside the existing authenticated dashboard rather than through the public GitHub Pages website. The public website may receive only an approved, sanitized published snapshot; it must never expose dashboard credentials, draft data, private CRM rows, or editor controls.
+The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Website Studio. Yeasmin must reach image, service-copy, pricing, preview, draft, and publish controls from inside the existing authenticated dashboard rather than through the public GitHub Pages website. Opening the Studio should transition to a dedicated full-screen editor workspace without the normal CRM sidebar or page shell, with an explicit route back to the dashboard. The public website may receive only an approved, sanitized published snapshot; it must never expose dashboard credentials, draft data, private CRM rows, or editor controls.
 
 ## Non-Goals
 

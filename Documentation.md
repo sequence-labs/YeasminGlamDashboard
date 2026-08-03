@@ -2720,3 +2720,20 @@ Validation:
 
 - Added a prominent `Website Studio` button to the dashboard command-center header, so the protected editor is reachable without typing `/website-studio`.
 - Kept the shortcut inside the dashboard; no public-site navigation or unauthenticated editor link was added.
+
+## 2026-08-03 — Full Website Studio browser-local parity
+
+- User review correctly identified that the dashboard route was only a preview/audit scaffold, not the complete editor previously available at the website's development-only `/studio/` route.
+- Required parity scope is now explicit: all 16 image slots, source inventory, search/filter, replacement and per-slot reset, the complete 13-item service-menu editor, live cross-origin preview updates, desktop/tablet/mobile preview controls, import/export, reset-all confirmation, and browser-local persistence matching the former editor's behavior.
+- This parity slice remains protected by the dashboard `AuthGate`. Browser-local drafts are not represented as server-published content; API-backed publishing remains a separate security-sensitive gate.
+
+### Dedicated full-screen editor correction
+
+- User review clarified that Website Studio must not render as another page inside the normal dashboard shell. The dashboard entry point now transitions to the protected `/website-studio` route as a dedicated full-screen workspace with its own branded header and an explicit `Dashboard` back link.
+- Removed the Studio page's `Shell` wrapper, CRM sidebar, mobile dashboard navigation, and shell padding while retaining the existing `AuthGate` around the route. The editor and exact public-site preview now share the full viewport in a two-pane desktop workspace.
+- Browser validation at `http://127.0.0.1:5173/website-studio` confirmed one `Website Studio` heading, one `Dashboard` back link, zero navigation/sidebar landmarks, all 16 image slots, all 13 menu entries, and the connected exact homepage preview.
+- `pnpm --filter @workspace/glam-crm typecheck` passed.
+- `pnpm --filter @workspace/glam-crm build` passed. Existing sourcemap, OpenCV browser-externalization, and large-chunk warnings remain unchanged.
+- Root `pnpm run typecheck` passed across libraries, API server, Glam CRM, mockup sandbox, and scripts.
+- A 430x932 browser pass reported equal `scrollWidth` and `clientWidth` with the full-screen Studio heading and controls visible; no horizontal page overflow was present. Browser warning/error logs were empty.
+- The public preview bridge was independently validated in YeasminWebsite with formatting, Astro check, 12 unit/content tests, a Pages-like two-route production build, production-asset boundary verification, and a focused Chromium iframe test covering valid image/menu application plus atomic rejection of unknown identifiers.
