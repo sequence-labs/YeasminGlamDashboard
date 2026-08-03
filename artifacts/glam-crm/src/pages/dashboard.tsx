@@ -153,6 +153,12 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline" size="default">
+              <Link href="/website-studio">
+                <Sparkles className="h-4 w-4" />
+                Website Studio
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="default">
               <Link href="/bookings">
                 <ListChecks className="h-4 w-4" />
                 All bookings

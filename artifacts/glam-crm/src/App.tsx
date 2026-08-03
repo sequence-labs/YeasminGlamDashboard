@@ -24,6 +24,7 @@ import AddonApprovalPage from "@/pages/addon-approval";
 import AddonMenuPage from "@/pages/addon-menu";
 import UpgradeMenuView from "@/pages/upgrade-menu-view";
 import ServiceMenusPage from "@/pages/service-menus";
+import WebsiteStudioPage from "@/pages/website-studio";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ function AppRoutes() {
 
       <Route path="/services" component={Services} />
       <Route path="/service-menus" component={ServiceMenusPage} />
+      <Route path="/website-studio" component={WebsiteStudioPage} />
       <Route path="/artist" component={Artist} />
       <Route path="/contracts" component={ContractTemplates} />
       <Route path="/contract-templates" component={ContractTemplates} />

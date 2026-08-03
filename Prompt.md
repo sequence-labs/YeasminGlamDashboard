@@ -52,6 +52,10 @@ Canonical menu content and pricing:
 
 The menu assets are static marketing materials. They must not contain client, booking, contract, payment, receipt, or other private CRM data.
 
+## Current Website Studio Intent
+
+The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Website Studio. Yeasmin must reach image, service-copy, pricing, preview, draft, and publish controls from inside the existing authenticated dashboard rather than through the public GitHub Pages website. The public website may receive only an approved, sanitized published snapshot; it must never expose dashboard credentials, draft data, private CRM rows, or editor controls.
+
 ## Non-Goals
 
 - Do not redesign the product UI for new functional behavior unless explicitly requested by the user for a UI/UX polishing pass.
@@ -63,6 +67,7 @@ The menu assets are static marketing materials. They must not contain client, bo
 - Do not surface Automations navigation or automation-management entry points unless the user explicitly reintroduces that workflow.
 - Do not auto-publish a final visual design before the user has reviewed the preview.
 - Do not make the public services menu depend on authenticated CRM data or expose private CRM records.
+- Do not expose the Website Studio on the public website or deploy the current local-only editor route as a hosted CMS.
 
 ## Constraints
 
