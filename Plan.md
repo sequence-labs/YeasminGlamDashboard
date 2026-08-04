@@ -460,6 +460,22 @@ Validation commands:
 - `psql <supabase-url> < data/backups/makeup_artist_hub-20260519-030003.sql`
 - `curl https://whisperflowserver.onrender.com/glam-api/api/healthz`
 
+### Work Package 3.4: Production Schema Compatibility
+
+Status: Complete — hosted migration applied and all deployed booking details validated.
+
+Acceptance criteria:
+- Hosted `public.clients.social_links` exists as `jsonb NOT NULL DEFAULT '[]'::jsonb` without modifying existing client values beyond the additive default.
+- Production client and booking list endpoints remain healthy after the migration.
+- Every active booking returned by the deployed list endpoint has a successful detail response, including reported IDs 11, 12, and 24.
+- The migration is idempotent and retained in repository history so application schema and hosted schema cannot silently diverge again.
+
+Validation commands:
+- Read-only `information_schema.columns` inspection before and after the migration.
+- Authenticated production probes for `/api/clients`, `/api/bookings`, and every `/api/bookings/:id` returned by the list.
+- Browser validation of deployed `/bookings/11`, `/bookings/12`, and `/bookings/24`.
+- `git diff --check`
+
 ### Work Package 2.16: Client Social Profiles
 
 Status: Complete.
