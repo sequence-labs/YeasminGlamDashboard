@@ -2737,3 +2737,21 @@ Validation:
 - Root `pnpm run typecheck` passed across libraries, API server, Glam CRM, mockup sandbox, and scripts.
 - A 430x932 browser pass reported equal `scrollWidth` and `clientWidth` with the full-screen Studio heading and controls visible; no horizontal page overflow was present. Browser warning/error logs were empty.
 - The public preview bridge was independently validated in YeasminWebsite with formatting, Astro check, 12 unit/content tests, a Pages-like two-route production build, production-asset boundary verification, and a focused Chromium iframe test covering valid image/menu application plus atomic rejection of unknown identifiers.
+
+## 2026-08-04 — Production booking-detail schema incident
+
+- **User report:** the production bookings list renders, but opening existing bookings such as IDs 11, 12, and 24 shows `Booking not found` while the API returns HTTP 500.
+- **Confirmed cause:** the deployed Drizzle schema selects `clients.social_links`, but hosted Supabase `public.clients` does not contain that column. PostgreSQL logs repeatedly report `column clients.social_links does not exist` at the booking-detail requests.
+- **Why list still works:** the list query selects only `clients.name`; the detail query and client-detail query select the complete client record and therefore request the missing column.
+- **Change boundary:** apply one idempotent, additive `jsonb NOT NULL DEFAULT '[]'` column migration. Do not modify or delete existing client or booking data.
+- **Acceptance:** hosted schema reports the expected column/type/default; authenticated client/list endpoints remain 200; every active booking ID returned by the production list has a 200 detail response; IDs 11, 12, and 24 render in the deployed dashboard.
+
+### Repair and validation evidence
+
+- Generated and retained the idempotent migration at `supabase/migrations/20260804052843_add_client_social_links.sql`; its version matches the hosted `supabase_migrations.schema_migrations` entry created by the production migration.
+- Applied `ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS social_links jsonb NOT NULL DEFAULT '[]'::jsonb` to hosted Supabase. Postflight inspection returned `data_type=jsonb`, `is_nullable=NO`, default `'[]'::jsonb`, and zero null client rows.
+- Authenticated production API smoke passed: `/clients` 200, `/bookings` 200, and all 14 booking IDs returned by the list produced 200 detail responses. Reported IDs 11, 12, and 24 each returned 200 independently.
+- Deployed browser verification passed for all three reported routes: booking 11 rendered `Asma Shariff`, booking 12 rendered `Jannatul ferdous`, and booking 24 rendered `Fatima ihsan`; none rendered `Booking not found`.
+- Booking 24 received a final visual inspection with its client, booking summary, and service schedule visible. Browser warning/error logs were empty.
+- Supabase Security Advisor returned no findings after the migration. Performance Advisor reported pre-existing informational foreign-key/index notices unrelated to this additive column repair; no index changes were made in this incident scope.
+- Current Supabase breaking-change review found no platform change relevant to this direct Postgres column addition. The repository migration and hosted migration history are now aligned.
