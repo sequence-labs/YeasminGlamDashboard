@@ -7,18 +7,18 @@
  */
 
 export interface ServiceMenuContentValues {
-  /** @maxLength 160 */
+  /** @maxLength 56 */
   title?: string;
-  /** @maxLength 1200 */
+  /** @maxLength 360 */
   description?: string;
-  /** @maxLength 1000 */
+  /** @maxLength 260 */
   note?: string;
-  /** @maxLength 160 */
+  /** @maxLength 60 */
   kicker?: string;
-  /** @maxLength 160 */
+  /** @maxLength 40 */
   price?: string;
-  /** @maxLength 160 */
+  /** @maxLength 40 */
   'price-general'?: string;
-  /** @maxLength 160 */
+  /** @maxLength 40 */
   'price-florida'?: string;
 }

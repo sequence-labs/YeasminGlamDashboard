@@ -2827,3 +2827,10 @@ Command evidence:
 
 Deployment boundary:
 - This work is implemented and locally validated but not deployed. Production rollout must apply the new migration first, rebuild/sync the shared Render API bundle, and publish the frontend afterward. Supabase advisors should be run before applying the production migration.
+
+### 2026-08-21 production rollout and final review
+
+- Applied the versioned `owner_editable_bridal_service_menu` migration to hosted Supabase before API deployment. Postflight inspection confirmed the six expected columns, RLS enabled, and no `anon` or `authenticated` grants. The advisor's informational `RLS Enabled No Policy` notice is intentional because only the session-protected server connection accesses this document.
+- Final review found that form fields remained editable during an in-flight save, while the success handler cleared drafts. Disabled menu inputs and draft-reset controls while a save is pending so later keystrokes cannot be silently discarded.
+- Aligned API, generated-contract, editor-input, and server normalization limits with the fixed printable layout: title 56, kicker 60, description 360, note 260, and price labels 40 characters.
+- Rebuilt and synchronized the API bundle into WhisperSpeechServer. Its six-test suite passed, and deployment PR #1 merged before the final dashboard follow-up.

@@ -1910,25 +1910,25 @@ components:
       properties:
         title:
           type: string
-          maxLength: 160
+          maxLength: 56
         description:
           type: string
-          maxLength: 1200
+          maxLength: 360
         note:
           type: string
-          maxLength: 1000
+          maxLength: 260
         kicker:
           type: string
-          maxLength: 160
+          maxLength: 60
         price:
           type: string
-          maxLength: 160
+          maxLength: 40
         price-general:
           type: string
-          maxLength: 160
+          maxLength: 40
         price-florida:
           type: string
-          maxLength: 160
+          maxLength: 40
 
     ServiceMenuContentItem:
       type: object
