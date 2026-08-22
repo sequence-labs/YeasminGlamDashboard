@@ -88,6 +88,16 @@ const allowedItemFields = new Map(
   defaultServiceMenuContent.items.map((menuItem) => [menuItem.id, Object.keys(menuItem.values)]),
 );
 
+const fieldMaxLengths: Record<string, number> = {
+  title: 56,
+  kicker: 60,
+  description: 360,
+  note: 260,
+  price: 40,
+  "price-general": 40,
+  "price-florida": 40,
+};
+
 export class InvalidServiceMenuContentError extends Error {}
 
 export function cloneDefaultServiceMenuContent(): ServiceMenuStoredContent {
@@ -131,6 +141,9 @@ export function normalizeServiceMenuContent(items: ServiceMenuStoredItem[]): Ser
       const trimmed = value.trim();
       if ((field === "title" || field.startsWith("price") || field === "kicker") && !trimmed) {
         throw new InvalidServiceMenuContentError(`${field} cannot be empty for menu item: ${defaultItem.id}`);
+      }
+      if (trimmed.length > (fieldMaxLengths[field] ?? 0)) {
+        throw new InvalidServiceMenuContentError(`${field} is too long for the printable layout: ${defaultItem.id}`);
       }
       return [field, trimmed];
     }));

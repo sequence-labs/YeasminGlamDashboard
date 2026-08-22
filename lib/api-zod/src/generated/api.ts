@@ -257,19 +257,19 @@ export const getServiceMenuContentResponseRevisionMin = 0;
 
 export const getServiceMenuContentResponseItemsItemIdMax = 80;
 
-export const getServiceMenuContentResponseItemsItemValuesTitleMax = 160;
+export const getServiceMenuContentResponseItemsItemValuesTitleMax = 56;
 
-export const getServiceMenuContentResponseItemsItemValuesDescriptionMax = 1200;
+export const getServiceMenuContentResponseItemsItemValuesDescriptionMax = 360;
 
-export const getServiceMenuContentResponseItemsItemValuesNoteMax = 1000;
+export const getServiceMenuContentResponseItemsItemValuesNoteMax = 260;
 
-export const getServiceMenuContentResponseItemsItemValuesKickerMax = 160;
+export const getServiceMenuContentResponseItemsItemValuesKickerMax = 60;
 
-export const getServiceMenuContentResponseItemsItemValuesPriceMax = 160;
+export const getServiceMenuContentResponseItemsItemValuesPriceMax = 40;
 
-export const getServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 160;
+export const getServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 40;
 
-export const getServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 160;
+export const getServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 40;
 
 export const getServiceMenuContentResponseItemsMin = 14;
 export const getServiceMenuContentResponseItemsMax = 14;
@@ -303,19 +303,19 @@ export const updateServiceMenuContentBodyExpectedRevisionMin = 0;
 
 export const updateServiceMenuContentBodyItemsItemIdMax = 80;
 
-export const updateServiceMenuContentBodyItemsItemValuesTitleMax = 160;
+export const updateServiceMenuContentBodyItemsItemValuesTitleMax = 56;
 
-export const updateServiceMenuContentBodyItemsItemValuesDescriptionMax = 1200;
+export const updateServiceMenuContentBodyItemsItemValuesDescriptionMax = 360;
 
-export const updateServiceMenuContentBodyItemsItemValuesNoteMax = 1000;
+export const updateServiceMenuContentBodyItemsItemValuesNoteMax = 260;
 
-export const updateServiceMenuContentBodyItemsItemValuesKickerMax = 160;
+export const updateServiceMenuContentBodyItemsItemValuesKickerMax = 60;
 
-export const updateServiceMenuContentBodyItemsItemValuesPriceMax = 160;
+export const updateServiceMenuContentBodyItemsItemValuesPriceMax = 40;
 
-export const updateServiceMenuContentBodyItemsItemValuesPriceGeneralMax = 160;
+export const updateServiceMenuContentBodyItemsItemValuesPriceGeneralMax = 40;
 
-export const updateServiceMenuContentBodyItemsItemValuesPriceFloridaMax = 160;
+export const updateServiceMenuContentBodyItemsItemValuesPriceFloridaMax = 40;
 
 export const updateServiceMenuContentBodyItemsMin = 14;
 export const updateServiceMenuContentBodyItemsMax = 14;
@@ -343,19 +343,19 @@ export const updateServiceMenuContentResponseRevisionMin = 0;
 
 export const updateServiceMenuContentResponseItemsItemIdMax = 80;
 
-export const updateServiceMenuContentResponseItemsItemValuesTitleMax = 160;
+export const updateServiceMenuContentResponseItemsItemValuesTitleMax = 56;
 
-export const updateServiceMenuContentResponseItemsItemValuesDescriptionMax = 1200;
+export const updateServiceMenuContentResponseItemsItemValuesDescriptionMax = 360;
 
-export const updateServiceMenuContentResponseItemsItemValuesNoteMax = 1000;
+export const updateServiceMenuContentResponseItemsItemValuesNoteMax = 260;
 
-export const updateServiceMenuContentResponseItemsItemValuesKickerMax = 160;
+export const updateServiceMenuContentResponseItemsItemValuesKickerMax = 60;
 
-export const updateServiceMenuContentResponseItemsItemValuesPriceMax = 160;
+export const updateServiceMenuContentResponseItemsItemValuesPriceMax = 40;
 
-export const updateServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 160;
+export const updateServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 40;
 
-export const updateServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 160;
+export const updateServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 40;
 
 export const updateServiceMenuContentResponseItemsMin = 14;
 export const updateServiceMenuContentResponseItemsMax = 14;

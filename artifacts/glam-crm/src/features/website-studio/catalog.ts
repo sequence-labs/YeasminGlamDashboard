@@ -66,7 +66,15 @@ const textField = (
   label,
   value,
   multiline,
-  maxLength: multiline ? 1_000 : 160,
+  maxLength: {
+    title: 56,
+    kicker: 60,
+    description: 360,
+    note: 260,
+    price: 40,
+    "price-general": 40,
+    "price-florida": 40,
+  }[key],
 });
 
 export const STUDIO_PREVIEW_ROUTES: readonly StudioPreviewRoute[] = [
