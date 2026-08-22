@@ -1,20 +1,21 @@
 import { useMemo, useState } from "react";
-import { Download, ExternalLink, FileImage, FileText, Share2, Sparkles } from "lucide-react";
+import { Download, ExternalLink, FileImage, FileText, PencilLine, Printer, Share2, Sparkles } from "lucide-react";
 import { Shell } from "@/components/layout/Shell";
 import { Button } from "@/components/ui/button";
+import { ServiceMenuDocument } from "@/components/service-menu/ServiceMenuDocument";
 import { useToast } from "@/hooks/use-toast";
+import { useGetServiceMenuContent } from "@workspace/api-client-react";
+import { Link } from "wouter";
 
 type MenuEdition = "general" | "florida";
 
-const menuDetails: Record<MenuEdition, { label: string; bundle: string; description: string }> = {
+const menuDetails: Record<MenuEdition, { label: string; description: string }> = {
   general: {
     label: "General",
-    bundle: "$600 per event",
     description: "The standard bridal collection for inquiries and events outside Florida.",
   },
   florida: {
     label: "Florida",
-    bundle: "$675 per event",
     description: "The Florida edition with its regional bridal bundle price.",
   },
 };
@@ -26,7 +27,10 @@ function publicAsset(path: string) {
 export default function ServiceMenusPage() {
   const [edition, setEdition] = useState<MenuEdition>("general");
   const { toast } = useToast();
+  const { data: menuContent, isLoading } = useGetServiceMenuContent();
   const details = menuDetails[edition];
+  const bundleValues = menuContent?.items.find((item) => item.id === "bridal-bundle")?.values;
+  const bundlePrice = edition === "florida" ? bundleValues?.["price-florida"] : bundleValues?.["price-general"];
   const slug = `glambyeasmin-services-${edition}`;
   const assets = useMemo(
     () => ({
@@ -36,7 +40,7 @@ export default function ServiceMenusPage() {
     [slug],
   );
 
-  async function shareMenu() {
+  async function shareOriginalMenu() {
     const absolutePdfUrl = new URL(assets.pdf, window.location.href).toString();
     try {
       const response = await fetch(assets.pdf);
@@ -74,10 +78,14 @@ export default function ServiceMenusPage() {
             </p>
             <div className="crm-gold-rule mt-6 w-24" />
           </div>
-          <Button onClick={shareMenu} className="min-h-11 gap-2 px-5" data-testid="button-share-service-menu">
-            <Share2 className="h-4 w-4" />
-            Share {details.label} menu
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button asChild variant="outline" className="min-h-11 gap-2 px-5">
+              <Link href="/website-studio?tab=menu" data-testid="button-edit-service-menu"><PencilLine className="h-4 w-4" /> Edit menu details</Link>
+            </Button>
+            <Button onClick={() => window.print()} disabled={!menuContent} className="min-h-11 gap-2 px-5" data-testid="button-print-service-menu">
+              <Printer className="h-4 w-4" /> Print / Save PDF
+            </Button>
+          </div>
         </header>
 
         <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
@@ -111,13 +119,17 @@ export default function ServiceMenusPage() {
               <div className="border-t border-card-border/70 px-5 py-4">
                 <div className="flex items-center gap-2 text-primary">
                   <Sparkles className="h-4 w-4" strokeWidth={1.5} />
-                  <span className="font-serif text-xl">{details.bundle}</span>
+                  <span className="font-serif text-xl">{bundlePrice ?? (isLoading ? "Loading…" : "Price unavailable")}</span>
                 </div>
                 <p className="mt-2 text-sm leading-5 text-muted-foreground">{details.description}</p>
               </div>
             </section>
 
             <section className="space-y-2" aria-label="Menu downloads">
+              <div className="px-1 pb-1">
+                <div className="crm-eyebrow">Reviewed original files</div>
+                {menuContent?.customized && <p className="mt-1 text-xs leading-5 text-amber-700 dark:text-amber-300">These archived downloads keep the original prices. Use Print / Save PDF above for the current edited menu.</p>}
+              </div>
               <Button asChild variant="outline" className="min-h-12 w-full justify-start gap-3 px-4">
                 <a href={assets.pdf} download={`${slug}.pdf`}>
                   <FileText className="h-4 w-4 text-primary" />
@@ -140,11 +152,12 @@ export default function ServiceMenusPage() {
                   Open full PDF
                 </a>
               </Button>
+              <Button variant="ghost" onClick={shareOriginalMenu} className="min-h-11 w-full justify-start gap-3 px-4 text-muted-foreground" data-testid="button-share-original-service-menu">
+                <Share2 className="h-4 w-4" /> Share reviewed original
+              </Button>
             </section>
 
-            <p className="px-1 text-xs leading-5 text-muted-foreground">
-              The PDF is best for email and printing. Each page is sized separately for text messages and social DMs.
-            </p>
+            <p className="px-1 text-xs leading-5 text-muted-foreground">Print / Save PDF uses the current saved details. The original PDF and page images remain available as a fallback.</p>
           </aside>
 
           <section className="overflow-hidden rounded-[28px] border border-card-border bg-[hsl(var(--primary)/0.95)] shadow-[0_28px_70px_-36px_var(--elevate-3)]">
@@ -156,15 +169,7 @@ export default function ServiceMenusPage() {
               <span className="rounded-full border border-primary-foreground/20 px-3 py-1 text-xs text-primary-foreground/75">2 pages</span>
             </div>
             <div className="max-h-[78dvh] space-y-4 overflow-y-auto bg-[#251116] p-3 sm:p-6 lg:p-8" data-testid="service-menu-preview">
-              {assets.pages.map((page, index) => (
-                <img
-                  key={page}
-                  src={page}
-                  alt={`${details.label} GLAMBYEASMIN services menu page ${index + 1}`}
-                  className="mx-auto block h-auto w-full max-w-[760px] rounded-sm bg-[#f5f0e8] shadow-[0_26px_50px_-28px_rgba(0,0,0,0.85)]"
-                  loading={index === 0 ? "eager" : "lazy"}
-                />
-              ))}
+              {menuContent ? <ServiceMenuDocument edition={edition} items={menuContent.items} /> : <div className="flex min-h-64 items-center justify-center text-sm text-white/70">Loading printable menu…</div>}
             </div>
           </section>
         </div>

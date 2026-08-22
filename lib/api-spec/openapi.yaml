@@ -225,6 +225,38 @@ paths:
         "204":
           description: Archived
 
+  /service-menu-content:
+    get:
+      operationId: getServiceMenuContent
+      tags: [services]
+      summary: Get the owner-managed printable bridal services menu
+      responses:
+        "200":
+          description: Current saved menu, or reviewed defaults when it has not been customized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceMenuContent"
+    patch:
+      operationId: updateServiceMenuContent
+      tags: [services]
+      summary: Atomically save the printable bridal services menu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceMenuContentUpdate"
+      responses:
+        "200":
+          description: Saved menu
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceMenuContent"
+        "409":
+          description: The menu was changed in another session
+
   # ─── Expenses ────────────────────────────────────────────────────────────
 
   /expenses:
@@ -1871,6 +1903,81 @@ components:
           type: boolean
         sortOrder:
           type: integer
+
+    ServiceMenuContentValues:
+      type: object
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+          maxLength: 160
+        description:
+          type: string
+          maxLength: 1200
+        note:
+          type: string
+          maxLength: 1000
+        kicker:
+          type: string
+          maxLength: 160
+        price:
+          type: string
+          maxLength: 160
+        price-general:
+          type: string
+          maxLength: 160
+        price-florida:
+          type: string
+          maxLength: 160
+
+    ServiceMenuContentItem:
+      type: object
+      additionalProperties: false
+      required: [id, values]
+      properties:
+        id:
+          type: string
+          minLength: 1
+          maxLength: 80
+        values:
+          $ref: "#/components/schemas/ServiceMenuContentValues"
+
+    ServiceMenuContent:
+      type: object
+      additionalProperties: false
+      required: [customized, revision, schemaVersion, items, updatedAt]
+      properties:
+        customized:
+          type: boolean
+        revision:
+          type: integer
+          minimum: 0
+        schemaVersion:
+          type: integer
+          minimum: 1
+        items:
+          type: array
+          minItems: 14
+          maxItems: 14
+          items:
+            $ref: "#/components/schemas/ServiceMenuContentItem"
+        updatedAt:
+          type: ["string", "null"]
+
+    ServiceMenuContentUpdate:
+      type: object
+      additionalProperties: false
+      required: [expectedRevision, items]
+      properties:
+        expectedRevision:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          minItems: 14
+          maxItems: 14
+          items:
+            $ref: "#/components/schemas/ServiceMenuContentItem"
 
     # ── Expenses ───────────────────────────────────────────────────────────
 
