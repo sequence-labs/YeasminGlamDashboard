@@ -50,7 +50,11 @@ Canonical menu content and pricing:
 - Early Morning Fee, 6:00-7:00 AM - $75.
 - Specialty note: the artist specializes in full glam and may not be the right artist for clients seeking completely natural glam.
 
-The menu assets are static marketing materials. They must not contain client, booking, contract, payment, receipt, or other private CRM data.
+The menu output is public-safe marketing material. Its service names, descriptions/inclusions, notes, and General/Florida pricing must be owner-editable from the authenticated CRM while preserving the existing approved two-page design. It must not contain client, booking, contract, payment, receipt, or other private CRM data.
+
+The editable bridal services menu is intentionally separate from booking Services & Fees. Marketing packages, regional prices, offers, travel rules, and early-morning details must not silently alter booking intake or existing booking price snapshots.
+
+The authenticated Website Studio Menu tab is the owner editing surface for printable menu content. Do not create a duplicate menu-management page; `/service-menus` should link directly to that existing editor and render the saved General or Florida edition.
 
 ## Current Website Studio Intent
 
@@ -68,6 +72,7 @@ The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Websit
 - Do not auto-publish a final visual design before the user has reviewed the preview.
 - Do not make the public services menu depend on authenticated CRM data or expose private CRM records.
 - Do not expose the Website Studio on the public website or deploy the current local-only editor route as a hosted CMS.
+- Do not redesign the existing two-page bridal services menu or synchronize it with booking Services & Fees unless the user explicitly requests that separate behavior.
 
 ## Constraints
 

@@ -250,6 +250,139 @@ export const DeleteServiceItemParams = zod.object({
 
 
 /**
+ * @summary Get the owner-managed printable bridal services menu
+ */
+export const getServiceMenuContentResponseRevisionMin = 0;
+
+
+export const getServiceMenuContentResponseItemsItemIdMax = 80;
+
+export const getServiceMenuContentResponseItemsItemValuesTitleMax = 160;
+
+export const getServiceMenuContentResponseItemsItemValuesDescriptionMax = 1200;
+
+export const getServiceMenuContentResponseItemsItemValuesNoteMax = 1000;
+
+export const getServiceMenuContentResponseItemsItemValuesKickerMax = 160;
+
+export const getServiceMenuContentResponseItemsItemValuesPriceMax = 160;
+
+export const getServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 160;
+
+export const getServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 160;
+
+export const getServiceMenuContentResponseItemsMin = 14;
+export const getServiceMenuContentResponseItemsMax = 14;
+
+
+
+export const GetServiceMenuContentResponse = zod.object({
+  "customized": zod.boolean(),
+  "revision": zod.number().min(getServiceMenuContentResponseRevisionMin),
+  "schemaVersion": zod.number().min(1),
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(getServiceMenuContentResponseItemsItemIdMax),
+  "values": zod.object({
+  "title": zod.string().max(getServiceMenuContentResponseItemsItemValuesTitleMax).optional(),
+  "description": zod.string().max(getServiceMenuContentResponseItemsItemValuesDescriptionMax).optional(),
+  "note": zod.string().max(getServiceMenuContentResponseItemsItemValuesNoteMax).optional(),
+  "kicker": zod.string().max(getServiceMenuContentResponseItemsItemValuesKickerMax).optional(),
+  "price": zod.string().max(getServiceMenuContentResponseItemsItemValuesPriceMax).optional(),
+  "price-general": zod.string().max(getServiceMenuContentResponseItemsItemValuesPriceGeneralMax).optional(),
+  "price-florida": zod.string().max(getServiceMenuContentResponseItemsItemValuesPriceFloridaMax).optional()
+})
+})).min(getServiceMenuContentResponseItemsMin).max(getServiceMenuContentResponseItemsMax),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Atomically save the printable bridal services menu
+ */
+export const updateServiceMenuContentBodyExpectedRevisionMin = 0;
+
+export const updateServiceMenuContentBodyItemsItemIdMax = 80;
+
+export const updateServiceMenuContentBodyItemsItemValuesTitleMax = 160;
+
+export const updateServiceMenuContentBodyItemsItemValuesDescriptionMax = 1200;
+
+export const updateServiceMenuContentBodyItemsItemValuesNoteMax = 1000;
+
+export const updateServiceMenuContentBodyItemsItemValuesKickerMax = 160;
+
+export const updateServiceMenuContentBodyItemsItemValuesPriceMax = 160;
+
+export const updateServiceMenuContentBodyItemsItemValuesPriceGeneralMax = 160;
+
+export const updateServiceMenuContentBodyItemsItemValuesPriceFloridaMax = 160;
+
+export const updateServiceMenuContentBodyItemsMin = 14;
+export const updateServiceMenuContentBodyItemsMax = 14;
+
+
+
+export const UpdateServiceMenuContentBody = zod.object({
+  "expectedRevision": zod.number().min(updateServiceMenuContentBodyExpectedRevisionMin),
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateServiceMenuContentBodyItemsItemIdMax),
+  "values": zod.object({
+  "title": zod.string().max(updateServiceMenuContentBodyItemsItemValuesTitleMax).optional(),
+  "description": zod.string().max(updateServiceMenuContentBodyItemsItemValuesDescriptionMax).optional(),
+  "note": zod.string().max(updateServiceMenuContentBodyItemsItemValuesNoteMax).optional(),
+  "kicker": zod.string().max(updateServiceMenuContentBodyItemsItemValuesKickerMax).optional(),
+  "price": zod.string().max(updateServiceMenuContentBodyItemsItemValuesPriceMax).optional(),
+  "price-general": zod.string().max(updateServiceMenuContentBodyItemsItemValuesPriceGeneralMax).optional(),
+  "price-florida": zod.string().max(updateServiceMenuContentBodyItemsItemValuesPriceFloridaMax).optional()
+})
+})).min(updateServiceMenuContentBodyItemsMin).max(updateServiceMenuContentBodyItemsMax)
+})
+
+export const updateServiceMenuContentResponseRevisionMin = 0;
+
+
+export const updateServiceMenuContentResponseItemsItemIdMax = 80;
+
+export const updateServiceMenuContentResponseItemsItemValuesTitleMax = 160;
+
+export const updateServiceMenuContentResponseItemsItemValuesDescriptionMax = 1200;
+
+export const updateServiceMenuContentResponseItemsItemValuesNoteMax = 1000;
+
+export const updateServiceMenuContentResponseItemsItemValuesKickerMax = 160;
+
+export const updateServiceMenuContentResponseItemsItemValuesPriceMax = 160;
+
+export const updateServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 160;
+
+export const updateServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 160;
+
+export const updateServiceMenuContentResponseItemsMin = 14;
+export const updateServiceMenuContentResponseItemsMax = 14;
+
+
+
+export const UpdateServiceMenuContentResponse = zod.object({
+  "customized": zod.boolean(),
+  "revision": zod.number().min(updateServiceMenuContentResponseRevisionMin),
+  "schemaVersion": zod.number().min(1),
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateServiceMenuContentResponseItemsItemIdMax),
+  "values": zod.object({
+  "title": zod.string().max(updateServiceMenuContentResponseItemsItemValuesTitleMax).optional(),
+  "description": zod.string().max(updateServiceMenuContentResponseItemsItemValuesDescriptionMax).optional(),
+  "note": zod.string().max(updateServiceMenuContentResponseItemsItemValuesNoteMax).optional(),
+  "kicker": zod.string().max(updateServiceMenuContentResponseItemsItemValuesKickerMax).optional(),
+  "price": zod.string().max(updateServiceMenuContentResponseItemsItemValuesPriceMax).optional(),
+  "price-general": zod.string().max(updateServiceMenuContentResponseItemsItemValuesPriceGeneralMax).optional(),
+  "price-florida": zod.string().max(updateServiceMenuContentResponseItemsItemValuesPriceFloridaMax).optional()
+})
+})).min(updateServiceMenuContentResponseItemsMin).max(updateServiceMenuContentResponseItemsMax),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
  * @summary List business expenses
  */
 export const ListExpensesQueryParams = zod.object({

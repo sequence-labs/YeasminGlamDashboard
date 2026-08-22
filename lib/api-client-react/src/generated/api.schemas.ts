@@ -140,6 +140,57 @@ export interface ServiceItemUpdate {
   sortOrder?: number;
 }
 
+export interface ServiceMenuContentValues {
+  /** @maxLength 160 */
+  title?: string;
+  /** @maxLength 1200 */
+  description?: string;
+  /** @maxLength 1000 */
+  note?: string;
+  /** @maxLength 160 */
+  kicker?: string;
+  /** @maxLength 160 */
+  price?: string;
+  /** @maxLength 160 */
+  'price-general'?: string;
+  /** @maxLength 160 */
+  'price-florida'?: string;
+}
+
+export interface ServiceMenuContentItem {
+  /**
+     * @minLength 1
+     * @maxLength 80
+     */
+  id: string;
+  values: ServiceMenuContentValues;
+}
+
+export interface ServiceMenuContent {
+  customized: boolean;
+  /** @minimum 0 */
+  revision: number;
+  /** @minimum 1 */
+  schemaVersion: number;
+  /**
+     * @minItems 14
+     * @maxItems 14
+     */
+  items: ServiceMenuContentItem[];
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export interface ServiceMenuContentUpdate {
+  /** @minimum 0 */
+  expectedRevision: number;
+  /**
+     * @minItems 14
+     * @maxItems 14
+     */
+  items: ServiceMenuContentItem[];
+}
+
 export type ExpenseCategory = typeof ExpenseCategory[keyof typeof ExpenseCategory];
 
 

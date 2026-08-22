@@ -186,6 +186,37 @@ Validation commands:
 - Browser validation of menu discovery, edition switching, preview, PDF download, PNG download, native-share support/fallback, and responsive behavior at `430x932`, `768x1024`, and `1440x900`.
 - `git diff --check`.
 
+### Work Package 2.21: Owner-Editable Bridal Services Menus
+
+Status: Complete.
+
+Objective:
+- Preserve the approved General and Florida two-page service-menu presentation while letting the authenticated owner edit the client-facing item names, descriptions/inclusions, notes, and prices herself.
+- Keep marketing-menu content isolated from booking catalog rates and historical booking line items.
+
+Acceptance criteria:
+- The existing `/service-menus` workflow includes an obvious edit surface; no second obscure settings workflow is required.
+- Every visible service, package, offer, travel-fee, early-morning, and specialty-note field in the two-page menu is editable, including the separate General and Florida Bridal Bundle prices.
+- Saved content persists through the authenticated API/database and reloads on another authenticated browser session.
+- General and Florida previews use the saved content immediately without changing the approved layout, artwork, page order, typography hierarchy, colors, or edition behavior.
+- The owner can print or use the browser's Save as PDF workflow from the current dynamic preview without exposing private CRM data.
+- The existing static PDFs and page images remain available as a safe fallback until the user deliberately saves customized menu content; editing does not silently change booking Services & Fees or past bookings.
+- Empty names/prices are rejected, text lengths are bounded, API input is validated, and failures leave the last saved menu intact.
+- The editor and preview work at mobile and desktop sizes with labeled controls and no horizontal application overflow.
+
+Validation commands:
+- `pnpm --filter @workspace/api-spec run codegen`
+- Apply `supabase/migrations/20260821223010_owner_editable_bridal_service_menu.sql` to the isolated local snapshot with `psql -v ON_ERROR_STOP=1`.
+- `pnpm --filter @workspace/api-server run typecheck`
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/api-server run build`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm run typecheck`
+- Authenticated API GET/PATCH round-trip against the isolated local snapshot, followed by a reversible restore to the reviewed defaults.
+- Browser validation of edit, save, reload, General/Florida switching, print-preview entry, static fallback, and responsive behavior at one mobile and one desktop viewport.
+- Rendered print/PDF visual inspection of both pages for clipping, overlap, legibility, and unchanged art direction.
+- `git diff --check` excluding generated binary PDFs when applicable.
+
 ## Rollback Conditions
 
 - Local migration requires replacing generated source files wholesale.

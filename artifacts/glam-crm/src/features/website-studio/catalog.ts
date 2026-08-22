@@ -20,13 +20,15 @@ export interface StudioImageSlot {
 
 export type StudioMenuSectionId =
   | "bridal-essentials"
-  | "curated-experiences";
+  | "curated-experiences"
+  | "style-note";
 
 export type StudioMenuPresentation =
   | "essential"
   | "package"
   | "feature"
-  | "detail";
+  | "detail"
+  | "note";
 
 export type StudioMenuFieldKey =
   | "kicker"
@@ -430,6 +432,22 @@ export const STUDIO_MENU_ITEMS: readonly StudioMenuItem[] = [
     ),
     textField("price", "Price", "6:00–7:00 AM / $75"),
   ]),
+  {
+    id: "style-note",
+    sectionId: "style-note",
+    sectionLabel: "Style Note",
+    presentation: "note",
+    displayOrder: 1,
+    fields: [
+      textField("title", "Title", "A note on style"),
+      textField(
+        "description",
+        "Description",
+        "I specialize in full glam makeup looks. If you are looking for completely natural glam, I may not be the right artist for you.",
+        true,
+      ),
+    ],
+  },
 ] as const;
 
 export const STUDIO_IMAGE_TYPES = [

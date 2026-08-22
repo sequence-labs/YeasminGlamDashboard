@@ -3,6 +3,7 @@ export * from "./bookings";
 export * from "./events";
 export * from "./payments";
 export * from "./services";
+export * from "./service-menu-content";
 export * from "./booking-activity";
 export * from "./artist-profile";
 export * from "./contract-templates";

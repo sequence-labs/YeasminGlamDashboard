@@ -8,6 +8,7 @@ import {
   LockKeyhole,
   Monitor,
   RotateCcw,
+  Save,
   Search,
   Smartphone,
   Tablet,
@@ -15,6 +16,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  getGetServiceMenuContentQueryKey,
+  useGetServiceMenuContent,
+  useUpdateServiceMenuContent,
+} from "@workspace/api-client-react";
 import {
   STUDIO_IMAGE_SLOTS,
   STUDIO_MENU_ITEMS,
@@ -28,6 +35,10 @@ import {
   importStudioSnapshot,
   readAllImageOverrides,
   readAllMenuDrafts,
+  buildServiceMenuItems,
+  printableMenuValidationError,
+  publishedMenuValues,
+  resolvedMenuValues,
   resetStudioStorage,
   writeImageOverride,
   writeMenuDraft,
@@ -56,9 +67,11 @@ function publicAssetUrl(path: string) {
 
 export default function WebsiteStudioPage() {
   const { toast } = useToast();
-  const [route, setRoute] = React.useState(STUDIO_PREVIEW_ROUTES[0]);
+  const queryClient = useQueryClient();
+  const startsOnMenu = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "menu";
+  const [route, setRoute] = React.useState(STUDIO_PREVIEW_ROUTES[startsOnMenu ? 1 : 0]);
   const [viewport, setViewport] = React.useState<PreviewViewport>("desktop");
-  const [editorTab, setEditorTab] = React.useState<EditorTab>("images");
+  const [editorTab, setEditorTab] = React.useState<EditorTab>(startsOnMenu ? "menu" : "images");
   const [imageOverrides, setImageOverrides] = React.useState<Record<string, StudioImageOverride>>({});
   const [menuDrafts, setMenuDrafts] = React.useState<Record<string, StudioMenuDraft>>({});
   const [search, setSearch] = React.useState("");
@@ -67,6 +80,9 @@ export default function WebsiteStudioPage() {
   const [storageReady, setStorageReady] = React.useState(false);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const importInputRef = React.useRef<HTMLInputElement>(null);
+  const { data: savedMenuContent, isLoading: isMenuContentLoading } = useGetServiceMenuContent();
+  const updateSavedMenu = useUpdateServiceMenuContent();
+  const savedMenuValues = React.useMemo(() => publishedMenuValues(savedMenuContent), [savedMenuContent]);
 
   const previewUrl = previewPageUrl(route.path);
   const frameClass = viewport === "mobile" ? "w-[390px]" : viewport === "tablet" ? "w-[768px]" : "w-full";
@@ -158,7 +174,7 @@ export default function WebsiteStudioPage() {
   }
 
   async function updateMenuField(item: StudioMenuItem, fieldKey: StudioMenuFieldKey, value: string) {
-    const original = item.fields.find((field) => field.key === fieldKey)?.value ?? "";
+    const original = savedMenuValues[item.id]?.[fieldKey] ?? item.fields.find((field) => field.key === fieldKey)?.value ?? "";
     const existing = menuDrafts[item.id]?.values ?? {};
     const values = { ...existing };
     if (value === original) delete values[fieldKey];
@@ -176,6 +192,35 @@ export default function WebsiteStudioPage() {
     await writeMenuDraft(record);
     setMenuDrafts((current) => ({ ...current, [item.id]: record }));
     setStatus(`${item.fields.find((field) => field.key === fieldKey)?.label ?? "Menu field"} saved locally.`);
+  }
+
+  function savePrintableMenu() {
+    if (!savedMenuContent) {
+      toast({ title: "Printable menu is still loading", variant: "destructive" });
+      return;
+    }
+    const items = buildServiceMenuItems(menuDrafts, savedMenuValues);
+    const validationError = printableMenuValidationError(items);
+    if (validationError) {
+      toast({ title: "Menu is not ready to save", description: validationError, variant: "destructive" });
+      return;
+    }
+
+    updateSavedMenu.mutate(
+      { data: { expectedRevision: savedMenuContent.revision, items } },
+      {
+        onSuccess: async (saved) => {
+          queryClient.setQueryData(getGetServiceMenuContentQueryKey(), saved);
+          await clearMenuDrafts();
+          setMenuDrafts({});
+          setStatus(`Printable menu saved · revision ${saved.revision}.`);
+          toast({ title: "Printable menu saved", description: "The General and Florida previews now use these details." });
+        },
+        onError: () => {
+          toast({ title: "Printable menu was not saved", description: "Reload to check for a newer saved version, then try again.", variant: "destructive" });
+        },
+      },
+    );
   }
 
   async function resetMenuItem(itemId: string) {
@@ -244,7 +289,7 @@ export default function WebsiteStudioPage() {
                 <div><span className="crm-eyebrow">Editing library</span><h2 className="crm-section-title mt-1">Edit the site in place</h2></div>
                 <span className="rounded-full border border-card-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">{changeCount} change{changeCount === 1 ? "" : "s"}</span>
               </div>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">Changes are saved in this browser and applied to the exact preview without overwriting project files.</p>
+              <p className="mt-2 text-sm leading-5 text-muted-foreground">Image drafts stay in this browser. Menu edits remain drafts until you save them to the printable menu.</p>
             </div>
 
             <div className="grid grid-cols-2 border-b border-card-border/70 p-2" role="tablist" aria-label="Website editing tools">
@@ -278,11 +323,22 @@ export default function WebsiteStudioPage() {
               </div>
             ) : (
               <div>
-                <div className="flex items-center justify-between gap-3 border-b border-card-border/70 p-4"><div><p className="crm-eyebrow">Services menu</p><p className="mt-1 text-sm text-muted-foreground">Wording and pricing</p></div><Button variant="ghost" size="sm" disabled={!Object.keys(menuDrafts).length} onClick={() => void resetMenu()}>Reset menu</Button></div>
+                <div className="space-y-3 border-b border-card-border/70 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div><p className="crm-eyebrow">Services menu</p><p className="mt-1 text-sm text-muted-foreground">Wording, inclusions, notes, and pricing</p></div>
+                    <Button variant="ghost" size="sm" disabled={!Object.keys(menuDrafts).length} onClick={() => void resetMenu()}>Discard drafts</Button>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                    <Button className="min-h-11 gap-2" disabled={isMenuContentLoading || updateSavedMenu.isPending || !Object.keys(menuDrafts).length} onClick={savePrintableMenu} data-testid="button-save-printable-menu"><Save className="h-4 w-4" />{updateSavedMenu.isPending ? "Saving…" : "Save printable menu"}</Button>
+                    <Button asChild variant="outline" className="min-h-11"><Link href="/service-menus" data-testid="button-preview-printable-menu">Preview printable menu</Link></Button>
+                  </div>
+                  <p className="text-xs leading-5 text-muted-foreground">{savedMenuContent?.customized ? `Saved revision ${savedMenuContent.revision}` : "Using the reviewed menu defaults"}. Save before sharing or printing.</p>
+                </div>
                 <div className="max-h-[calc(100dvh-360px)] min-h-[420px] divide-y divide-card-border/60 overflow-y-auto">
                   {STUDIO_MENU_ITEMS.map((item) => {
                     const draft = menuDrafts[item.id];
-                    return <article key={item.id} className="space-y-4 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">{item.sectionLabel}</p><h3 className="mt-1 font-serif text-xl text-foreground">{item.fields.find((field) => field.key === "title")?.value}</h3></div><button type="button" disabled={!draft} onClick={() => void resetMenuItem(item.id)} className="text-xs font-semibold text-muted-foreground disabled:opacity-30">Reset</button></div><div className="space-y-3">{item.fields.map((field) => { const value = draft?.values[field.key] ?? field.value; const common = { value, maxLength: field.maxLength, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void updateMenuField(item, field.key, event.target.value), className: "mt-1 w-full rounded-lg border border-card-border bg-card px-3 py-2 text-sm leading-5 text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10" }; return <label key={field.key} className="block text-xs font-semibold text-muted-foreground">{field.label}{field.multiline ? <textarea {...common} rows={4} /> : <input {...common} />}</label>; })}</div></article>;
+                    const values = resolvedMenuValues(item.id, menuDrafts, savedMenuValues);
+                    return <article key={item.id} className="space-y-4 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">{item.sectionLabel}</p><h3 className="mt-1 font-serif text-xl text-foreground">{values.title}</h3></div><button type="button" disabled={!draft} onClick={() => void resetMenuItem(item.id)} className="text-xs font-semibold text-muted-foreground disabled:opacity-30">Reset</button></div><div className="space-y-3">{item.fields.map((field) => { const value = values[field.key] ?? ""; const common = { value, maxLength: field.maxLength, onChange: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void updateMenuField(item, field.key, event.target.value), className: "mt-1 w-full rounded-lg border border-card-border bg-card px-3 py-2 text-sm leading-5 text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10" }; return <label key={field.key} className="block text-xs font-semibold text-muted-foreground">{field.label}{field.multiline ? <textarea {...common} rows={4} /> : <input {...common} />}</label>; })}</div></article>;
                   })}
                 </div>
               </div>
@@ -302,7 +358,7 @@ export default function WebsiteStudioPage() {
             <div className="flex min-h-[620px] justify-center overflow-auto bg-muted/30 p-4 sm:p-6 xl:h-[calc(100dvh-265px)] xl:min-h-0">
               <iframe ref={iframeRef} title={`${route.label} exact public preview`} src={previewUrl} onLoad={() => { setStatus("Preview loaded. Connecting editor…"); void sendPreviewState(); }} className={`${frameClass} min-h-[780px] shrink-0 rounded-lg border border-card-border bg-background shadow-xl xl:h-full xl:min-h-0`} />
             </div>
-            <div className="flex flex-col gap-1 border-t border-card-border/70 px-5 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between"><p aria-live="polite">{status}</p><p>{changeCount} local change{changeCount === 1 ? "" : "s"} · Stored only in this browser</p></div>
+            <div className="flex flex-col gap-1 border-t border-card-border/70 px-5 py-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between"><p aria-live="polite">{status}</p><p>{Object.keys(menuDrafts).length} unsaved menu change{Object.keys(menuDrafts).length === 1 ? "" : "s"} · {Object.keys(imageOverrides).length} local image change{Object.keys(imageOverrides).length === 1 ? "" : "s"}</p></div>
           </section>
         </div>
       </div>
