@@ -15,6 +15,7 @@ import {
   CalendarRange,
   BookOpenText,
   PanelsTopLeft,
+  ClipboardPenLine,
 } from "lucide-react";
 import {
   useGetArtistProfile,
@@ -36,7 +37,8 @@ const secondaryLinks = [
   { href: "/service-menus", label: "Service Menus", icon: BookOpenText },
   { href: "/website-studio", label: "Website Studio", icon: PanelsTopLeft },
   { href: "/expenses", label: "Expenses", icon: ReceiptText },
-  { href: "/artist", label: "Artist", icon: UserRound },
+  { href: "/artist", label: "Profile", icon: UserRound },
+  { href: "/assistant-agreements", label: "Assistant Agreements", icon: ClipboardPenLine },
   { href: "/contracts", label: "Contracts", icon: FileText },
 ];
 

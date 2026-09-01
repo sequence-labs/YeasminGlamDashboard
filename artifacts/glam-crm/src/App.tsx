@@ -17,6 +17,8 @@ import ContractRoute from "@/pages/contract-route";
 import Services from "@/pages/services";
 import Artist from "@/pages/artist";
 import ContractTemplates from "@/pages/contract-templates";
+import AssistantAgreements from "@/pages/assistant-agreements";
+import AssistantAgreementLibrary from "@/pages/assistant-agreement-library";
 import CalendarPage from "@/pages/calendar";
 import ExpensesPage from "@/pages/expenses";
 import PortalPage from "@/pages/portal";
@@ -62,6 +64,9 @@ function AppRoutes() {
       <Route path="/artist" component={Artist} />
       <Route path="/contracts" component={ContractTemplates} />
       <Route path="/contract-templates" component={ContractTemplates} />
+      <Route path="/assistant-agreements/new" component={AssistantAgreements} />
+      <Route path="/assistant-agreements/:id" component={AssistantAgreements} />
+      <Route path="/assistant-agreements" component={AssistantAgreementLibrary} />
       <Route path="/calendar" component={CalendarPage} />
       <Route path="/expenses" component={ExpensesPage} />
 

@@ -24,6 +24,8 @@ tags:
     description: Artist business profile
   - name: contractTemplates
     description: Reusable contract template management
+  - name: assistantAgreements
+    description: Assistant artist profiles and event agreements
   - name: dashboard
     description: Dashboard summary data
   - name: notifications
@@ -599,6 +601,160 @@ paths:
       responses:
         "204":
           description: Deleted
+
+  # ─── Assistant artist agreements ────────────────────────────────────────
+
+  /assistant-artists:
+    get:
+      operationId: listAssistantArtists
+      tags: [assistantAgreements]
+      summary: List assistant artist profiles
+      responses:
+        "200":
+          description: Assistant artists
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssistantArtist"
+    post:
+      operationId: createAssistantArtist
+      tags: [assistantAgreements]
+      summary: Create an assistant artist profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantArtistInput"
+      responses:
+        "201":
+          description: Created assistant artist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantArtist"
+
+  /assistant-artists/{id}:
+    get:
+      operationId: getAssistantArtist
+      tags: [assistantAgreements]
+      summary: Get an assistant artist profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Assistant artist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantArtist"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateAssistantArtist
+      tags: [assistantAgreements]
+      summary: Update an assistant artist profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantArtistUpdate"
+      responses:
+        "200":
+          description: Updated assistant artist
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantArtist"
+
+  /assistant-agreements:
+    get:
+      operationId: listAssistantAgreements
+      tags: [assistantAgreements]
+      summary: List assistant agreements
+      responses:
+        "200":
+          description: Assistant agreements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssistantAgreementListItem"
+    post:
+      operationId: createAssistantAgreement
+      tags: [assistantAgreements]
+      summary: Create an assistant agreement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantAgreementInput"
+      responses:
+        "201":
+          description: Created assistant agreement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAgreementDetail"
+
+  /assistant-agreements/{id}:
+    get:
+      operationId: getAssistantAgreement
+      tags: [assistantAgreements]
+      summary: Get an assistant agreement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Assistant agreement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAgreementDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateAssistantAgreement
+      tags: [assistantAgreements]
+      summary: Update an assistant agreement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantAgreementUpdate"
+      responses:
+        "200":
+          description: Updated assistant agreement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantAgreementDetail"
 
   /bookings/{id}/restore:
     post:
@@ -2377,6 +2533,241 @@ components:
           type: boolean
         isDefault:
           type: boolean
+
+    # ── Assistant Artist Agreements ───────────────────────────────────────
+
+    AssistantAgreementStatus:
+      type: string
+      enum: [draft, confirmed, completed, cancelled]
+
+    AssistantArtist:
+      type: object
+      required: [id, name, role, active, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        active:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    AssistantArtistInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role:
+          type: string
+          maxLength: 80
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        active:
+          type: boolean
+
+    AssistantArtistUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        role:
+          type: string
+          maxLength: 80
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        active:
+          type: boolean
+
+    AssistantAgreement:
+      type: object
+      required: [id, assistantArtistId, eventName, minimumClients, maximumClients, perClientRate, bookingDeposit, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        assistantArtistId:
+          type: integer
+        eventName:
+          type: string
+        eventDate:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        arrivalTime:
+          type: ["string", "null"]
+        minimumClients:
+          type: integer
+          minimum: 0
+        maximumClients:
+          type: integer
+          minimum: 0
+        perClientRate:
+          type: number
+          minimum: 0
+        bookingDeposit:
+          type: number
+          minimum: 0
+        paymentMethod:
+          type: ["string", "null"]
+        paymentTiming:
+          type: ["string", "null"]
+        specialNotes:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/AssistantAgreementStatus"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    AssistantAgreementDetail:
+      allOf:
+        - $ref: "#/components/schemas/AssistantAgreementListItem"
+        - type: object
+          required: [history]
+          properties:
+            history:
+              type: array
+              items:
+                $ref: "#/components/schemas/AssistantAgreementAuditEvent"
+
+    AssistantAgreementListItem:
+      allOf:
+        - $ref: "#/components/schemas/AssistantAgreement"
+        - type: object
+          required: [assistantArtist]
+          properties:
+            assistantArtist:
+              $ref: "#/components/schemas/AssistantArtist"
+
+    AssistantAgreementAuditEvent:
+      type: object
+      required: [id, agreementId, assistantArtistId, action, actorType, summary, changes, snapshot, createdAt]
+      properties:
+        id:
+          type: integer
+        agreementId:
+          type: integer
+        assistantArtistId:
+          type: integer
+        action:
+          type: string
+          enum: [created, updated, status_changed, assistant_profile_updated]
+        actorType:
+          type: string
+          enum: [artist, system]
+        summary:
+          type: string
+        changes:
+          type: object
+          additionalProperties: true
+        snapshot:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+
+    AssistantAgreementInput:
+      type: object
+      required: [assistantArtistId, eventName, minimumClients, maximumClients, perClientRate, bookingDeposit]
+      properties:
+        assistantArtistId:
+          type: integer
+        eventName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        eventDate:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        arrivalTime:
+          type: ["string", "null"]
+        minimumClients:
+          type: integer
+          minimum: 0
+        maximumClients:
+          type: integer
+          minimum: 0
+        perClientRate:
+          type: number
+          minimum: 0
+        bookingDeposit:
+          type: number
+          minimum: 0
+        paymentMethod:
+          type: ["string", "null"]
+        paymentTiming:
+          type: ["string", "null"]
+        specialNotes:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/AssistantAgreementStatus"
+
+    AssistantAgreementUpdate:
+      type: object
+      properties:
+        assistantArtistId:
+          type: integer
+        eventName:
+          type: string
+          minLength: 1
+          maxLength: 160
+        eventDate:
+          type: ["string", "null"]
+        location:
+          type: ["string", "null"]
+        arrivalTime:
+          type: ["string", "null"]
+        minimumClients:
+          type: integer
+          minimum: 0
+        maximumClients:
+          type: integer
+          minimum: 0
+        perClientRate:
+          type: number
+          minimum: 0
+        bookingDeposit:
+          type: number
+          minimum: 0
+        paymentMethod:
+          type: ["string", "null"]
+        paymentTiming:
+          type: ["string", "null"]
+        specialNotes:
+          type: ["string", "null"]
+        status:
+          $ref: "#/components/schemas/AssistantAgreementStatus"
 
     # ── Booking ─────────────────────────────────────────────────────────────
 

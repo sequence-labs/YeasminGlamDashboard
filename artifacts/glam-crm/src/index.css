@@ -12,6 +12,42 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@media print {
+  .assistant-agreement-controls,
+  .crm-sidebar,
+  .crm-mobile-nav,
+  .crm-command-palette {
+    display: none !important;
+  }
+
+  body,
+  #root {
+    background: #fff !important;
+  }
+
+  .assistant-agreement-document {
+    max-width: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .crm-shell:has(.assistant-agreement-document) > aside {
+    display: none !important;
+  }
+
+  .crm-shell:has(.assistant-agreement-document),
+  .crm-shell:has(.assistant-agreement-document) > main,
+  .crm-shell:has(.assistant-agreement-document) > main > div,
+  .crm-shell:has(.assistant-agreement-document) > main > div > div {
+    display: block !important;
+    height: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -461,6 +497,12 @@
 .contract-print-page .text-gray-700 { color: #374151; }
 .contract-print-page .text-gray-600 { color: #4b5563; }
 .contract-print-page .text-gray-500 { color: #6b7280; }
+
+/* Agreement headings must stay readable against the white document in every theme. */
+.assistant-agreement-document h2,
+.assistant-agreement-document h3 {
+  color: #0f172a !important;
+}
 
 /* Printable bridal services menu — mirrors the reviewed two-page Letter composition. */
 .service-menu-print-pages {

@@ -22,6 +22,13 @@ import type {
 import type {
   ArtistProfile,
   ArtistProfileUpdate,
+  AssistantAgreementDetail,
+  AssistantAgreementInput,
+  AssistantAgreementListItem,
+  AssistantAgreementUpdate,
+  AssistantArtist,
+  AssistantArtistInput,
+  AssistantArtistUpdate,
   AutomationRunResult,
   AutomationSettings,
   AutomationSettingsUpdate,
@@ -2315,6 +2322,600 @@ export const useDeleteBooking = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteBookingMutationOptions(options));
+    }
+
+export const getListAssistantArtistsUrl = () => {
+
+
+
+
+  return `/api/assistant-artists`
+}
+
+/**
+ * @summary List assistant artist profiles
+ */
+export const listAssistantArtists = async ( options?: RequestInit): Promise<AssistantArtist[]> => {
+
+  return customFetch<AssistantArtist[]>(getListAssistantArtistsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAssistantArtistsQueryKey = () => {
+    return [
+    `/api/assistant-artists`
+    ] as const;
+    }
+
+
+export const getListAssistantArtistsQueryOptions = <TData = Awaited<ReturnType<typeof listAssistantArtists>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssistantArtists>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAssistantArtistsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAssistantArtists>>> = ({ signal }) => listAssistantArtists({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAssistantArtists>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAssistantArtistsQueryResult = NonNullable<Awaited<ReturnType<typeof listAssistantArtists>>>
+export type ListAssistantArtistsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List assistant artist profiles
+ */
+
+export function useListAssistantArtists<TData = Awaited<ReturnType<typeof listAssistantArtists>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssistantArtists>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAssistantArtistsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateAssistantArtistUrl = () => {
+
+
+
+
+  return `/api/assistant-artists`
+}
+
+/**
+ * @summary Create an assistant artist profile
+ */
+export const createAssistantArtist = async (assistantArtistInput: AssistantArtistInput, options?: RequestInit): Promise<AssistantArtist> => {
+
+  return customFetch<AssistantArtist>(getCreateAssistantArtistUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      assistantArtistInput,)
+  }
+);}
+
+
+
+
+export const getCreateAssistantArtistMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssistantArtist>>, TError,{data: BodyType<AssistantArtistInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAssistantArtist>>, TError,{data: BodyType<AssistantArtistInput>}, TContext> => {
+
+const mutationKey = ['createAssistantArtist'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAssistantArtist>>, {data: BodyType<AssistantArtistInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAssistantArtist(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAssistantArtistMutationResult = NonNullable<Awaited<ReturnType<typeof createAssistantArtist>>>
+    export type CreateAssistantArtistMutationBody = BodyType<AssistantArtistInput>
+    export type CreateAssistantArtistMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an assistant artist profile
+ */
+export const useCreateAssistantArtist = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssistantArtist>>, TError,{data: BodyType<AssistantArtistInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAssistantArtist>>,
+        TError,
+        {data: BodyType<AssistantArtistInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAssistantArtistMutationOptions(options));
+    }
+
+export const getGetAssistantArtistUrl = (id: number,) => {
+
+
+
+
+  return `/api/assistant-artists/${id}`
+}
+
+/**
+ * @summary Get an assistant artist profile
+ */
+export const getAssistantArtist = async (id: number, options?: RequestInit): Promise<AssistantArtist> => {
+
+  return customFetch<AssistantArtist>(getGetAssistantArtistUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAssistantArtistQueryKey = (id: number,) => {
+    return [
+    `/api/assistant-artists/${id}`
+    ] as const;
+    }
+
+
+export const getGetAssistantArtistQueryOptions = <TData = Awaited<ReturnType<typeof getAssistantArtist>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAssistantArtist>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAssistantArtistQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAssistantArtist>>> = ({ signal }) => getAssistantArtist(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAssistantArtist>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAssistantArtistQueryResult = NonNullable<Awaited<ReturnType<typeof getAssistantArtist>>>
+export type GetAssistantArtistQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get an assistant artist profile
+ */
+
+export function useGetAssistantArtist<TData = Awaited<ReturnType<typeof getAssistantArtist>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAssistantArtist>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAssistantArtistQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateAssistantArtistUrl = (id: number,) => {
+
+
+
+
+  return `/api/assistant-artists/${id}`
+}
+
+/**
+ * @summary Update an assistant artist profile
+ */
+export const updateAssistantArtist = async (id: number,
+    assistantArtistUpdate: AssistantArtistUpdate, options?: RequestInit): Promise<AssistantArtist> => {
+
+  return customFetch<AssistantArtist>(getUpdateAssistantArtistUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      assistantArtistUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateAssistantArtistMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAssistantArtist>>, TError,{id: number;data: BodyType<AssistantArtistUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAssistantArtist>>, TError,{id: number;data: BodyType<AssistantArtistUpdate>}, TContext> => {
+
+const mutationKey = ['updateAssistantArtist'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAssistantArtist>>, {id: number;data: BodyType<AssistantArtistUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAssistantArtist(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAssistantArtistMutationResult = NonNullable<Awaited<ReturnType<typeof updateAssistantArtist>>>
+    export type UpdateAssistantArtistMutationBody = BodyType<AssistantArtistUpdate>
+    export type UpdateAssistantArtistMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an assistant artist profile
+ */
+export const useUpdateAssistantArtist = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAssistantArtist>>, TError,{id: number;data: BodyType<AssistantArtistUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAssistantArtist>>,
+        TError,
+        {id: number;data: BodyType<AssistantArtistUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAssistantArtistMutationOptions(options));
+    }
+
+export const getListAssistantAgreementsUrl = () => {
+
+
+
+
+  return `/api/assistant-agreements`
+}
+
+/**
+ * @summary List assistant agreements
+ */
+export const listAssistantAgreements = async ( options?: RequestInit): Promise<AssistantAgreementListItem[]> => {
+
+  return customFetch<AssistantAgreementListItem[]>(getListAssistantAgreementsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAssistantAgreementsQueryKey = () => {
+    return [
+    `/api/assistant-agreements`
+    ] as const;
+    }
+
+
+export const getListAssistantAgreementsQueryOptions = <TData = Awaited<ReturnType<typeof listAssistantAgreements>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssistantAgreements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAssistantAgreementsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAssistantAgreements>>> = ({ signal }) => listAssistantAgreements({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAssistantAgreements>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAssistantAgreementsQueryResult = NonNullable<Awaited<ReturnType<typeof listAssistantAgreements>>>
+export type ListAssistantAgreementsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List assistant agreements
+ */
+
+export function useListAssistantAgreements<TData = Awaited<ReturnType<typeof listAssistantAgreements>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAssistantAgreements>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAssistantAgreementsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateAssistantAgreementUrl = () => {
+
+
+
+
+  return `/api/assistant-agreements`
+}
+
+/**
+ * @summary Create an assistant agreement
+ */
+export const createAssistantAgreement = async (assistantAgreementInput: AssistantAgreementInput, options?: RequestInit): Promise<AssistantAgreementDetail> => {
+
+  return customFetch<AssistantAgreementDetail>(getCreateAssistantAgreementUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      assistantAgreementInput,)
+  }
+);}
+
+
+
+
+export const getCreateAssistantAgreementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssistantAgreement>>, TError,{data: BodyType<AssistantAgreementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAssistantAgreement>>, TError,{data: BodyType<AssistantAgreementInput>}, TContext> => {
+
+const mutationKey = ['createAssistantAgreement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAssistantAgreement>>, {data: BodyType<AssistantAgreementInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAssistantAgreement(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAssistantAgreementMutationResult = NonNullable<Awaited<ReturnType<typeof createAssistantAgreement>>>
+    export type CreateAssistantAgreementMutationBody = BodyType<AssistantAgreementInput>
+    export type CreateAssistantAgreementMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create an assistant agreement
+ */
+export const useCreateAssistantAgreement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAssistantAgreement>>, TError,{data: BodyType<AssistantAgreementInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAssistantAgreement>>,
+        TError,
+        {data: BodyType<AssistantAgreementInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAssistantAgreementMutationOptions(options));
+    }
+
+export const getGetAssistantAgreementUrl = (id: number,) => {
+
+
+
+
+  return `/api/assistant-agreements/${id}`
+}
+
+/**
+ * @summary Get an assistant agreement
+ */
+export const getAssistantAgreement = async (id: number, options?: RequestInit): Promise<AssistantAgreementDetail> => {
+
+  return customFetch<AssistantAgreementDetail>(getGetAssistantAgreementUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAssistantAgreementQueryKey = (id: number,) => {
+    return [
+    `/api/assistant-agreements/${id}`
+    ] as const;
+    }
+
+
+export const getGetAssistantAgreementQueryOptions = <TData = Awaited<ReturnType<typeof getAssistantAgreement>>, TError = ErrorType<void>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAssistantAgreement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAssistantAgreementQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAssistantAgreement>>> = ({ signal }) => getAssistantAgreement(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAssistantAgreement>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAssistantAgreementQueryResult = NonNullable<Awaited<ReturnType<typeof getAssistantAgreement>>>
+export type GetAssistantAgreementQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get an assistant agreement
+ */
+
+export function useGetAssistantAgreement<TData = Awaited<ReturnType<typeof getAssistantAgreement>>, TError = ErrorType<void>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAssistantAgreement>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAssistantAgreementQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateAssistantAgreementUrl = (id: number,) => {
+
+
+
+
+  return `/api/assistant-agreements/${id}`
+}
+
+/**
+ * @summary Update an assistant agreement
+ */
+export const updateAssistantAgreement = async (id: number,
+    assistantAgreementUpdate: AssistantAgreementUpdate, options?: RequestInit): Promise<AssistantAgreementDetail> => {
+
+  return customFetch<AssistantAgreementDetail>(getUpdateAssistantAgreementUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      assistantAgreementUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateAssistantAgreementMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAssistantAgreement>>, TError,{id: number;data: BodyType<AssistantAgreementUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAssistantAgreement>>, TError,{id: number;data: BodyType<AssistantAgreementUpdate>}, TContext> => {
+
+const mutationKey = ['updateAssistantAgreement'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAssistantAgreement>>, {id: number;data: BodyType<AssistantAgreementUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateAssistantAgreement(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAssistantAgreementMutationResult = NonNullable<Awaited<ReturnType<typeof updateAssistantAgreement>>>
+    export type UpdateAssistantAgreementMutationBody = BodyType<AssistantAgreementUpdate>
+    export type UpdateAssistantAgreementMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update an assistant agreement
+ */
+export const useUpdateAssistantAgreement = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAssistantAgreement>>, TError,{id: number;data: BodyType<AssistantAgreementUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAssistantAgreement>>,
+        TError,
+        {id: number;data: BodyType<AssistantAgreementUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateAssistantAgreementMutationOptions(options));
     }
 
 export const getRestoreBookingUrl = (id: number,) => {

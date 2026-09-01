@@ -963,6 +963,333 @@ export const DeleteBookingParams = zod.object({
 
 
 /**
+ * @summary List assistant artist profiles
+ */
+export const ListAssistantArtistsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListAssistantArtistsResponse = zod.array(ListAssistantArtistsResponseItem)
+
+
+/**
+ * @summary Create an assistant artist profile
+ */
+export const createAssistantArtistBodyNameMax = 120;
+
+export const createAssistantArtistBodyRoleMax = 80;
+
+
+
+export const CreateAssistantArtistBody = zod.object({
+  "name": zod.string().min(1).max(createAssistantArtistBodyNameMax),
+  "role": zod.string().max(createAssistantArtistBodyRoleMax).optional(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Get an assistant artist profile
+ */
+export const GetAssistantArtistParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAssistantArtistResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update an assistant artist profile
+ */
+export const UpdateAssistantArtistParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const updateAssistantArtistBodyNameMax = 120;
+
+export const updateAssistantArtistBodyRoleMax = 80;
+
+
+
+export const UpdateAssistantArtistBody = zod.object({
+  "name": zod.string().min(1).max(updateAssistantArtistBodyNameMax).optional(),
+  "role": zod.string().max(updateAssistantArtistBodyRoleMax).optional(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean().optional()
+})
+
+export const UpdateAssistantArtistResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary List assistant agreements
+ */
+export const listAssistantAgreementsResponseOneMinimumClientsMin = 0;
+
+export const listAssistantAgreementsResponseOneMaximumClientsMin = 0;
+
+export const listAssistantAgreementsResponseOnePerClientRateMin = 0;
+
+export const listAssistantAgreementsResponseOneBookingDepositMin = 0;
+
+
+
+export const ListAssistantAgreementsResponseItem = zod.object({
+  "id": zod.number(),
+  "assistantArtistId": zod.number(),
+  "eventName": zod.string(),
+  "eventDate": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "arrivalTime": zod.string().nullish(),
+  "minimumClients": zod.number().min(listAssistantAgreementsResponseOneMinimumClientsMin),
+  "maximumClients": zod.number().min(listAssistantAgreementsResponseOneMaximumClientsMin),
+  "perClientRate": zod.number().min(listAssistantAgreementsResponseOnePerClientRateMin),
+  "bookingDeposit": zod.number().min(listAssistantAgreementsResponseOneBookingDepositMin),
+  "paymentMethod": zod.string().nullish(),
+  "paymentTiming": zod.string().nullish(),
+  "specialNotes": zod.string().nullish(),
+  "status": zod.enum(['draft', 'confirmed', 'completed', 'cancelled']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).and(zod.object({
+  "assistantArtist": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+}))
+export const ListAssistantAgreementsResponse = zod.array(ListAssistantAgreementsResponseItem)
+
+
+/**
+ * @summary Create an assistant agreement
+ */
+export const createAssistantAgreementBodyEventNameMax = 160;
+
+export const createAssistantAgreementBodyMinimumClientsMin = 0;
+
+export const createAssistantAgreementBodyMaximumClientsMin = 0;
+
+export const createAssistantAgreementBodyPerClientRateMin = 0;
+
+export const createAssistantAgreementBodyBookingDepositMin = 0;
+
+
+
+export const CreateAssistantAgreementBody = zod.object({
+  "assistantArtistId": zod.number(),
+  "eventName": zod.string().min(1).max(createAssistantAgreementBodyEventNameMax),
+  "eventDate": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "arrivalTime": zod.string().nullish(),
+  "minimumClients": zod.number().min(createAssistantAgreementBodyMinimumClientsMin),
+  "maximumClients": zod.number().min(createAssistantAgreementBodyMaximumClientsMin),
+  "perClientRate": zod.number().min(createAssistantAgreementBodyPerClientRateMin),
+  "bookingDeposit": zod.number().min(createAssistantAgreementBodyBookingDepositMin),
+  "paymentMethod": zod.string().nullish(),
+  "paymentTiming": zod.string().nullish(),
+  "specialNotes": zod.string().nullish(),
+  "status": zod.enum(['draft', 'confirmed', 'completed', 'cancelled']).optional()
+})
+
+
+/**
+ * @summary Get an assistant agreement
+ */
+export const GetAssistantAgreementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const getAssistantAgreementResponseOneOneMinimumClientsMin = 0;
+
+export const getAssistantAgreementResponseOneOneMaximumClientsMin = 0;
+
+export const getAssistantAgreementResponseOneOnePerClientRateMin = 0;
+
+export const getAssistantAgreementResponseOneOneBookingDepositMin = 0;
+
+
+
+export const GetAssistantAgreementResponse = zod.object({
+  "id": zod.number(),
+  "assistantArtistId": zod.number(),
+  "eventName": zod.string(),
+  "eventDate": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "arrivalTime": zod.string().nullish(),
+  "minimumClients": zod.number().min(getAssistantAgreementResponseOneOneMinimumClientsMin),
+  "maximumClients": zod.number().min(getAssistantAgreementResponseOneOneMaximumClientsMin),
+  "perClientRate": zod.number().min(getAssistantAgreementResponseOneOnePerClientRateMin),
+  "bookingDeposit": zod.number().min(getAssistantAgreementResponseOneOneBookingDepositMin),
+  "paymentMethod": zod.string().nullish(),
+  "paymentTiming": zod.string().nullish(),
+  "specialNotes": zod.string().nullish(),
+  "status": zod.enum(['draft', 'confirmed', 'completed', 'cancelled']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).and(zod.object({
+  "assistantArtist": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+})).and(zod.object({
+  "history": zod.array(zod.object({
+  "id": zod.number(),
+  "agreementId": zod.number(),
+  "assistantArtistId": zod.number(),
+  "action": zod.enum(['created', 'updated', 'status_changed', 'assistant_profile_updated']),
+  "actorType": zod.enum(['artist', 'system']),
+  "summary": zod.string(),
+  "changes": zod.record(zod.string(), zod.unknown()),
+  "snapshot": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.string()
+}))
+}))
+
+
+/**
+ * @summary Update an assistant agreement
+ */
+export const UpdateAssistantAgreementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const updateAssistantAgreementBodyEventNameMax = 160;
+
+export const updateAssistantAgreementBodyMinimumClientsMin = 0;
+
+export const updateAssistantAgreementBodyMaximumClientsMin = 0;
+
+export const updateAssistantAgreementBodyPerClientRateMin = 0;
+
+export const updateAssistantAgreementBodyBookingDepositMin = 0;
+
+
+
+export const UpdateAssistantAgreementBody = zod.object({
+  "assistantArtistId": zod.number().optional(),
+  "eventName": zod.string().min(1).max(updateAssistantAgreementBodyEventNameMax).optional(),
+  "eventDate": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "arrivalTime": zod.string().nullish(),
+  "minimumClients": zod.number().min(updateAssistantAgreementBodyMinimumClientsMin).optional(),
+  "maximumClients": zod.number().min(updateAssistantAgreementBodyMaximumClientsMin).optional(),
+  "perClientRate": zod.number().min(updateAssistantAgreementBodyPerClientRateMin).optional(),
+  "bookingDeposit": zod.number().min(updateAssistantAgreementBodyBookingDepositMin).optional(),
+  "paymentMethod": zod.string().nullish(),
+  "paymentTiming": zod.string().nullish(),
+  "specialNotes": zod.string().nullish(),
+  "status": zod.enum(['draft', 'confirmed', 'completed', 'cancelled']).optional()
+})
+
+export const updateAssistantAgreementResponseOneOneMinimumClientsMin = 0;
+
+export const updateAssistantAgreementResponseOneOneMaximumClientsMin = 0;
+
+export const updateAssistantAgreementResponseOneOnePerClientRateMin = 0;
+
+export const updateAssistantAgreementResponseOneOneBookingDepositMin = 0;
+
+
+
+export const UpdateAssistantAgreementResponse = zod.object({
+  "id": zod.number(),
+  "assistantArtistId": zod.number(),
+  "eventName": zod.string(),
+  "eventDate": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "arrivalTime": zod.string().nullish(),
+  "minimumClients": zod.number().min(updateAssistantAgreementResponseOneOneMinimumClientsMin),
+  "maximumClients": zod.number().min(updateAssistantAgreementResponseOneOneMaximumClientsMin),
+  "perClientRate": zod.number().min(updateAssistantAgreementResponseOneOnePerClientRateMin),
+  "bookingDeposit": zod.number().min(updateAssistantAgreementResponseOneOneBookingDepositMin),
+  "paymentMethod": zod.string().nullish(),
+  "paymentTiming": zod.string().nullish(),
+  "specialNotes": zod.string().nullish(),
+  "status": zod.enum(['draft', 'confirmed', 'completed', 'cancelled']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+}).and(zod.object({
+  "assistantArtist": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "role": zod.string(),
+  "email": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+})).and(zod.object({
+  "history": zod.array(zod.object({
+  "id": zod.number(),
+  "agreementId": zod.number(),
+  "assistantArtistId": zod.number(),
+  "action": zod.enum(['created', 'updated', 'status_changed', 'assistant_profile_updated']),
+  "actorType": zod.enum(['artist', 'system']),
+  "summary": zod.string(),
+  "changes": zod.record(zod.string(), zod.unknown()),
+  "snapshot": zod.record(zod.string(), zod.unknown()),
+  "createdAt": zod.string()
+}))
+}))
+
+
+/**
  * @summary Restore a deleted booking
  */
 export const RestoreBookingParams = zod.object({
