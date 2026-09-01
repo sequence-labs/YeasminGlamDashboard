@@ -378,6 +378,26 @@ Validation commands:
 - `pnpm run typecheck`
 - Browser validation on `http://localhost:5173/contract-templates`
 
+### Work Package 2.22: Assistant Artist Agreement Builder
+
+Status: Complete locally; production rollout remains pending.
+
+Acceptance criteria:
+- The authenticated CRM provides a dedicated, printable Assistant Artist Agreement that is clearly separate from client booking contracts.
+- The owner can enter the assistant artist, role, event details, assigned services/client count, per-client rate, booking deposit, payment method, and payment timing.
+- Defaults open at $90 per completed client and a $100 booking deposit, but remain editable for future makeup, hair, and assistant hires.
+- The generated agreement covers confirmation, deposit proof and return conditions, attendance, cancellation/no-show, replacement costs, assigned scope, professional/sanitary conduct, confidentiality, payment, signatures, and a worker-classification caveat.
+- The page prints cleanly and does not transmit agreement data anywhere until a later explicit storage or signature workflow is requested.
+- Assistant Agreements appears as its own sidebar destination with a searchable view of assistant artists, their current and past agreements, and agreement status.
+- Opening an agreement provides the full detail, safe updates, and a durable timestamped activity history for creation, edits, and status changes.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm run typecheck`
+- Browser validation on `http://localhost:5173/assistant-agreements`, including field changes, calculated pay, print layout, and desktop/mobile rendering.
+- Browser validation of the agreement list, a detail/update flow, status filtering, and the visible history timeline.
+
 ### Work Package 2.10: UI and UX Polish
 
 Status: In progress.

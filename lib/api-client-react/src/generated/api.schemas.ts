@@ -482,6 +482,202 @@ export interface ContractTemplateUpdate {
   isDefault?: boolean;
 }
 
+export type AssistantAgreementStatus = typeof AssistantAgreementStatus[keyof typeof AssistantAgreementStatus];
+
+
+export const AssistantAgreementStatus = {
+  draft: 'draft',
+  confirmed: 'confirmed',
+  completed: 'completed',
+  cancelled: 'cancelled',
+} as const;
+
+export interface AssistantArtist {
+  id: number;
+  name: string;
+  role: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssistantArtistInput {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name: string;
+  /** @maxLength 80 */
+  role?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  active?: boolean;
+}
+
+export interface AssistantArtistUpdate {
+  /**
+     * @minLength 1
+     * @maxLength 120
+     */
+  name?: string;
+  /** @maxLength 80 */
+  role?: string;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  active?: boolean;
+}
+
+export interface AssistantAgreement {
+  id: number;
+  assistantArtistId: number;
+  eventName: string;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  arrivalTime?: string | null;
+  /** @minimum 0 */
+  minimumClients: number;
+  /** @minimum 0 */
+  maximumClients: number;
+  /** @minimum 0 */
+  perClientRate: number;
+  /** @minimum 0 */
+  bookingDeposit: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  paymentTiming?: string | null;
+  /** @nullable */
+  specialNotes?: string | null;
+  status: AssistantAgreementStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AssistantAgreementListItem = AssistantAgreement & {
+  assistantArtist: AssistantArtist;
+};
+
+export type AssistantAgreementAuditEventAction = typeof AssistantAgreementAuditEventAction[keyof typeof AssistantAgreementAuditEventAction];
+
+
+export const AssistantAgreementAuditEventAction = {
+  created: 'created',
+  updated: 'updated',
+  status_changed: 'status_changed',
+  assistant_profile_updated: 'assistant_profile_updated',
+} as const;
+
+export type AssistantAgreementAuditEventActorType = typeof AssistantAgreementAuditEventActorType[keyof typeof AssistantAgreementAuditEventActorType];
+
+
+export const AssistantAgreementAuditEventActorType = {
+  artist: 'artist',
+  system: 'system',
+} as const;
+
+export type AssistantAgreementAuditEventChanges = { [key: string]: unknown };
+
+export type AssistantAgreementAuditEventSnapshot = { [key: string]: unknown };
+
+export interface AssistantAgreementAuditEvent {
+  id: number;
+  agreementId: number;
+  assistantArtistId: number;
+  action: AssistantAgreementAuditEventAction;
+  actorType: AssistantAgreementAuditEventActorType;
+  summary: string;
+  changes: AssistantAgreementAuditEventChanges;
+  snapshot: AssistantAgreementAuditEventSnapshot;
+  createdAt: string;
+}
+
+export type AssistantAgreementDetail = AssistantAgreementListItem & {
+  history: AssistantAgreementAuditEvent[];
+};
+
+export interface AssistantAgreementInput {
+  assistantArtistId: number;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  eventName: string;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  arrivalTime?: string | null;
+  /** @minimum 0 */
+  minimumClients: number;
+  /** @minimum 0 */
+  maximumClients: number;
+  /** @minimum 0 */
+  perClientRate: number;
+  /** @minimum 0 */
+  bookingDeposit: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  paymentTiming?: string | null;
+  /** @nullable */
+  specialNotes?: string | null;
+  status?: AssistantAgreementStatus;
+}
+
+export interface AssistantAgreementUpdate {
+  assistantArtistId?: number;
+  /**
+     * @minLength 1
+     * @maxLength 160
+     */
+  eventName?: string;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  arrivalTime?: string | null;
+  /** @minimum 0 */
+  minimumClients?: number;
+  /** @minimum 0 */
+  maximumClients?: number;
+  /** @minimum 0 */
+  perClientRate?: number;
+  /** @minimum 0 */
+  bookingDeposit?: number;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  paymentTiming?: string | null;
+  /** @nullable */
+  specialNotes?: string | null;
+  status?: AssistantAgreementStatus;
+}
+
 export type BookingStatus = typeof BookingStatus[keyof typeof BookingStatus];
 
 

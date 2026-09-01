@@ -104,3 +104,11 @@ The calendar subscription UI must offer two clearly separated subscriptions: a b
 ## Current Client Social Profile Intent
 
 Client records should support zero or more internal social/profile entries, including an Instagram handle or direct URL and other social platforms. The artist should be able to add and edit those entries from client and booking workflows, see them on client information and booking details, and open a stored profile directly in a new browser tab. Social profile data is CRM-only and must not be added to public client portal or calendar feed output unless explicitly requested.
+
+## Current Assistant Artist Agreement Intent
+
+The authenticated CRM needs a reusable, printable Assistant Artist Agreement for makeup artists, hairstylists, and comparable event-service assistants that Yeasmin hires to help complete a booking. It must be separate from the client-facing booking contracts and let the owner fill in the event, assistant, role, agreed services or client count, per-client rate, booking deposit, payment method, and signatures before printing or saving as a PDF.
+
+The first workflow should open with a $90-per-completed-client rate and a $100 booking deposit, while keeping those values editable for future hires. It must record that the deposit is proof of the booking and an advance against final compensation, require the assistant to attend as agreed, set a clear cancellation/no-show remedy, protect client and business information, and make the assistant responsible for professional, sanitary work within the assigned scope. It must not claim that a contract label alone decides independent-contractor or employee classification; classification depends on the actual relationship and applicable law.
+
+Assistant Agreements is its own CRM workspace, not a card inside the client-contract area. It must list each assistant artist with their current and past agreements and clear statuses. The owner must be able to open an agreement, review its full detail, update it when needed, and see a durable, timestamped, append-only history that records agreement creation, updates, and status changes.

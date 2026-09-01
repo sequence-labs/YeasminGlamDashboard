@@ -2834,3 +2834,60 @@ Deployment boundary:
 - Final review found that form fields remained editable during an in-flight save, while the success handler cleared drafts. Disabled menu inputs and draft-reset controls while a save is pending so later keystrokes cannot be silently discarded.
 - Aligned API, generated-contract, editor-input, and server normalization limits with the fixed printable layout: title 56, kicker 60, description 360, note 260, and price labels 40 characters.
 - Rebuilt and synchronized the API bundle into WhisperSpeechServer. Its six-test suite passed, and deployment PR #1 merged before the final dashboard follow-up.
+
+## 2026-09-01 - Assistant Artist Agreement Builder (Start)
+
+- Started Work Package 2.22 to create a printable, internal agreement for hired makeup artists, hairstylists, and comparable assistants. This is intentionally separate from client booking contracts.
+- Initial contract defaults are $90 per completed client and a $100 booking deposit, with editable terms for different assistants and jobs.
+- Reviewed the existing client-contract system and New York State guidance before implementation. The agreement will avoid claiming that a contract label alone determines worker classification; that determination depends on the actual relationship and applicable law.
+- The three user-mentioned reference images were not available at their supplied paths, so no image-derived instructions were used.
+- Validation failure: the first `pnpm --filter @workspace/api-server run typecheck` stopped on two TypeScript narrowing errors in the new assistant-agreement route when reporting invalid request data. No database or hosted environment was changed; the validation guards are being corrected before the next run.
+- Browser validation note: the first local save-flow attempt stopped before submission because the test automation used the ambiguous label `Event`, which also matched `Event date`. The page was rendered without console errors; the retry uses an exact field locator.
+- Browser validation note: the first print-emulation inspection command used a TypeScript-only non-null assertion, which the browser JavaScript runtime rejected before it reached the page. The rendered contract was unaffected; the print check is being rerun with valid JavaScript.
+- Print validation failure: print media correctly hid the agreement controls and set the page background to white, but the CRM sidebar remained visible in the print canvas. The print styles are being narrowed to the assistant-agreement shell so the exported document contains only the agreement.
+- Final database-inspection note: the first post-cleanup RLS query referenced a non-existent `information_schema.tables.row_security` column. The migration and API smoke checks had already succeeded; RLS is being rechecked against PostgreSQL's `pg_class.relrowsecurity` field.
+
+### Implementation and validation evidence
+
+- Added persistent `assistant_artists` profiles and `assistant_agreements` records. A saved profile holds reusable contact, role, and payment details; every agreement separately snapshots its event, assignment range, rate, deposit, payment timing, special notes, and status.
+- Added authenticated API routes for list/create/read/update operations and regenerated the OpenAPI Zod contracts and React Query client. The page at `/assistant-agreements` now saves and reloads agreements, auto-fills the contract, and provides a Print / Save PDF action.
+- The print-ready agreement includes deposit receipt/credit language, attendance and cancellation/no-show terms, reasonable replacement-cost language, professional/sanitary scope, client/business confidentiality, independent-classification caveat, and two signature blocks. It defaults to $90 per completed client, a 2-3 person assignment range, and a $100 booking deposit, while keeping every field editable.
+- Created the additive, RLS-enabled migration `supabase/migrations/20260901045121_add_assistant_artists_and_agreements.sql`. It revokes direct `anon` and `authenticated` access because data remains available only through the authenticated server API. The migration was applied only to `makeup_artist_hub_prod_snapshot`; hosted Supabase was not changed.
+- Database postflight on the isolated snapshot confirmed both tables exist, both collections return empty after cleanup, and `pg_class.relrowsecurity` is true for `assistant_artists` and `assistant_agreements`.
+- Browser QA on `http://127.0.0.1:5173/assistant-agreements` passed: creating a QA assistant generated a profile and agreement, a $95 rate updated the compensation range to $190-$285, restoring $90 restored $180-$270, and the saved agreement reloaded with its values. The QA agreement and assistant were then deleted by their verified local IDs, leaving both new tables at zero rows.
+- Desktop and 430x932 mobile checks reported no relevant console warnings/errors and no mobile horizontal overflow (`scrollWidth=clientWidth=415`). Print-media emulation hid the controls and CRM sidebar, set the body to white, and retained only the agreement document.
+- `pnpm --filter @workspace/api-spec run codegen`, focused API/frontend typechecks, API/frontend builds, root `pnpm run typecheck`, API smoke checks, and `git diff --check` passed. The frontend build retained the existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.
+- Production rollout is intentionally not performed. Before deploying, apply the reviewed migration to hosted Supabase, run the advisor/security review, rebuild and synchronize the shared Render API bundle, then publish the dashboard frontend.
+
+### 2026-09-01 - Assistant Agreement Heading Contrast Fix
+
+- Browser review found that the Assistant Artist Agreement title and its numbered section headings inherited a light color on the white document canvas. Set the assistant-agreement `h2` and `h3` text to a dark print-safe navy with a scoped rule.
+- Browser recheck confirmed the title, sections 1-5, and the section 6 signatures heading are now dark and legible on the white agreement page. The rule is also part of the printable document stylesheet, so the contrast persists for Print / Save PDF.
+- Focused frontend TypeScript validation and the production dashboard build passed after the stylesheet change. The build retained the pre-existing source-map, OpenCV browser-externalization, and large-chunk warnings; `git diff --check` also passed.
+
+## 2026-09-01 - Assistant Agreements Workspace and Audit History (Start)
+
+- Continuing Work Package 2.22: Assistant Agreements will move out of the client-contract page into a dedicated sidebar workspace. The workspace will list each assistant artist and their present/past agreements, provide agreement detail/editing, and show a durable change history.
+- The audit trail will be append-only, scoped to the agreement, and written atomically with creation and updates so the displayed history cannot omit a successful change.
+- Reviewed current Supabase migration/RLS guidance before adding the history table. The database remains server-accessed; the new table will enable RLS and revoke direct `anon` and `authenticated` access like the existing assistant-agreement tables.
+- Validation failure: the first frontend typecheck rejected the generated agreement-detail query options because the generated hook requires its query key when options are supplied. The editor is being aligned with the existing query-hook pattern before the next validation run.
+- Isolated Browser-data setup note: the first clone attempt used a PostgreSQL 16 `pg_dump` client against the local PostgreSQL 17 snapshot, so PostgreSQL rejected the dump before any data was copied. The empty test database will be removed and recreated with the matching client; no working agreement data was changed.
+- Local server refresh note: stopping the previous development wrapper did not stop its child API process, so the first refreshed API start correctly failed with `EADDRINUSE` on port 8792. The exact listener will be identified and stopped before retrying; no source or database data was affected.
+
+### Implementation and validation evidence
+
+- Added the `assistant_agreement_audit_events` migration and Drizzle schema. It captures a timestamp, actor, action, plain-language summary, changed values, and a contract snapshot. RLS is enabled, direct `anon` and `authenticated` table access is revoked, and a database trigger rejects audit-row updates and deletes.
+- The agreement API now creates the agreement and its `created` history event in one transaction. It appends only meaningful agreement updates, distinguishes status changes, and also records assistant-profile changes on the linked agreement history. Detail responses include newest-first history; list responses remain lightweight.
+- Assistant Agreements is now a first-class sidebar destination. Its dedicated landing page supports search and all/current/past filters, groups agreements by artist, displays current versus past work and statuses, and opens an editable full agreement. The old shortcut card was removed from client Contracts.
+- Browser QA used a temporary isolated database and confirmed: a new agreement appears under its artist with a confirmed current status; opening it shows full editable detail; creation, status update, and assistant-profile update appear in the visible timeline. The temporary database, test data, and temporary servers were removed afterward; normal local data was not changed.
+- Local snapshot postflight confirmed `assistant_agreement_audit_events` exists with RLS enabled and its immutable trigger installed. The main local API was rebuilt and restarted against the normal local snapshot after the feature change.
+- The immutable-trigger behavior was also exercised in a rollback-only local transaction: an inserted temporary audit event rejected `DELETE` with `assistant agreement audit events are append-only`, and the following count confirmed zero retained test rows.
+- `pnpm --filter @workspace/api-spec run codegen`, focused API/frontend typechecks, root `pnpm run typecheck`, API build, frontend build, and `git diff --check` passed. The frontend build retained the existing source-map, OpenCV browser-externalization, and large-chunk warnings.
+- Production rollout was not performed. Apply `supabase/migrations/20260901051005_add_assistant_agreement_audit_events.sql` to hosted Supabase before deploying the rebuilt API and dashboard.
+
+### 2026-09-01 - Assistant Agreements Interface Refinements
+
+- Renamed the shared sidebar entry from `Artist` to `Profile`; this also updates the corresponding mobile navigation label while preserving the existing `/artist` destination.
+- Removed the legal-use note from the Assistant Agreements editor as requested.
+- Change history is now collapsed by default and can be expanded with `Show history` or collapsed again with `Hide history`; the complete audit trail remains intact.
+- Browser recheck on the local dashboard confirmed the `Profile` navigation label and the removed legal-note box. Focused frontend typecheck, production build, and `git diff --check` passed. The build retained only the pre-existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.

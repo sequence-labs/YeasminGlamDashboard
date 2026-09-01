@@ -7,6 +7,7 @@ export * from "./service-menu-content";
 export * from "./booking-activity";
 export * from "./artist-profile";
 export * from "./contract-templates";
+export * from "./assistant-agreements";
 export * from "./tags";
 export * from "./notifications";
 export * from "./portal";

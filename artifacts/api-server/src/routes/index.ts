@@ -18,6 +18,7 @@ import leadsRouter from "./leads";
 import expensesRouter from "./expenses";
 import addonsRouter from "./addons";
 import bookingUpgradeMenuRouter from "./booking-upgrade-menu";
+import assistantAgreementsRouter from "./assistant-agreements";
 
 const router: IRouter = Router();
 
@@ -27,6 +28,7 @@ router.use(servicesRouter);
 router.use(serviceMenuContentRouter);
 router.use(artistProfileRouter);
 router.use(contractTemplatesRouter);
+router.use(assistantAgreementsRouter);
 router.use(bookingsRouter);
 router.use(dashboardRouter);
 router.use(tagsRouter);
