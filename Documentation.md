@@ -2891,3 +2891,16 @@ Deployment boundary:
 - Removed the legal-use note from the Assistant Agreements editor as requested.
 - Change history is now collapsed by default and can be expanded with `Show history` or collapsed again with `Hide history`; the complete audit trail remains intact.
 - Browser recheck on the local dashboard confirmed the `Profile` navigation label and the removed legal-note box. Focused frontend typecheck, production build, and `git diff --check` passed. The build retained only the pre-existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.
+
+## 2026-09-01 - Live Assistant Agreement Save and Print Investigation (Start)
+
+- Began Work Package 2.22 production investigation after a live mobile save reported that the assistant agreement could not be saved and Print / Save PDF appeared not to respond.
+- The deployed GitHub Pages frontend contains the Assistant Agreements workspace, including the Profile navigation refinement; the hosted API requires authentication. The prior feature record explicitly states that its new migrations and rebuilt API bundle were not deployed, so the live API/schema rollout is being verified before changing the client behavior.
+
+### Diagnosis, rollout, and validation evidence
+
+- Confirmed the cause of the save failure: the live Supabase database initially had none of `assistant_artists`, `assistant_agreements`, or `assistant_agreement_audit_events`, and the embedded Render API bundle had no assistant-agreement routes. An authenticated production request returned `404 Cannot GET /glam-api/api/assistant-agreements`.
+- Applied the two existing additive migrations to hosted Supabase. All three tables now exist with RLS enabled; the audit-event immutability trigger was created. No agreement, artist, or other CRM records were created, edited, or deleted during diagnosis.
+- Rebuilt and synchronized the API bundle, ran `/Users/iftatbhuiyan/WhisperSpeechServer`'s six-test suite successfully, and merged its deployment pull request #3. After Render picked up the bundle, the same authenticated live request returned `200` with an agreement list response.
+- Updated the agreement print action to retain the native print path while giving a clear phone-specific message: the device print screen is where the artist can print, save, or share the PDF. If a browser does not expose printing, the app now tells the artist to open the agreement in Safari or Chrome instead of silently doing nothing.
+- Focused frontend typecheck and production build passed, as did `git diff --check`. The frontend build retained only the existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.

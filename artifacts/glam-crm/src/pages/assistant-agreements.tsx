@@ -283,6 +283,23 @@ export default function AssistantAgreements() {
     }
   }
 
+  function printAgreement() {
+    if (typeof window.print !== "function") {
+      toast({
+        title: "Printing is not available in this browser",
+        description: "Open this agreement in Safari or Chrome to print or save a PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Opening print options",
+      description: "On a phone, use the system print screen to print or save and share the PDF.",
+    });
+    window.print();
+  }
+
   const artist = fieldValue(fields.artistName, "Artist");
   const business = fieldValue(fields.artistBusinessName, artist);
   const assistant = fieldValue(fields.assistantName, "Assistant Artist");
@@ -314,7 +331,7 @@ export default function AssistantAgreements() {
             <Button type="button" onClick={saveAgreement} disabled={createAssistantArtist.isPending || updateAssistantArtist.isPending || createAssistantAgreement.isPending || updateAssistantAgreement.isPending} data-testid="btn-save-assistant-agreement">
               <Save className="mr-2 h-4 w-4" /> {selectedAgreementId ? "Save changes" : "Save agreement"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => window.print()} data-testid="btn-print-assistant-agreement">
+            <Button type="button" variant="outline" onClick={printAgreement} data-testid="btn-print-assistant-agreement">
               <Printer className="mr-2 h-4 w-4" /> Print / Save PDF
             </Button>
           </div>
