@@ -296,11 +296,14 @@ python3 artifacts/glam-crm/scripts/generate-service-menus.py
 
 The generator requires Python 3 with `reportlab` and `Pillow`, macOS Arial and Georgia supplemental fonts, and Poppler's `pdftoppm`. It writes review copies to `output/pdf/` and refreshes the public PDFs plus separate page-1/page-2 share PNGs under `artifacts/glam-crm/public/service-menus/`.
 
-The checked-in files are the reviewed original fallback. Owner-edited menu content is stored separately in `service_menu_content` and rendered by `/service-menus`; it does not require rerunning the Python generator. Apply `supabase/migrations/20260821223010_owner_editable_bridal_service_menu.sql` before deploying the API/frontend version that reads this table:
+The checked-in files are the reviewed original fallback. Owner-edited menu content is stored separately in `service_menu_content` and rendered by `/service-menus`; it does not require rerunning the Python generator. Apply both service-menu migrations before deploying the API/frontend version that reads Bridal and Party menu keys:
 
 ```sh
 psql <supabase postgres url> -v ON_ERROR_STOP=1 \
   -f supabase/migrations/20260821223010_owner_editable_bridal_service_menu.sql
+
+psql <supabase postgres url> -v ON_ERROR_STOP=1 \
+  -f supabase/migrations/20260903175807_expand_service_menu_library.sql
 ```
 
-The migration is additive, enables RLS, and grants no direct `anon` or `authenticated` table access. The authenticated Node API uses the existing server-side Postgres connection. Deploy in this order: database migration, rebuilt/synced API bundle, then frontend. Until all three are live, the reviewed original PDF/PNG assets remain the safe fallback.
+The migrations are additive, enable RLS, and grant no direct `anon` or `authenticated` table access. The authenticated Node API uses the existing server-side Postgres connection. Deploy in this order: both database migrations, rebuilt/synced API bundle, verification that the keyed Bridal and Party endpoints return HTTP 200, then frontend. Until all three are live, the reviewed original PDF/PNG assets remain the safe fallback.

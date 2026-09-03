@@ -21,7 +21,10 @@ export const serviceMenuContentTable = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [
-    check("service_menu_content_singleton_key", sql`${table.key} = 'bridal-services'`),
+    check(
+      "service_menu_content_supported_key",
+      sql`${table.key} in ('bridal-services', 'party-services')`,
+    ),
     check("service_menu_content_schema_version_positive", sql`${table.schemaVersion} >= 1`),
     check("service_menu_content_revision_positive", sql`${table.revision} >= 1`),
     check("service_menu_content_document_object", sql`jsonb_typeof(${table.content}) = 'object'`),

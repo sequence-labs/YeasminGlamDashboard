@@ -28,7 +28,15 @@ The Automations surface is no longer a desired visible CRM workflow. Do not show
 
 ## Current Shareable Services Menu Intent
 
-GLAMBYEASMIN needs two polished, public-safe bridal services menus that the artist can quickly preview, download, and share with prospective clients: a general edition and a Florida edition. Each edition must be available as a print-quality PDF and as two page-level high-resolution PNGs suitable for messaging and social sharing, so the detail copy remains readable instead of being compressed into one extra-tall image. The CRM entry point must be prominent and responsive rather than hidden in a secondary settings surface.
+GLAMBYEASMIN needs a cohesive, public-safe Service Menus library that the artist can understand and use without hunting across unrelated controls. The library is organized first by menu type - Bridal or Party - and then by location edition - General or Florida where that menu has location-specific content. Selecting one menu opens one focused workspace for that exact type and location, with a clear preview and three primary actions: Edit, Share, and Print.
+
+The current Bridal menu retains General and Florida editions. The current Party source establishes a General edition; a Florida Party edition should appear only when Florida-specific Party content is intentionally created. Reviewed original PDFs and page images remain available as fallbacks, but must be collapsed under an Archived originals control instead of competing with the current editable menu and its primary actions.
+
+For the Work Package 2.23 follow-up, the two supplied local JPG references belong specifically to the Party General menu's Simple Glam section. They should be presented as Simple Glam examples rather than as generic Party imagery or as references for another service, with a restrained, print-safe image treatment that preserves the menu's legibility and editorial hierarchy.
+
+The two newly supplied local JPG references belong specifically to the Party General menu's Soft Glam section. They should appear only as Soft Glam examples, with print-safe crops that remain unclipped and preserve the legibility of the service name, price, description, and surrounding menu content.
+
+The three newly supplied local JPG references belong specifically to the Party General menu's Party Glam section. They should appear only as Party Glam examples in a print-safe three-image composition that preserves intact face crops and keeps the service name, price, description, and surrounding menu copy fully legible.
 
 The visual direction is elevated bridal editorial: warm ivory, restrained burgundy or plum, subtle champagne accents, refined serif display typography, highly legible body copy, generous spacing, and tasteful beauty-inspired detail. The design should feel luxurious and personal without relying on stock photography, visual clutter, or novelty wedding motifs. The first implementation should provide a faithful preview for user review before treating the visual direction as final.
 
@@ -50,11 +58,25 @@ Canonical menu content and pricing:
 - Early Morning Fee, 6:00-7:00 AM - $75.
 - Specialty note: the artist specializes in full glam and may not be the right artist for clients seeking completely natural glam.
 
-The menu output is public-safe marketing material. Its service names, descriptions/inclusions, notes, and General/Florida pricing must be owner-editable from the authenticated CRM while preserving the existing approved two-page design. It must not contain client, booking, contract, payment, receipt, or other private CRM data.
+Canonical Party menu content and pricing, sourced from `/Users/iftatbhuiyan/Library/Messages/Attachments/9a/10/942BC0EB-62ED-4804-8418-BD1258A40E0A/Party priceless (1).pdf`:
+- Simple Glam - $130.
+- Soft Glam - $175.
+- Party Glam - $225.
+- Party Hair - $185.
+- Setups - $75.
+- Hijab Setups - $75.
+- Travel fee, 10-15 miles - $50.
+- Travel fee, 20+ miles - $100.
+- Further-distance travel pricing is discussed during consultation; travel fees are confirmed at booking, and clients may travel to the artist to avoid a travel fee.
+- Early Morning Fee, 3:00-5:00 AM - $200.
+- Early Morning Fee, 6:00-7:00 AM - $75.
+- Specialty note: the artist specializes in full glam and may not be the right artist for clients seeking completely natural glam.
 
-The editable bridal services menu is intentionally separate from booking Services & Fees. Marketing packages, regional prices, offers, travel rules, and early-morning details must not silently alter booking intake or existing booking price snapshots.
+The menu output is public-safe marketing material. Its service names, descriptions/inclusions, notes, menu type, available location editions, and location-specific pricing must be owner-editable from the authenticated CRM while preserving approved output designs unless the user reviews a deliberate collateral redesign. It must not contain client, booking, contract, payment, receipt, or other private CRM data.
 
-The authenticated Website Studio Menu tab is the owner editing surface for printable menu content. Do not create a duplicate menu-management page; `/service-menus` should link directly to that existing editor and render the saved General or Florida edition.
+The editable Service Menus library is intentionally separate from booking Services & Fees. Marketing packages, regional prices, offers, travel rules, and early-morning details must not silently alter booking intake, the operational service catalog, or any existing booking-local price snapshot.
+
+`/service-menus` is the single owner workspace for choosing, previewing, editing, sharing, and printing a selected marketing menu. Any Website Studio menu entry must open this same workspace or the same selected-menu state rather than creating a second editing flow with duplicated controls.
 
 ## Current Website Studio Intent
 
@@ -72,7 +94,7 @@ The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Websit
 - Do not auto-publish a final visual design before the user has reviewed the preview.
 - Do not make the public services menu depend on authenticated CRM data or expose private CRM records.
 - Do not expose the Website Studio on the public website or deploy the current local-only editor route as a hosted CMS.
-- Do not redesign the existing two-page bridal services menu or synchronize it with booking Services & Fees unless the user explicitly requests that separate behavior.
+- Do not silently redesign an approved client-facing menu output or synchronize marketing-menu content with booking Services & Fees. The current request authorizes redesigning the Service Menus management flow and adding the Party menu, not silently changing booking prices or historical snapshots.
 
 ## Constraints
 
@@ -90,6 +112,14 @@ The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Websit
 - React API client: `lib/api-client-react`
 - Database schema: `lib/db/src/schema`
 - Generated Zod contracts: `lib/api-zod`
+- Current Party menu source: `/Users/iftatbhuiyan/Library/Messages/Attachments/9a/10/942BC0EB-62ED-4804-8418-BD1258A40E0A/Party priceless (1).pdf`
+- Simple Glam reference photo 1: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-simple-glam-01.jpg`
+- Simple Glam reference photo 2: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-simple-glam-02.jpg`
+- Soft Glam reference photo 1: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-soft-glam-01.jpg`
+- Soft Glam reference photo 2: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-soft-glam-02.jpg`
+- Party Glam reference photo 1: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-glam-01.jpg`
+- Party Glam reference photo 2: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-glam-02.jpg`
+- Party Glam reference photo 3: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-glam-03.jpg`
 
 ## Current Scope
 

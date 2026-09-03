@@ -271,8 +271,7 @@ export const getServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 40;
 
 export const getServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 40;
 
-export const getServiceMenuContentResponseItemsMin = 14;
-export const getServiceMenuContentResponseItemsMax = 14;
+export const getServiceMenuContentResponseItemsMax = 20;
 
 
 
@@ -291,7 +290,7 @@ export const GetServiceMenuContentResponse = zod.object({
   "price-general": zod.string().max(getServiceMenuContentResponseItemsItemValuesPriceGeneralMax).optional(),
   "price-florida": zod.string().max(getServiceMenuContentResponseItemsItemValuesPriceFloridaMax).optional()
 })
-})).min(getServiceMenuContentResponseItemsMin).max(getServiceMenuContentResponseItemsMax),
+})).min(1).max(getServiceMenuContentResponseItemsMax),
   "updatedAt": zod.string().nullable()
 })
 
@@ -317,8 +316,7 @@ export const updateServiceMenuContentBodyItemsItemValuesPriceGeneralMax = 40;
 
 export const updateServiceMenuContentBodyItemsItemValuesPriceFloridaMax = 40;
 
-export const updateServiceMenuContentBodyItemsMin = 14;
-export const updateServiceMenuContentBodyItemsMax = 14;
+export const updateServiceMenuContentBodyItemsMax = 20;
 
 
 
@@ -335,7 +333,7 @@ export const UpdateServiceMenuContentBody = zod.object({
   "price-general": zod.string().max(updateServiceMenuContentBodyItemsItemValuesPriceGeneralMax).optional(),
   "price-florida": zod.string().max(updateServiceMenuContentBodyItemsItemValuesPriceFloridaMax).optional()
 })
-})).min(updateServiceMenuContentBodyItemsMin).max(updateServiceMenuContentBodyItemsMax)
+})).min(1).max(updateServiceMenuContentBodyItemsMax)
 })
 
 export const updateServiceMenuContentResponseRevisionMin = 0;
@@ -357,8 +355,7 @@ export const updateServiceMenuContentResponseItemsItemValuesPriceGeneralMax = 40
 
 export const updateServiceMenuContentResponseItemsItemValuesPriceFloridaMax = 40;
 
-export const updateServiceMenuContentResponseItemsMin = 14;
-export const updateServiceMenuContentResponseItemsMax = 14;
+export const updateServiceMenuContentResponseItemsMax = 20;
 
 
 
@@ -377,7 +374,145 @@ export const UpdateServiceMenuContentResponse = zod.object({
   "price-general": zod.string().max(updateServiceMenuContentResponseItemsItemValuesPriceGeneralMax).optional(),
   "price-florida": zod.string().max(updateServiceMenuContentResponseItemsItemValuesPriceFloridaMax).optional()
 })
-})).min(updateServiceMenuContentResponseItemsMin).max(updateServiceMenuContentResponseItemsMax),
+})).min(1).max(updateServiceMenuContentResponseItemsMax),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Get one owner-managed printable service menu
+ */
+export const GetServiceMenuDocumentParams = zod.object({
+  "menuKey": zod.enum(['bridal-services', 'party-services'])
+})
+
+export const getServiceMenuDocumentResponseRevisionMin = 0;
+
+
+export const getServiceMenuDocumentResponseItemsItemIdMax = 80;
+
+export const getServiceMenuDocumentResponseItemsItemValuesTitleMax = 56;
+
+export const getServiceMenuDocumentResponseItemsItemValuesDescriptionMax = 360;
+
+export const getServiceMenuDocumentResponseItemsItemValuesNoteMax = 260;
+
+export const getServiceMenuDocumentResponseItemsItemValuesKickerMax = 60;
+
+export const getServiceMenuDocumentResponseItemsItemValuesPriceMax = 40;
+
+export const getServiceMenuDocumentResponseItemsItemValuesPriceGeneralMax = 40;
+
+export const getServiceMenuDocumentResponseItemsItemValuesPriceFloridaMax = 40;
+
+export const getServiceMenuDocumentResponseItemsMax = 20;
+
+
+
+export const GetServiceMenuDocumentResponse = zod.object({
+  "customized": zod.boolean(),
+  "revision": zod.number().min(getServiceMenuDocumentResponseRevisionMin),
+  "schemaVersion": zod.number().min(1),
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(getServiceMenuDocumentResponseItemsItemIdMax),
+  "values": zod.object({
+  "title": zod.string().max(getServiceMenuDocumentResponseItemsItemValuesTitleMax).optional(),
+  "description": zod.string().max(getServiceMenuDocumentResponseItemsItemValuesDescriptionMax).optional(),
+  "note": zod.string().max(getServiceMenuDocumentResponseItemsItemValuesNoteMax).optional(),
+  "kicker": zod.string().max(getServiceMenuDocumentResponseItemsItemValuesKickerMax).optional(),
+  "price": zod.string().max(getServiceMenuDocumentResponseItemsItemValuesPriceMax).optional(),
+  "price-general": zod.string().max(getServiceMenuDocumentResponseItemsItemValuesPriceGeneralMax).optional(),
+  "price-florida": zod.string().max(getServiceMenuDocumentResponseItemsItemValuesPriceFloridaMax).optional()
+})
+})).min(1).max(getServiceMenuDocumentResponseItemsMax),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Atomically save one printable service menu
+ */
+export const UpdateServiceMenuDocumentParams = zod.object({
+  "menuKey": zod.enum(['bridal-services', 'party-services'])
+})
+
+export const updateServiceMenuDocumentBodyExpectedRevisionMin = 0;
+
+export const updateServiceMenuDocumentBodyItemsItemIdMax = 80;
+
+export const updateServiceMenuDocumentBodyItemsItemValuesTitleMax = 56;
+
+export const updateServiceMenuDocumentBodyItemsItemValuesDescriptionMax = 360;
+
+export const updateServiceMenuDocumentBodyItemsItemValuesNoteMax = 260;
+
+export const updateServiceMenuDocumentBodyItemsItemValuesKickerMax = 60;
+
+export const updateServiceMenuDocumentBodyItemsItemValuesPriceMax = 40;
+
+export const updateServiceMenuDocumentBodyItemsItemValuesPriceGeneralMax = 40;
+
+export const updateServiceMenuDocumentBodyItemsItemValuesPriceFloridaMax = 40;
+
+export const updateServiceMenuDocumentBodyItemsMax = 20;
+
+
+
+export const UpdateServiceMenuDocumentBody = zod.object({
+  "expectedRevision": zod.number().min(updateServiceMenuDocumentBodyExpectedRevisionMin),
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateServiceMenuDocumentBodyItemsItemIdMax),
+  "values": zod.object({
+  "title": zod.string().max(updateServiceMenuDocumentBodyItemsItemValuesTitleMax).optional(),
+  "description": zod.string().max(updateServiceMenuDocumentBodyItemsItemValuesDescriptionMax).optional(),
+  "note": zod.string().max(updateServiceMenuDocumentBodyItemsItemValuesNoteMax).optional(),
+  "kicker": zod.string().max(updateServiceMenuDocumentBodyItemsItemValuesKickerMax).optional(),
+  "price": zod.string().max(updateServiceMenuDocumentBodyItemsItemValuesPriceMax).optional(),
+  "price-general": zod.string().max(updateServiceMenuDocumentBodyItemsItemValuesPriceGeneralMax).optional(),
+  "price-florida": zod.string().max(updateServiceMenuDocumentBodyItemsItemValuesPriceFloridaMax).optional()
+})
+})).min(1).max(updateServiceMenuDocumentBodyItemsMax)
+})
+
+export const updateServiceMenuDocumentResponseRevisionMin = 0;
+
+
+export const updateServiceMenuDocumentResponseItemsItemIdMax = 80;
+
+export const updateServiceMenuDocumentResponseItemsItemValuesTitleMax = 56;
+
+export const updateServiceMenuDocumentResponseItemsItemValuesDescriptionMax = 360;
+
+export const updateServiceMenuDocumentResponseItemsItemValuesNoteMax = 260;
+
+export const updateServiceMenuDocumentResponseItemsItemValuesKickerMax = 60;
+
+export const updateServiceMenuDocumentResponseItemsItemValuesPriceMax = 40;
+
+export const updateServiceMenuDocumentResponseItemsItemValuesPriceGeneralMax = 40;
+
+export const updateServiceMenuDocumentResponseItemsItemValuesPriceFloridaMax = 40;
+
+export const updateServiceMenuDocumentResponseItemsMax = 20;
+
+
+
+export const UpdateServiceMenuDocumentResponse = zod.object({
+  "customized": zod.boolean(),
+  "revision": zod.number().min(updateServiceMenuDocumentResponseRevisionMin),
+  "schemaVersion": zod.number().min(1),
+  "items": zod.array(zod.object({
+  "id": zod.string().min(1).max(updateServiceMenuDocumentResponseItemsItemIdMax),
+  "values": zod.object({
+  "title": zod.string().max(updateServiceMenuDocumentResponseItemsItemValuesTitleMax).optional(),
+  "description": zod.string().max(updateServiceMenuDocumentResponseItemsItemValuesDescriptionMax).optional(),
+  "note": zod.string().max(updateServiceMenuDocumentResponseItemsItemValuesNoteMax).optional(),
+  "kicker": zod.string().max(updateServiceMenuDocumentResponseItemsItemValuesKickerMax).optional(),
+  "price": zod.string().max(updateServiceMenuDocumentResponseItemsItemValuesPriceMax).optional(),
+  "price-general": zod.string().max(updateServiceMenuDocumentResponseItemsItemValuesPriceGeneralMax).optional(),
+  "price-florida": zod.string().max(updateServiceMenuDocumentResponseItemsItemValuesPriceFloridaMax).optional()
+})
+})).min(1).max(updateServiceMenuDocumentResponseItemsMax),
   "updatedAt": zod.string().nullable()
 })
 

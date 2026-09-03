@@ -271,7 +271,7 @@ export default function WebsiteStudioPage() {
               <LockKeyhole className="h-3.5 w-3.5 text-primary" aria-label="Authenticated dashboard only" />
             </div>
             <h1 className="crm-page-title mt-2">Website Studio</h1>
-            <p className="crm-page-subtitle">Replace every website image, edit the complete public service menu, and review changes instantly across desktop, tablet, and mobile.</p>
+            <p className="crm-page-subtitle">Replace website images and review them instantly across desktop, tablet, and mobile. Client-ready pricing now lives in Service menus.</p>
             <div className="crm-gold-rule mt-6 w-24" />
           </div>
           <div className="flex flex-wrap gap-2">
@@ -289,12 +289,12 @@ export default function WebsiteStudioPage() {
                 <div><span className="crm-eyebrow">Editing library</span><h2 className="crm-section-title mt-1">Edit the site in place</h2></div>
                 <span className="rounded-full border border-card-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">{changeCount} change{changeCount === 1 ? "" : "s"}</span>
               </div>
-              <p className="mt-2 text-sm leading-5 text-muted-foreground">Image drafts stay in this browser. Menu edits remain drafts until you save them to the printable menu.</p>
+              <p className="mt-2 text-sm leading-5 text-muted-foreground">Image drafts stay in this browser. Prior menu drafts remain available here for recovery.</p>
             </div>
 
             <div className="grid grid-cols-2 border-b border-card-border/70 p-2" role="tablist" aria-label="Website editing tools">
               <button type="button" role="tab" aria-selected={editorTab === "images"} onClick={() => setEditorTab("images")} className={`min-h-11 rounded-lg text-sm font-semibold ${editorTab === "images" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>Images <span className="ml-1 opacity-70">{STUDIO_IMAGE_SLOTS.length}</span></button>
-              <button type="button" role="tab" aria-selected={editorTab === "menu"} onClick={() => { setEditorTab("menu"); setRoute(STUDIO_PREVIEW_ROUTES[1]); }} className={`min-h-11 rounded-lg text-sm font-semibold ${editorTab === "menu" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>Menu <span className="ml-1 opacity-70">{STUDIO_MENU_ITEMS.length}</span></button>
+              <button type="button" role="tab" aria-selected={editorTab === "menu"} onClick={() => setEditorTab("menu")} className={`min-h-11 rounded-lg text-sm font-semibold ${editorTab === "menu" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`}>Saved drafts <span className="ml-1 opacity-70">{Object.keys(menuDrafts).length}</span></button>
             </div>
 
             {editorTab === "images" ? (
@@ -325,7 +325,7 @@ export default function WebsiteStudioPage() {
               <div>
                 <div className="space-y-3 border-b border-card-border/70 p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div><p className="crm-eyebrow">Services menu</p><p className="mt-1 text-sm text-muted-foreground">Wording, inclusions, notes, and pricing</p></div>
+                    <div><p className="crm-eyebrow">Prior menu drafts</p><p className="mt-1 text-sm text-muted-foreground">Recover browser-local edits, then move to the current Service menus workspace.</p></div>
                     <Button variant="ghost" size="sm" disabled={updateSavedMenu.isPending || !Object.keys(menuDrafts).length} onClick={() => void resetMenu()}>Discard drafts</Button>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
