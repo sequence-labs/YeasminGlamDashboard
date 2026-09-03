@@ -72,7 +72,7 @@ export function Sidebar() {
       <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
 
       {/* ---------- Mobile top bar ---------- */}
-      <header className="sticky top-0 z-30 border-b border-sidebar-border bg-background/90 px-4 py-3 backdrop-blur-xl md:hidden">
+      <header className="crm-mobile-header sticky top-0 z-30 border-b border-sidebar-border bg-background/90 px-4 py-3 backdrop-blur-xl md:hidden">
         <div className="flex items-center gap-3">
           <div className="crm-monogram h-10 w-10 font-serif text-sm">
             <span style={{ fontVariationSettings: "'opsz' 48" }}>{monogram}</span>

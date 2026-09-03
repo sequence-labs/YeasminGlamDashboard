@@ -198,6 +198,24 @@ The deployed frontend calls the shared Render API at:
 https://whisperflowserver.onrender.com/glam-api/api/*
 ```
 
+### Installable Home Screen build requirements
+
+The installable metadata and service-worker scope follow the Vite base path. Local development uses `/`; GitHub Pages uses `/YeasminGlamDashboard/`. Build and preview the production path explicitly:
+
+```sh
+BASE_PATH=/YeasminGlamDashboard/ \
+VITE_API_BASE_URL=https://whisperflowserver.onrender.com/glam-api \
+pnpm --filter @workspace/glam-crm run build
+
+BASE_PATH=/YeasminGlamDashboard/ pnpm --filter @workspace/glam-crm run serve
+```
+
+The built output must contain a base-path-safe manifest, 180-by-180 Apple touch icon, 192-by-192 and 512-by-512 manifest icons, and the service worker. Probe them through `/YeasminGlamDashboard/` rather than opening files directly.
+
+Service-worker caching is public-shell-only. Never cache `/api/*`, `/glam-api/api/*`, session/authentication responses, non-GET traffic, cross-origin responses, or CRM records. Version shell caches without deleting unrelated browser storage, and never force-reload an open page with unsaved work.
+
+Final acceptance requires a real iPhone Safari Add to Home Screen test covering the icon, name, standalone launch, authentication, safe areas, navigation, an unsaved form, background/resume, and update behavior. The product intentionally includes no in-app installation instructions.
+
 For Apple Calendar subscriptions, set `VITE_PUBLIC_CALENDAR_BASE_URL` when the feed should use a specific public or LAN-reachable origin. In production this should be the HTTPS API origin that serves `/api/public/calendar/:token.ics`; on a phone, `localhost` is the phone itself and will not reach the development computer.
 
 ## Shared Render API Setup

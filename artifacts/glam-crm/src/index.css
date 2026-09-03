@@ -260,6 +260,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    background-color: hsl(var(--background));
   }
 
   body {
@@ -271,8 +272,31 @@
       hsl(var(--background));
     background-attachment: fixed;
     min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
     letter-spacing: -0.005em;
     font-feature-settings: "ss01", "cv11";
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  @media (max-width: 767px) {
+    body {
+      background-attachment: scroll;
+    }
+
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 
   /* Sub-headings default to Inter for legibility; h1 remains the editorial
@@ -334,14 +358,61 @@
   /* Shell + nav surfaces */
   .crm-shell {
     @apply bg-background;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+
+  .crm-shell > main {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .crm-mobile-header {
+    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+    padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+    padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  }
+
+  .crm-auth-gate {
+    min-height: 100dvh;
+    padding-top: calc(3rem + env(safe-area-inset-top, 0px));
+    padding-right: calc(1.5rem + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(1.5rem + env(safe-area-inset-left, 0px));
   }
 
   .crm-mobile-main {
-    padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    padding-right: calc(1.25rem + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(1.25rem + env(safe-area-inset-left, 0px));
   }
 
   .crm-mobile-nav {
-    padding-bottom: max(0.25rem, env(safe-area-inset-bottom, 0px));
+    right: max(0.75rem, env(safe-area-inset-right, 0px));
+    bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    left: max(0.75rem, env(safe-area-inset-left, 0px));
+  }
+
+  .website-studio-shell {
+    padding-top: calc(1rem + env(safe-area-inset-top, 0px));
+    padding-right: calc(1rem + env(safe-area-inset-right, 0px));
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    padding-left: calc(1rem + env(safe-area-inset-left, 0px));
+  }
+
+  @media (min-width: 640px) and (max-width: 767px) {
+    .crm-mobile-main {
+      padding-right: calc(2rem + env(safe-area-inset-right, 0px));
+      padding-left: calc(2rem + env(safe-area-inset-left, 0px));
+    }
+  }
+
+  @media (min-width: 640px) {
+    .website-studio-shell {
+      padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
+      padding-right: calc(1.5rem + env(safe-area-inset-right, 0px));
+      padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+      padding-left: calc(1.5rem + env(safe-area-inset-left, 0px));
+    }
   }
 
   /* The signature card surface
@@ -459,7 +530,30 @@
   /* Mobile main padding override */
   @media (min-width: 768px) {
     .crm-mobile-main {
+      padding-right: 2.5rem;
       padding-bottom: 2.5rem;
+      padding-left: 2.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .crm-mobile-main {
+      padding-right: 3.5rem;
+      padding-left: 3.5rem;
+    }
+  }
+
+  @media (display-mode: standalone) and (min-width: 768px) {
+    .crm-shell > aside {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-left: env(safe-area-inset-left, 0px);
+    }
+
+    .crm-shell > main {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
   }
 

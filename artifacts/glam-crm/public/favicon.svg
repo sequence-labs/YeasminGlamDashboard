@@ -1,3 +1,6 @@
 <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+  <rect width="180" height="180" rx="40" fill="#74263D"/>
+  <rect x="12" y="12" width="156" height="156" rx="32" stroke="#D7B46A" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="90" cy="90" r="55" fill="#F6F0E7" fill-opacity="0.08"/>
+  <text x="90" y="105" fill="#FFF9F0" font-family="Georgia, 'Times New Roman', serif" font-size="55" text-anchor="middle" letter-spacing="-3">YB</text>
 </svg>

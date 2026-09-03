@@ -253,6 +253,37 @@ Validation commands:
 - Print-media emulation plus rendered PDF inspection for Bridal General, Bridal Florida, and Party General, checking page count, selected-menu identity, margins, clipping, overlap, legibility, and absence of CRM controls/private data.
 - `git diff --check -- Prompt.md Plan.md Documentation.md`
 
+### Work Package 2.24: Installable iPhone and iPad Home Screen Experience
+
+Status: In progress — implementation is isolated from the completed Service Menu release; GitHub Pages deployment and real-iPhone acceptance remain pending.
+
+Objective:
+- Make the existing CRM installable through Safari's native Add to Home Screen flow and make its standalone Home Screen launch feel polished across iPhone and iPad.
+- Preserve the current website and authentication behavior while adding only the metadata, assets, safe-area treatment, and public app-shell support required for an app-like installed experience.
+- Do not add an in-app installation guide, instructional prompt, banner, or custom installation flow; the user will explain the native Safari action directly.
+
+Acceptance criteria:
+- A valid web app manifest resolves correctly at `/` and `/YeasminGlamDashboard/`, with base-path-safe `start_url`, `scope`, icons, standalone display, names, and colors.
+- Branded 180, 192, and 512 pixel icons load at their declared dimensions and retain safe mask padding.
+- The shared CRM shell and independent Website Studio workspace respect top, side, and bottom safe areas without horizontal overflow or controls colliding with iPhone/iPad system areas.
+- Touch targets, scrolling, text inputs, zoom, theme/status-bar color, and reduced-motion behavior remain usable in browser and standalone modes.
+- A production-only service worker caches only same-origin public shell/static resources. It bypasses all API/authentication routes, non-GET and cross-origin traffic, private CRM data, and unknown application data paths.
+- Cache updates are versioned and failure-tolerant and never force-reload an open form or discard unsaved work.
+- No install guide, prompt, banner, modal, or custom install control appears.
+- Local-root and production-base builds, manifest/icon probes, service-worker routing tests, iPhone/iPad browser layouts, and `git diff --check` pass.
+- Final acceptance requires a real iPhone Add to Home Screen test covering icon/name, standalone launch, sign-in, core navigation, an unsaved editable form, background/resume, safe areas, and update behavior.
+
+Validation commands:
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- `BASE_PATH=/YeasminGlamDashboard/ VITE_API_BASE_URL=https://whisperflowserver.onrender.com/glam-api pnpm --filter @workspace/glam-crm run build`
+- Parse the generated manifest and verify every declared icon dimension and production-base URL.
+- Inspect built HTML for manifest, Apple touch, standalone, theme-color, and `viewport-fit=cover` metadata.
+- Run a focused service-worker harness proving public shell/static routing and API/auth/non-GET/cross-origin/private-path bypasses.
+- Validate authenticated iPhone portrait/landscape and iPad layouts, form focus, safe-area simulation, overflow, and console state in the Browser.
+- Record the real-iPhone Safari Add to Home Screen gate in `Documentation.md` before merge.
+- `git diff --check -- Prompt.md Plan.md Setup.md Documentation.md`
+
 ## Rollback Conditions
 
 - Local migration requires replacing generated source files wholesale.

@@ -78,6 +78,14 @@ The editable Service Menus library is intentionally separate from booking Servic
 
 `/service-menus` is the single owner workspace for choosing, previewing, editing, sharing, and printing a selected marketing menu. Any Website Studio menu entry must open this same workspace or the same selected-menu state rather than creating a second editing flow with duplicated controls.
 
+## Current Installable Web App Intent
+
+The authenticated Makeup Artist Hub website should be installable from Safari's Add to Home Screen flow on iPhone and iPad and should feel polished and app-like when launched from its Home Screen icon. The installed experience must use GLAMBYEASMIN branding, open inside a standalone window, respect device safe areas, and preserve clear, touch-friendly interaction across the entire CRM rather than optimizing only one page.
+
+Installation support must remain compatible with both the local root path and the production GitHub Pages base path at `/YeasminGlamDashboard/`. The installable shell may cache only same-origin public application-shell resources needed to launch the interface. It must never cache API requests, authentication responses, client records, bookings, contracts, payments, receipts, assistant agreements, or other private CRM data.
+
+The user will personally show the artist how to use Safari's native Add to Home Screen action. The website must not add an installation guide, instructional modal, banner, prompt, or custom install workflow.
+
 ## Current Website Studio Intent
 
 The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Website Studio. Yeasmin must reach image, service-copy, pricing, preview, draft, and publish controls from inside the existing authenticated dashboard rather than through the public GitHub Pages website. Opening the Studio should transition to a dedicated full-screen editor workspace without the normal CRM sidebar or page shell, with an explicit route back to the dashboard. The public website may receive only an approved, sanitized published snapshot; it must never expose dashboard credentials, draft data, private CRM rows, or editor controls.
@@ -95,6 +103,7 @@ The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Websit
 - Do not make the public services menu depend on authenticated CRM data or expose private CRM records.
 - Do not expose the Website Studio on the public website or deploy the current local-only editor route as a hosted CMS.
 - Do not silently redesign an approved client-facing menu output or synchronize marketing-menu content with booking Services & Fees. The current request authorizes redesigning the Service Menus management flow and adding the Party menu, not silently changing booking prices or historical snapshots.
+- Do not add an in-app Add to Home Screen guide, installation prompt, instructional banner, or imitation of Safari's native installation controls.
 
 ## Constraints
 
@@ -103,6 +112,8 @@ The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Websit
 - Prefer existing source patterns in `artifacts/*` and `lib/*`.
 - Use focused validation before claiming the app works.
 - If external documentation is needed, verify against current docs.
+- Keep install metadata, icons, service-worker scope, and cached shell URLs correct for both `/` in local development and `/YeasminGlamDashboard/` on GitHub Pages.
+- Never cache authenticated API responses or private CRM data in the installable app shell.
 
 ## Source Links
 
@@ -120,6 +131,8 @@ The authenticated Makeup Artist Hub dashboard should own the GLAMBYEASMIN Websit
 - Party Glam reference photo 1: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-glam-01.jpg`
 - Party Glam reference photo 2: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-glam-02.jpg`
 - Party Glam reference photo 3: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-glam-03.jpg`
+- Current WebKit Home Screen behavior: `https://webkit.org/blog/17333/webkit-features-in-safari-26-0/`
+- Apple safe-area guidance: `https://developer.apple.com/videos/play/wwdc2021/10029/`
 
 ## Current Scope
 
