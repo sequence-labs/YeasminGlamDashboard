@@ -255,7 +255,7 @@ Validation commands:
 
 ### Work Package 2.24: Installable iPhone and iPad Home Screen Experience
 
-Status: In progress — implementation is isolated from the completed Service Menu release; GitHub Pages deployment and real-iPhone acceptance remain pending.
+Status: Deployed — pull request #18 is merged and the GitHub Pages release is live; real-iPhone acceptance remains pending before this work package is complete.
 
 Objective:
 - Make the existing CRM installable through Safari's native Add to Home Screen flow and make its standalone Home Screen launch feel polished across iPhone and iPad.
@@ -281,7 +281,7 @@ Validation commands:
 - Inspect built HTML for manifest, Apple touch, standalone, theme-color, and `viewport-fit=cover` metadata.
 - Run a focused service-worker harness proving public shell/static routing and API/auth/non-GET/cross-origin/private-path bypasses.
 - Validate authenticated iPhone portrait/landscape and iPad layouts, form focus, safe-area simulation, overflow, and console state in the Browser.
-- Record the real-iPhone Safari Add to Home Screen gate in `Documentation.md` before merge.
+- Record the real-iPhone Safari Add to Home Screen gate in `Documentation.md`; deployment may proceed with explicit user authorization, but the work package remains incomplete until that physical-device gate passes.
 - `git diff --check -- Prompt.md Plan.md Setup.md Documentation.md`
 
 ## Rollback Conditions

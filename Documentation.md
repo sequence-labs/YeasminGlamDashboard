@@ -3042,3 +3042,11 @@ Deployment boundary:
 - Resolved all three review findings. Required shell resources now use fail-fast fetch/validation before `skipWaiting`; the failed-install harness rejects the install and records zero `skipWaiting` calls. The sign-in/checking-access gate now adds all four safe-area insets, and automatic iOS phone-number linking remains enabled.
 - Safe-area emulation passed with realistic insets. At 430-by-932, the sign-in gate computed 95px top and 82px bottom padding, and the authenticated bottom navigation ended exactly 34px above the viewport edge. Landscape login padding included 47px left/right cutout allowances plus its normal spacing; all tested layouts retained zero horizontal overflow.
 - Independent re-review confirmed all three findings resolved, found no regression from the fixes, and passed `git diff --check origin/main`.
+
+## 2026-09-03 - Work Package 2.24 GitHub Pages Release
+
+- The user explicitly authorized release while the physical-iPhone acceptance gate remains pending. Squash-merged dashboard pull request #18 as `Commit #48 - Prepare installable Glam Studio app` (`1623ed2f65c5a6ac482630f9ba8a85f3e649a9af`).
+- GitHub Pages workflow run `33799133007` completed successfully: the production build and deploy jobs passed. The workflow emitted only the repository's existing Node.js action-runtime deprecation annotation.
+- Production probes returned HTTP 200 with the correct content types for the app HTML, `manifest.webmanifest`, `sw.js`, Apple touch icon, 192-pixel icon, 512-pixel icon, and maskable 512-pixel icon. The deployed manifest reports `display: standalone` with base-path-safe `start_url` and `scope`; the deployed service worker retains its same-origin `/api/` bypass.
+- Refreshed `https://sequence-labs.github.io/YeasminGlamDashboard/` in the visible in-app Browser and confirmed the authenticated production dashboard loads successfully after the release.
+- Work Package 2.24 is deployed but not complete. Real-iPhone Safari Add to Home Screen, icon/name, standalone launch, sign-in, core navigation, unsaved-form preservation, safe areas, background/resume, and update behavior remain the final physical-device acceptance gate.
