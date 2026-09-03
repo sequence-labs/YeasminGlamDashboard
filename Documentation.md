@@ -3005,3 +3005,11 @@ Deployment boundary:
 - Published the source-copy correction through WhisperSpeechServer pull request #5 (`Commit #28 - Match party menu source copy`). The production Party menu was updated through the authenticated API to revision 2, and its reload contains `false lashes` with no remaining `premium lashes` wording.
 - Repeated the final print gate after scoping the page rule. Headless Chrome produced an unencrypted two-page US Letter Party Services PDF (612-by-792 points); rendered inspection confirmed all seven supplied images remain attached to the correct Simple Glam, Soft Glam, and Party Glam sections with intact crops, readable prices and descriptions, complete page-two travel/timing content, and no dashboard controls, clipping, overlap, or extra pages.
 - The local in-app Browser preview remains available at `/service-menus?menu=party-services` for visible user review while the dashboard pull request is finalized.
+
+## 2026-09-03 - Work Package 2.23 Production Release (Completed)
+
+- Squash-merged dashboard pull request #16 as `Commit #46 - Add cohesive service menu library` (`b6b59242d9e3a69adcdb2e7e63a6fbbef5d54508`). The merged diff contains the Service Menu library, Party pricing, seven approved images, editor, generated API clients, and additive migration; installable Home Screen/PWA work remains outside this release.
+- GitHub Pages workflow run `33796287545` completed successfully: both the production build and deploy jobs passed. The workflow emitted only its existing Node.js action-runtime deprecation annotation.
+- Opened the deployed Party menu in the in-app Browser and confirmed Party & Event General selection, `$130` Simple Glam, `$175` Soft Glam, `$225` Party Glam, `false lashes`, and no `premium lashes` wording.
+- Verified the deployed editor through the visible UI by making a harmless trailing-space edit to `Simple Glam`, saving successfully, observing the `Menu saved` confirmation, reloading, and confirming the normalized value returned as `Simple Glam`.
+- Work Package 2.23 is complete. The installable Home Screen experience remains a separate, unmerged workstream for continued validation.

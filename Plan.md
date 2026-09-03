@@ -219,7 +219,7 @@ Validation commands:
 
 ### Work Package 2.23: Cohesive Bridal and Party Service Menu Library
 
-Status: Production database/API and authenticated save-reload behavior verified; dashboard PR ready to merge.
+Status: Complete — production database/API, authenticated save-reload behavior, dashboard merge, and GitHub Pages deployment verified.
 
 Objective:
 - Redesign `/service-menus` as one understandable library and workspace instead of a sequence of scattered edition, download, open, share, edit, and print controls.
