@@ -129,6 +129,7 @@ export * from './serviceMenuContent';
 export * from './serviceMenuContentItem';
 export * from './serviceMenuContentUpdate';
 export * from './serviceMenuContentValues';
+export * from './serviceMenuKey';
 export * from './tag';
 export * from './tagAssignment';
 export * from './tagInput';

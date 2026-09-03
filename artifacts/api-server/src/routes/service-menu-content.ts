@@ -1,18 +1,19 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { and, eq, sql } from "drizzle-orm";
 import { db, serviceMenuContentTable, type ServiceMenuContentRow, type ServiceMenuStoredItem } from "@workspace/db";
 import { GetServiceMenuContentResponse, UpdateServiceMenuContentBody, UpdateServiceMenuContentResponse } from "@workspace/api-zod";
 import {
   InvalidServiceMenuContentError,
   cloneDefaultServiceMenuContent,
+  isServiceMenuKey,
   normalizeServiceMenuContent,
+  type ServiceMenuKey,
 } from "../lib/service-menu-content";
 
 const router: IRouter = Router();
-const menuKey = "bridal-services";
 
-function serializeMenu(row?: ServiceMenuContentRow) {
-  const content = row?.content ?? cloneDefaultServiceMenuContent();
+function serializeMenu(menuKey: ServiceMenuKey, row?: ServiceMenuContentRow) {
+  const content = row?.content ?? cloneDefaultServiceMenuContent(menuKey);
   return {
     customized: Boolean(row),
     revision: row?.revision ?? 0,
@@ -22,7 +23,7 @@ function serializeMenu(row?: ServiceMenuContentRow) {
   };
 }
 
-async function loadMenuRow() {
+async function loadMenuRow(menuKey: ServiceMenuKey) {
   const [row] = await db
     .select()
     .from(serviceMenuContentTable)
@@ -39,11 +40,12 @@ function postgresErrorCode(error: unknown) {
 }
 
 router.get("/service-menu-content", async (_req, res): Promise<void> => {
-  const row = await loadMenuRow();
-  res.json(GetServiceMenuContentResponse.parse(serializeMenu(row)));
+  const menuKey = "bridal-services";
+  const row = await loadMenuRow(menuKey);
+  res.json(GetServiceMenuContentResponse.parse(serializeMenu(menuKey, row)));
 });
 
-router.patch("/service-menu-content", async (req, res): Promise<void> => {
+async function updateMenu(req: Request, res: Response, menuKey: ServiceMenuKey): Promise<void> {
   const parsed = UpdateServiceMenuContentBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -52,7 +54,7 @@ router.patch("/service-menu-content", async (req, res): Promise<void> => {
 
   let content;
   try {
-    content = normalizeServiceMenuContent((req.body as { items: ServiceMenuStoredItem[] }).items);
+    content = normalizeServiceMenuContent(menuKey, (req.body as { items: ServiceMenuStoredItem[] }).items);
   } catch (error) {
     if (error instanceof InvalidServiceMenuContentError) {
       res.status(400).json({ error: error.message });
@@ -101,7 +103,30 @@ router.patch("/service-menu-content", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(UpdateServiceMenuContentResponse.parse(serializeMenu(row)));
+  res.json(UpdateServiceMenuContentResponse.parse(serializeMenu(menuKey, row)));
+}
+
+router.patch("/service-menu-content", async (req, res): Promise<void> => {
+  await updateMenu(req, res, "bridal-services");
+});
+
+router.get("/service-menu-content/:menuKey", async (req, res): Promise<void> => {
+  const { menuKey } = req.params;
+  if (!isServiceMenuKey(menuKey)) {
+    res.status(404).json({ error: "Service menu not found" });
+    return;
+  }
+  const row = await loadMenuRow(menuKey);
+  res.json(GetServiceMenuContentResponse.parse(serializeMenu(menuKey, row)));
+});
+
+router.patch("/service-menu-content/:menuKey", async (req, res): Promise<void> => {
+  const { menuKey } = req.params;
+  if (!isServiceMenuKey(menuKey)) {
+    res.status(404).json({ error: "Service menu not found" });
+    return;
+  }
+  await updateMenu(req, res, menuKey);
 });
 
 export default router;

@@ -140,6 +140,14 @@ export interface ServiceItemUpdate {
   sortOrder?: number;
 }
 
+export type ServiceMenuKey = typeof ServiceMenuKey[keyof typeof ServiceMenuKey];
+
+
+export const ServiceMenuKey = {
+  'bridal-services': 'bridal-services',
+  'party-services': 'party-services',
+} as const;
+
 export interface ServiceMenuContentValues {
   /** @maxLength 56 */
   title?: string;
@@ -173,8 +181,8 @@ export interface ServiceMenuContent {
   /** @minimum 1 */
   schemaVersion: number;
   /**
-     * @minItems 14
-     * @maxItems 14
+     * @minItems 1
+     * @maxItems 20
      */
   items: ServiceMenuContentItem[];
   /** @nullable */
@@ -185,8 +193,8 @@ export interface ServiceMenuContentUpdate {
   /** @minimum 0 */
   expectedRevision: number;
   /**
-     * @minItems 14
-     * @maxItems 14
+     * @minItems 1
+     * @maxItems 20
      */
   items: ServiceMenuContentItem[];
 }

@@ -95,6 +95,7 @@ import type {
   ServiceItemUpdate,
   ServiceMenuContent,
   ServiceMenuContentUpdate,
+  ServiceMenuKey,
   Tag,
   TagAssignment,
   TagInput,
@@ -994,6 +995,155 @@ export const useUpdateServiceMenuContent = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateServiceMenuContentMutationOptions(options));
+    }
+
+export const getGetServiceMenuDocumentUrl = (menuKey: ServiceMenuKey,) => {
+
+
+
+
+  return `/api/service-menu-content/${menuKey}`
+}
+
+/**
+ * @summary Get one owner-managed printable service menu
+ */
+export const getServiceMenuDocument = async (menuKey: ServiceMenuKey, options?: RequestInit): Promise<ServiceMenuContent> => {
+
+  return customFetch<ServiceMenuContent>(getGetServiceMenuDocumentUrl(menuKey),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetServiceMenuDocumentQueryKey = (menuKey: ServiceMenuKey,) => {
+    return [
+    `/api/service-menu-content/${menuKey}`
+    ] as const;
+    }
+
+
+export const getGetServiceMenuDocumentQueryOptions = <TData = Awaited<ReturnType<typeof getServiceMenuDocument>>, TError = ErrorType<void>>(menuKey: ServiceMenuKey, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getServiceMenuDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetServiceMenuDocumentQueryKey(menuKey);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getServiceMenuDocument>>> = ({ signal }) => getServiceMenuDocument(menuKey, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(menuKey), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getServiceMenuDocument>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetServiceMenuDocumentQueryResult = NonNullable<Awaited<ReturnType<typeof getServiceMenuDocument>>>
+export type GetServiceMenuDocumentQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get one owner-managed printable service menu
+ */
+
+export function useGetServiceMenuDocument<TData = Awaited<ReturnType<typeof getServiceMenuDocument>>, TError = ErrorType<void>>(
+ menuKey: ServiceMenuKey, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getServiceMenuDocument>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetServiceMenuDocumentQueryOptions(menuKey,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateServiceMenuDocumentUrl = (menuKey: ServiceMenuKey,) => {
+
+
+
+
+  return `/api/service-menu-content/${menuKey}`
+}
+
+/**
+ * @summary Atomically save one printable service menu
+ */
+export const updateServiceMenuDocument = async (menuKey: ServiceMenuKey,
+    serviceMenuContentUpdate: ServiceMenuContentUpdate, options?: RequestInit): Promise<ServiceMenuContent> => {
+
+  return customFetch<ServiceMenuContent>(getUpdateServiceMenuDocumentUrl(menuKey),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      serviceMenuContentUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateServiceMenuDocumentMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateServiceMenuDocument>>, TError,{menuKey: ServiceMenuKey;data: BodyType<ServiceMenuContentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateServiceMenuDocument>>, TError,{menuKey: ServiceMenuKey;data: BodyType<ServiceMenuContentUpdate>}, TContext> => {
+
+const mutationKey = ['updateServiceMenuDocument'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateServiceMenuDocument>>, {menuKey: ServiceMenuKey;data: BodyType<ServiceMenuContentUpdate>}> = (props) => {
+          const {menuKey,data} = props ?? {};
+
+          return  updateServiceMenuDocument(menuKey,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateServiceMenuDocumentMutationResult = NonNullable<Awaited<ReturnType<typeof updateServiceMenuDocument>>>
+    export type UpdateServiceMenuDocumentMutationBody = BodyType<ServiceMenuContentUpdate>
+    export type UpdateServiceMenuDocumentMutationError = ErrorType<void>
+
+    /**
+ * @summary Atomically save one printable service menu
+ */
+export const useUpdateServiceMenuDocument = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateServiceMenuDocument>>, TError,{menuKey: ServiceMenuKey;data: BodyType<ServiceMenuContentUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateServiceMenuDocument>>,
+        TError,
+        {menuKey: ServiceMenuKey;data: BodyType<ServiceMenuContentUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateServiceMenuDocumentMutationOptions(options));
     }
 
 export const getListExpensesUrl = (params?: ListExpensesParams,) => {

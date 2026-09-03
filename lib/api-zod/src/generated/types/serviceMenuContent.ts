@@ -14,8 +14,8 @@ export interface ServiceMenuContent {
   /** @minimum 1 */
   schemaVersion: number;
   /**
-     * @minItems 14
-     * @maxItems 14
+     * @minItems 1
+     * @maxItems 20
      */
   items: ServiceMenuContentItem[];
   /** @nullable */

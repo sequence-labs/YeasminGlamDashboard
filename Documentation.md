@@ -2904,3 +2904,104 @@ Deployment boundary:
 - Rebuilt and synchronized the API bundle, ran `/Users/iftatbhuiyan/WhisperSpeechServer`'s six-test suite successfully, and merged its deployment pull request #3. After Render picked up the bundle, the same authenticated live request returned `200` with an agreement list response.
 - Updated the agreement print action to retain the native print path while giving a clear phone-specific message: the device print screen is where the artist can print, save, or share the PDF. If a browser does not expose printing, the app now tells the artist to open the agreement in Safari or Chrome instead of silently doing nothing.
 - Focused frontend typecheck and production build passed, as did `git diff --check`. The frontend build retained only the existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.
+
+## 2026-09-03 - Cohesive Bridal and Party Service Menu Library (Start)
+
+- Started Work Package 2.23 as a documentation-only planning pass. No application source, generated client, database, migration, or deployed environment was changed.
+- The Service Menus flow will be redesigned as one cohesive library organized first by menu type (`Bridal` and `Party`) and then by available location (`General` and `Florida` where applicable). One selected-menu workspace will own the preview and the three clear primary actions: Edit, Share, and Print.
+- Reviewed originals will remain available for recovery but will move under an `Archived originals` section that is collapsed by default, so fallback files no longer compete with the current editable menu.
+- Reviewed the supplied four-page `Party priceless (1).pdf` by text extraction and rendered-page inspection. It is the source for the current Party General menu: Simple Glam `$130`, Soft Glam `$175`, Party Glam `$225`, Party Hair `$185`, Setups `$75`, Hijab Setups `$75`, travel `$50` for 10-15 miles and `$100` for 20+ miles with consultation for further distances, Early Morning Fee `$200` for 3:00-5:00 AM and `$75` for 6:00-7:00 AM, and the note that the artist specializes in full glam.
+- The marketing-menu data boundary remains explicit: Bridal and Party collateral must not update booking Services & Fees, operational service records, or prior booking-local price snapshots.
+- Acceptance criteria and future validation now cover generated API clients when needed, an isolated local migration when needed, authenticated API persistence, frontend typecheck/build, desktop and mobile Browser flows, marketing/booking data isolation, and clean print/PDF output for every available menu edition.
+- Focused API typecheck passed. The first frontend typecheck failed in the new editor because the generated query hook requires an explicit query key and the change comparison did not narrow optional response data; implementation was paused to record the failure before applying those two local typing fixes.
+- The additive migration `supabase/migrations/20260903175807_expand_service_menu_library.sql` was applied only to local `makeup_artist_hub_prod_snapshot`; its constraint now allows the preserved `bridal-services` key and new `party-services` key. A first isolation-count query used a guessed `public.services` table name and failed without changing data; the actual schema will be inspected before retrying with the real table names.
+- Desktop and 430-by-932 Browser checks passed for menu selection, location choices, Party preview, editor access, save/reload, restored source wording, touch targets, and horizontal overflow. The first real two-page PDF render exposed a pre-existing print isolation defect: the printable pages inherited dashboard positioning, which shifted and clipped content. The print document is being moved to a body-level print portal before the render is repeated.
+
+## 2026-09-03 - Cohesive Bridal and Party Service Menu Library (Completed Locally)
+
+- Rebuilt `/service-menus` around a two-step choice: select Bridal or Party & Event, then select only a confirmed location edition. Bridal offers General and Florida; Party intentionally offers General only because the supplied PDF does not define Florida pricing.
+- Replaced the competing download/open/share controls with one selected-menu workspace, a live two-page preview, one primary `Save or share menu` action, and secondary Edit and Print actions. Bridal source files remain recoverable under `Archived originals`, collapsed by default.
+- Added a dedicated editor for each menu key. A successful Browser round trip changed the first Party service name, saved it, reloaded it from the API, verified the persisted value, and restored `Simple Glam`. Save errors surface through a destructive recovery toast and optimistic concurrency preserves the last saved revision.
+- Added the Party General document with all 11 source-derived items and a distinct two-page editorial layout. `Setups` and `Hijab Setups` preserve the source naming and current `$75` prices. Party marketing content remains separate from operational `service_items` and booking records.
+- Extended the existing server-owned `service_menu_content` persistence with `party-services` while preserving the legacy Bridal endpoint. Generated React Query and Zod clients were regenerated from the updated OpenAPI contract. The additive database migration was applied only to `makeup_artist_hub_prod_snapshot`; hosted Supabase was not changed.
+- The isolation round trip kept counts unchanged at 18 bookings and 16 operational service items while the menu row count changed only from 0 to 1. A repeated stale Party save returned HTTP 409 with the expected reload-before-saving message.
+- Fixed the print defect by rendering a body-level print-only document instead of inheriting the dashboard's positioned layout. Headless Chrome produced two-page, US Letter PDFs for Party General, Bridal General, and Bridal Florida. Rendered-page inspection confirmed clean margins, no clipping or overlap, no private CRM controls, and preserved Florida Bridal Bundle pricing of `$675 / event`.
+- Browser checks at desktop and 430-by-932 phone size confirmed clear selected-menu identity, Party/Bridal switching, Party's single General location, Bridal's General/Florida options, editor access, save/reload, touch-sized actions, collapsed archives, zero horizontal overflow, and no console warnings or errors.
+- Validation passed: API code generation, API typecheck/build, frontend typecheck/build, root workspace typecheck, and `git diff --check`. The frontend build emitted only the repository's existing sourcemap, OpenCV externalization, and large-chunk warnings.
+- Deployment boundary: this work is complete in the local branch only. No hosted database migration, commit, push, merge, GitHub Pages publication, or production API deployment was performed in this task.
+
+## 2026-09-03 - Work Package 2.23 Simple Glam Photo Follow-up (Start)
+
+- Started a documentation-only follow-up to associate the two supplied JPG references with the Party General menu's Simple Glam section: `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-simple-glam-01.jpg` and `/Users/iftatbhuiyan/Makeup-Artist-Hub/artifacts/glam-crm/public/service-menus/party-simple-glam-02.jpg`.
+- The follow-up acceptance target is to keep both photos scoped to Simple Glam and apply a print-safe crop/treatment with clean margins, no clipping, and no reduction in service-copy legibility.
+- This start note changes durable planning documentation only. No application source code or image asset was edited.
+
+## 2026-09-03 - Work Package 2.23 Simple Glam Photo Follow-up (Completed Locally)
+
+- Added the two supplied images as durable, web-optimized assets at `artifacts/glam-crm/public/service-menus/party-simple-glam-01.jpg` and `party-simple-glam-02.jpg`. Their preserved aspect ratios are 1458-by-1800 and 1480-by-1800; the combined optimized size is approximately 797 KB.
+- Reshaped Party page 1 so Simple Glam is the photographic focal point: the two tightly cropped portraits sit inside the Simple Glam service block beside its name, `$130` price, and description. Soft Glam and Party Glam remain quieter supporting choices beneath it, so the images cannot be mistaken for another service.
+- Browser verification confirmed both source images loaded at desktop and 430-by-932 phone size, the app retained zero horizontal overflow, and the browser console remained free of warnings and errors.
+- A fresh headless-Chrome print produced a two-page US Letter PDF. Rendered page 1 inspection confirmed both portraits, the Simple Glam association, readable copy and pricing, clean margins, and no clipping or watermark intrusion in the applied crops.
+- Validation passed: focused frontend typecheck, production frontend build, root workspace typecheck, and `git diff --check`. The production build retained only the repository's existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.
+- Deployment boundary remains unchanged: the photo follow-up is local only and has not been committed, pushed, merged, or deployed.
+
+## 2026-09-03 - Work Package 2.23 Soft Glam Photo Follow-up (Start)
+
+- Started a documentation-only follow-up to associate `codex-clipboard-9f4123c4-44ed-410b-a00e-f549de931473.jpg` and `codex-clipboard-d01d2e4a-35e4-4f7a-a4f2-ad7688c0a240.jpg` only with the Party General menu's Soft Glam section.
+- Acceptance requires print-safe, unclipped image treatment that preserves the legibility of the Soft Glam service details and surrounding menu content. No application source or image asset is changed in this documentation-only step.
+- Print-validation command failure: the first headless-Chrome command was rejected before execution because it attempted to remove predictable temporary files with `rm -f`. No PDF or project file was changed. The retry will use a fresh `mktemp` directory and avoid deletion.
+
+## 2026-09-03 - Work Package 2.23 Soft Glam Photo Follow-up (Completed Locally)
+
+- Added the supplied Soft Glam references as optimized, durable assets at `artifacts/glam-crm/public/service-menus/party-soft-glam-01.jpg` and `party-soft-glam-02.jpg`. Their preserved dimensions are 1775-by-1800 and 1487-by-1800; the combined optimized size is approximately 907 KB.
+- Rebalanced Party page 1 into a deliberate service sequence. Simple Glam keeps its own two-photo row, Soft Glam now has a separate reversed two-photo row beside its `$175` name and description, and Party Glam remains a compact text-only service block until its own references are supplied.
+- Tightened the Simple Glam crop so the source watermark remains outside the client-facing frame and explicitly set the Party hero title to ivory for reliable screen and print contrast.
+- Browser checks at 1440-by-900 and 430-by-932 confirmed all four service-specific images load, the Soft Glam row stays attached to the correct title and price, and the page has no horizontal overflow. The phone preview showed the complete two-page menu within the existing responsive preview flow.
+- A fresh headless-Chrome export produced a two-page US Letter PDF. Rendered page 1 inspection confirmed legible service names, prices, and descriptions; clean margins; intact face crops; no clipping or overlap; no visible source watermark; and a clear distinction among Simple Glam, Soft Glam, and Party Glam.
+- Validation passed: focused frontend typecheck, production frontend build, root workspace typecheck, and `git diff --check`. The build retained only the repository's existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.
+- Deployment boundary remains unchanged: this follow-up is local only and has not been committed, pushed, merged, or deployed.
+
+## 2026-09-03 - Work Package 2.23 Party Glam Photo Follow-up (Start)
+
+- Started a documentation-only follow-up for three supplied Party Glam references, with durable asset placeholders at `artifacts/glam-crm/public/service-menus/party-glam-01.jpg`, `party-glam-02.jpg`, and `party-glam-03.jpg`.
+- Acceptance requires all three photos to remain associated only with Party Glam, use a print-safe three-image composition with intact face crops, and preserve the legibility of the Party Glam service name, price, description, and surrounding menu copy.
+- This start note changes durable planning documentation only. No application source code or image asset was edited, and the follow-up is not marked complete.
+- Edit failure: the first combined JSX/CSS patch was rejected before changing either file because the CSS hunk was accidentally scoped to the component path. The implementation will be retried as separate, file-specific patches.
+
+## 2026-09-03 - Work Package 2.23 Party Glam Photo Follow-up (Completed Locally)
+
+- Added the three supplied Party Glam references as optimized assets at `artifacts/glam-crm/public/service-menus/party-glam-01.jpg`, `party-glam-02.jpg`, and `party-glam-03.jpg`. Their preserved dimensions are 1327-by-1800, 1216-by-1800, and 1737-by-1800; the combined optimized size is approximately 1.03 MB.
+- Replaced the temporary text-only Party Glam block with a dedicated `$225` feature row. Its asymmetric collage uses one large portrait and two stacked supporting crops, distinguishing Party Glam from the equal two-photo Simple Glam and Soft Glam treatments while keeping every reference inside the correct service section.
+- Browser measurement found the first collage grid inherited excessive intrinsic image height and pushed the makeup-inclusions note outside the page. Constraining the triptych grid to the intended feature height restored an exact fit; final desktop and 430-by-932 phone checks reported equal content scroll/client heights and zero horizontal overflow.
+- A fresh headless-Chrome export produced a two-page US Letter PDF. Rendered page 1 inspection confirmed all three Party Glam images, intact face and eye-makeup crops, clear `$225` pricing and description, clean margins, the complete makeup-inclusions note, and no clipping or overlap.
+- Validation passed: focused frontend typecheck, production frontend build, root workspace typecheck, and `git diff --check`. The build retained only the repository's existing sourcemap, OpenCV browser-externalization, and large-chunk warnings.
+- Deployment boundary remains unchanged: the Party Glam photo follow-up is local only and has not been committed, pushed, merged, or deployed.
+
+## 2026-09-03 - Work Package 2.23 GitHub Merge (Start)
+
+- The user authorized committing, pushing, and merging the cohesive Service Menus library together with all supplied Simple Glam, Soft Glam, and Party Glam photos.
+- The release commit must use the repository's next sequential `Commit #` prefix.
+- The user subsequently clarified that the Service Menus release should be made fully operational before merge, including its required hosted Supabase constraint and shared Render API deployment.
+
+## 2026-09-03 - Service Menu Release Review Follow-up
+
+- Independent release review found that the new keyed endpoints initially returned HTTP 404 on the hosted Render API and the hosted database still had the older single-key constraint. The production release work below resolves that gate before the dashboard merge.
+- Restored the supplied PDF's explicit Soft Glam and Party Glam inclusions for brows, blush, bronzer, highlight, lip application, and lashes.
+- Added individual Party text limits plus combined page-one/page-two print budgets in both the editor and server normalization layer. A first maximum-description test fit only while titles and prices remained short; independent review then demonstrated that simultaneously maximal names, prices, and descriptions could still overflow. The final guard rejects that combined case before saving with a clear print-readiness message, limits long unbroken title/price tokens, and keeps the approved source copy at zero measured element, page-X, or page-Y overflow with 16 pixels remaining above the first-page footer. The intended source copy was restored and saved after testing.
+- Reopened the prior Website Studio menu-draft view under `?tab=menu` as a clearly labeled `Saved drafts` recovery tab. Browser verification confirmed the URL no longer redirects and browser-local drafts can be reviewed or moved into the current Service Menus workflow.
+- Final sequential validation passed API typecheck/build, frontend typecheck, the `/YeasminGlamDashboard/` production build, the full workspace typecheck, and `git diff --check`. The same existing sourcemap, OpenCV browser-externalization, and large-chunk warnings remain non-blocking.
+- Initial GitHub release preparation opened pull request #16; its final diff was narrowed to the completed Service Menus work before merge.
+
+## 2026-09-03 - Work Package 2.23 Production Release (Start)
+
+- The user clarified that the completed Service Menus library, Party pricing, supplied Simple/Soft/Party Glam photos, editor, and printable output should be released now.
+- Release order remains database first, shared Render API second, authenticated live Bridal/Party save-load verification third, and the Service Menus-only dashboard merge last. The production change must not alter booking-service pricing or private CRM records.
+- Applied the additive `expand_service_menu_library` migration to hosted Supabase. Postflight inspection confirms the old Bridal-only check is gone, the replacement permits only `bridal-services` and `party-services`, no `anon` or `authenticated` grants exist, and the menu table remains empty until the authenticated API initializes defaults. Existing advisor notices are unchanged and unrelated to this constraint expansion.
+- The first shared-server test attempt in a fresh isolated worktree stopped before loading tests because that worktree had no `node_modules` and Node could not resolve `dotenv`. The dashboard API build and 12-file bundle sync succeeded; tests will be rerun using the server repository's existing locked dependencies.
+- Reran the shared-server suite against its existing locked dependencies; all six tests passed. Published `Commit #27 - Deploy service menu library API` and merged WhisperSpeechServer pull request #4. The merge completed successfully; the CLI's optional local branch cleanup reported that `main` is already checked out in the primary worktree, which did not affect the remote merge or Render deployment.
+- After Render switched revisions, authenticated production requests returned HTTP 200 for both `/service-menu-content/bridal-services` and `/service-menu-content/party-services`. Saving each reviewed default created revision 1; immediate reloads returned identical items; intentionally stale revision-0 saves returned HTTP 409 for both menus. This verified live persistence and overwrite protection without modifying booking, client, contract, or operational service rows.
+- Final Service Menus-only validation passed API typecheck/build, frontend typecheck, the `/YeasminGlamDashboard/` production build, the sequential full workspace typecheck, and `git diff --check`. The existing sourcemap, OpenCV browser-externalization, and large-chunk warnings remain non-blocking.
+- Final independent review found and fixed three scope/accuracy issues before merge: Party Glam now says `false lashes` exactly as the supplied PDF does, the print-page rule is scoped to the named Service Menu page, and unrelated workstream documentation is absent from the release diff.
+- Published the source-copy correction through WhisperSpeechServer pull request #5 (`Commit #28 - Match party menu source copy`). The production Party menu was updated through the authenticated API to revision 2, and its reload contains `false lashes` with no remaining `premium lashes` wording.
+- Repeated the final print gate after scoping the page rule. Headless Chrome produced an unencrypted two-page US Letter Party Services PDF (612-by-792 points); rendered inspection confirmed all seven supplied images remain attached to the correct Simple Glam, Soft Glam, and Party Glam sections with intact crops, readable prices and descriptions, complete page-two travel/timing content, and no dashboard controls, clipping, overlap, or extra pages.
+- The local in-app Browser preview remains available at `/service-menus?menu=party-services` for visible user review while the dashboard pull request is finalized.

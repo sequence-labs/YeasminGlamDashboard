@@ -217,6 +217,42 @@ Validation commands:
 - Rendered print/PDF visual inspection of both pages for clipping, overlap, legibility, and unchanged art direction.
 - `git diff --check` excluding generated binary PDFs when applicable.
 
+### Work Package 2.23: Cohesive Bridal and Party Service Menu Library
+
+Status: Production database/API and authenticated save-reload behavior verified; dashboard PR ready to merge.
+
+Objective:
+- Redesign `/service-menus` as one understandable library and workspace instead of a sequence of scattered edition, download, open, share, edit, and print controls.
+- Organize selection first by menu type (`Bridal` or `Party`), then by location (`General` or `Florida` where that menu has a location-specific edition).
+- Keep the current editable menu prominent and keep reviewed original files available only as a collapsed fallback.
+
+Acceptance criteria:
+- The Service Menus landing state presents Bridal and Party as the primary choices; after a type is selected, it presents only the locations available for that type. Bridal supports General and Florida. Party starts with General and must not imply that a Florida Party edition exists until Florida-specific Party content is created.
+- One selected-menu workspace clearly identifies the active menu type and location, shows one live preview, and groups the primary actions as Edit, Share, and Print. Duplicate or competing download/open/share controls are removed from the main flow.
+- Share offers the appropriate client-ready output from the selected menu without requiring the owner to choose between confusingly named current and original files. Print uses the selected menu's current saved content and opens a clean print/save-PDF path.
+- Reviewed original PDFs and page images remain recoverable under an `Archived originals` disclosure that is collapsed by default and visually secondary to the current menu.
+- The Party General menu uses the supplied `Party priceless (1).pdf` as its current content source and includes: Simple Glam `$130`, Soft Glam `$175`, Party Glam `$225`, Party Hair `$185`, Setups `$75`, Hijab Setups `$75`, travel at `$50` for 10-15 miles and `$100` for 20+ miles, consultation for further distances, Early Morning Fee `$200` for 3:00-5:00 AM and `$75` for 6:00-7:00 AM, and the full-glam specialty note.
+- The two supplied Simple Glam photos are associated only with the Party General Simple Glam section and use a print-safe crop and treatment with clean margins, no clipping, and no loss of service-copy legibility.
+- The two supplied Soft Glam photos are associated only with the Party General Soft Glam section; their print-safe treatment keeps both images unclipped and does not reduce the legibility of the service name, price, description, or surrounding menu content.
+- The three supplied Party Glam photos are associated only with the Party General Party Glam section; their print-safe three-image composition preserves intact face crops and does not reduce the legibility of the service name, price, description, or surrounding menu content.
+- Bridal General and Florida content remains available and its existing region-specific pricing is preserved unless the owner deliberately edits it.
+- Marketing menu content and persistence remain separate from booking `Services & Fees`, operational service records, and booking-local or historical price snapshots. Saving or editing a marketing menu cannot rewrite any of those records.
+- Saved current menu content reloads reliably in another authenticated session. Invalid or stale updates preserve the last saved menu and show a useful recovery message.
+- The workflow is cohesive and usable at desktop and phone sizes, with clear hierarchy, accessible labels, adequate touch targets, no horizontal overflow, and no need to understand internal terms such as reviewed original or generated asset.
+- Printed Bridal General, Bridal Florida, and Party General menus contain only the selected client-facing menu, use print-safe margins, and have no clipped, overlapping, missing, or illegible content.
+
+Validation commands:
+- If the API contract changes, run `pnpm --filter @workspace/api-spec run codegen`, then verify the generated Zod contracts and React Query client are updated without unrelated churn.
+- If persistence schema changes, apply the new versioned migration only to `makeup_artist_hub_prod_snapshot` with `psql -v ON_ERROR_STOP=1`; record the exact migration filename in `Documentation.md` before running it and verify the marketing-menu rows remain isolated from service and booking snapshot tables.
+- If API behavior changes, run `pnpm --filter @workspace/api-server run typecheck` and `pnpm --filter @workspace/api-server run build`, then perform an authenticated list/read/save/reload and stale-revision API round trip against the isolated local snapshot.
+- `pnpm --filter @workspace/glam-crm run typecheck`
+- `pnpm --filter @workspace/glam-crm run build`
+- `pnpm run typecheck`
+- Browser validation at desktop (`1440x900`) and mobile (`430x932`) covering type selection, available-location selection, selected-menu identity, edit/save/reload, Share, Print, and expand/collapse behavior for Archived originals.
+- Browser isolation check confirming a marketing-menu save leaves booking Services & Fees and existing booking-local price snapshots unchanged.
+- Print-media emulation plus rendered PDF inspection for Bridal General, Bridal Florida, and Party General, checking page count, selected-menu identity, margins, clipping, overlap, legibility, and absence of CRM controls/private data.
+- `git diff --check -- Prompt.md Plan.md Documentation.md`
+
 ## Rollback Conditions
 
 - Local migration requires replacing generated source files wholesale.

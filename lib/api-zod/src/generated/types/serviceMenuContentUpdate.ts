@@ -11,8 +11,8 @@ export interface ServiceMenuContentUpdate {
   /** @minimum 0 */
   expectedRevision: number;
   /**
-     * @minItems 14
-     * @maxItems 14
+     * @minItems 1
+     * @maxItems 20
      */
   items: ServiceMenuContentItem[];
 }
