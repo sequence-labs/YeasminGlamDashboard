@@ -99,7 +99,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center px-6">
+      <div className="crm-auth-gate flex min-h-screen items-center justify-center px-6">
         <div className="crm-section flex items-center gap-3 px-5 py-4">
           <div className="h-2 w-2 animate-pulse rounded-full bg-primary" />
           <span className="text-sm text-muted-foreground">Checking access…</span>
@@ -111,7 +111,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (authenticated) return <>{children}</>;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center px-6 py-12">
+    <div className="crm-auth-gate relative flex min-h-screen items-center justify-center px-6 py-12">
       <div className="w-full max-w-md crm-fade-up">
         <div className="crm-section overflow-hidden p-8 sm:p-10">
           {/* Brand block */}

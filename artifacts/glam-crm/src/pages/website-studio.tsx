@@ -262,7 +262,7 @@ export default function WebsiteStudioPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col gap-5 bg-background p-4 sm:p-6">
+    <div className="website-studio-shell flex min-h-dvh flex-col gap-5 bg-background p-4 sm:p-6">
         <header className="flex flex-col gap-5 rounded-2xl border border-card-border bg-card px-5 py-5 shadow-sm lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="flex items-center gap-2">
